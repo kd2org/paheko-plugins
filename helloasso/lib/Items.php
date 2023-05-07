@@ -163,4 +163,10 @@ class Items
 
 		return $data;
 	}
+	
+	static public function reset(): void
+	{
+		$sql = sprintf('DELETE FROM %s;', Item::TABLE);
+		DB::getInstance()->exec($sql);
+	}
 }

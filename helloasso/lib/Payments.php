@@ -160,6 +160,12 @@ class Payments
 
 		return $data;
 	}
+	
+	static public function reset(): void
+	{
+		$sql = sprintf('DELETE FROM %s;', Payment::TABLE);
+		DB::getInstance()->exec($sql);
+	}
 
 /*
 

@@ -110,4 +110,10 @@ class Orders
 
 		return $data;
 	}
+	
+	static public function reset(): void
+	{
+		$sql = sprintf('DELETE FROM %s;', Order::TABLE);
+		DB::getInstance()->exec($sql);
+	}
 }

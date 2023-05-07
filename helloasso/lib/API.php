@@ -8,7 +8,8 @@ use KD2\HTTP;
 
 class API
 {
-	const BASE_URL = 'https://api.helloasso.com/';
+	//const BASE_URL = 'https://api.helloasso.com/';
+	const BASE_URL = 'https://api.helloasso-sandbox.com/';
 
 	protected $ha;
 	protected $oauth;

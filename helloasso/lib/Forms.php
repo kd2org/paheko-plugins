@@ -90,4 +90,10 @@ class Forms
 			}
 		}
 	}
+	
+	static public function reset(): void
+	{
+		$sql = sprintf('DELETE FROM %s;', Form::TABLE);
+		DB::getInstance()->exec($sql);
+	}
 }

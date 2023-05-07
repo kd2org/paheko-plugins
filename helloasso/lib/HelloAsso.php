@@ -89,20 +89,26 @@ class HelloAsso
 	public function saveClient(string $client_id, string $client_secret): void
 	{
 		$client_id = trim($client_id);
-
-		if ($client_id !== $this->config->client_id) {
-			// Clear everything!
+		$old_client_id = $this->config->client_id;
+		
+		if ($client_id !== $old_client_id) {
 			$this->reset();
 		}
 
 		$api = API::getInstance();
 		$api->register($client_id, $client_secret);
+		
+		if ($client_id !== $old_client_id) {
+			$this->sync();
+		}
 	}
 
 	public function reset(): void
 	{
-		$sql = sprintf('DELETE FROM %s;', Form::TABLE);
-		DB::getInstance()->exec($sql);
+		Forms::reset();
+		Orders::reset();
+		Payments::reset();
+		Items::reset();
 	}
 
 	public function saveConfig(array $map, $merge_names, $match_email_field): bool
