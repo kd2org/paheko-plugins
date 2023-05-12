@@ -4,8 +4,12 @@ namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Plugin\HelloAsso\Entities\Payment;
+use Garradin\Plugin\HelloAsso\Entities as HA;
 use Garradin\Plugin\HelloAsso\API;
+
+use Garradin\Payments\Payments as Paheko_Payments;
+use Garradin\Entities\Payments\Payment;
+use Garradin\Entities\Users\User;
 
 use Garradin\DB;
 use Garradin\DynamicList;
@@ -13,21 +17,27 @@ use Garradin\Utils;
 
 use KD2\DB\EntityManager as EM;
 
-class Payments
+class Payments extends Paheko_Payments
 {
+	const PAHEKO_STATUS = [ HA\Payment::STATE_OK => Payment::VALIDATED_STATUS ]; // ToDo: complete the list
+	const UPDATE_MESSAGE = 'Mise à jour du paiement';
+
 	static public function get(int $id): ?Payment
 	{
-		return EM::findOneById(Payment::class, $id);
+		return EM::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE provider = :provider AND json_extract(extra_data, \'$.id\') = :id', HelloAsso::PROVIDER_NAME, $id);
 	}
 
 	static public function list($for): DynamicList
 	{
 		$columns = [
-			'id' => [
+			'reference' => [
 				'label' => 'Référence',
 			],
-			'id_transaction' => [
-				'label' => 'Écriture',
+			'id_transaction' => [ // Not yet implemented inside Paheko Payment entity
+				'label' => 'Écriture'
+			],
+			'label' => [
+				'label' => 'Libellé'
 			],
 			'date' => [
 				'label' => 'Date',
@@ -35,29 +45,37 @@ class Payments
 			'amount' => [
 				'label' => 'Montant',
 			],
-			'person' => [
-				'label' => 'Personne',
+			'id_author' => [
+				'label' => 'Personne'
 			],
+			'author_name' => [],
 			'state' => [
 				'label' => 'Statut',
+				'select' => 'json_extract(extra_data, \'$.state\')'
 			],
 			'transfer_date' => [
 				'label' => 'Versement',
+				'select' => 'json_extract(extra_data, \'$.transfert_date\')'
 			],
-			'receipt_url' => [],
-			'id_order' => [],
+			'receipt_url' => [
+				'select' => 'json_extract(extra_data, \'$.receipt_url\')'
+			],
+			'id_order' => [
+				'label' => 'Commande',
+				'select' => 'json_extract(extra_data, \'$.id_order\')'
+			]
 		];
 
 		$tables = Payment::TABLE;
 		$list = new DynamicList($columns, $tables);
 
 		if ($for instanceof Form) {
-			$conditions = sprintf('id_form = %d', $for->id);
+			$conditions = sprintf('json_extract(extra_data, \'$.id_form\') = %d', $for->id);
 			$list->setConditions($conditions);
 			$list->setTitle(sprintf('%s - Paiements', $for->name));
 		}
 		elseif ($for instanceof Order) {
-			$conditions = sprintf('id_order = %d', $for->id);
+			$conditions = sprintf('json_extract(extra_data, \'$.id_order\') = %d', $for->id);
 			$list->setConditions($conditions);
 			$list->setTitle(sprintf('Commande - %d - Paiements', $for->id));
 		}
@@ -66,7 +84,10 @@ class Payments
 		}
 
 		$list->setModifier(function ($row) {
-			$row->state = Payment::STATES[$row->state] ?? 'Inconnu';
+			$row->state = HA\Payment::STATES[$row->state] ?? 'Inconnu';
+			if ($row->id_author) {
+				$row->author = EM::findOneById(User::class, (int)$row->id_author);
+			}
 		});
 
 		$list->setExportCallback(function (&$row) {
@@ -79,7 +100,7 @@ class Payments
 
 	static public function getLastPaymentDate(): ?\DateTime
 	{
-		$date = DB::getInstance()->firstColumn(sprintf('SELECT MAX(date) FROM %s WHERE state = ?;', Payment::TABLE), Payment::STATE_OK);
+		$date = DB::getInstance()->firstColumn(sprintf('SELECT MAX(date) FROM %s WHERE provider = :plugin_provider AND status = :validated_status;', Payment::TABLE), HelloAsso::PROVIDER_NAME, Payment::VALIDATED_STATUS);
 
 		if ($date) {
 			$date = \DateTime::createFromFormat('!Y-m-d H:i:s', $date);
@@ -95,7 +116,7 @@ class Payments
 		$params = [
 			'pageSize'  => HelloAsso::getPageSize(),
 			// Only return new Authorized payments, we are no expecting
-			'states'    => Payment::STATE_OK,
+			'states'    => HA\Payment::STATE_OK,
 		];
 
 		$page_count = 1;
@@ -121,49 +142,53 @@ class Payments
 		}
 	}
 
-	static protected function syncPayment(\stdClass $data): void
+	static protected function syncPayment(\stdClass $raw_data): void
 	{
-		$entity = self::get($data->id) ?? new Payment;
+		$payment = self::get($raw_data->id) ?? new Payment;
+		$data = self::formatData($raw_data);
+		$data->raw_data = &$raw_data;
 
-		$entity->set('raw_data', json_encode($data));
-
-		$data = self::transform($data);
-
-		if (!$entity->exists()) {
-			$entity->set('id', $data->id);
-			$entity->set('id_order', $data->order_id);
-			$entity->set('id_form', Forms::getId($data->org_slug, $data->form_slug));
+		if (!$payment->exists()) {
+			$author = EM::findOne(User::class, 'SELECT * FROM @TABLE WHERE email = ? LIMIT 1;', $data->payer->email);
+			$author_id = $author->id ?? null;
+			$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
+			$data->id_form = Forms::getId($data->org_slug, $data->form_slug);
+			$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
+			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::PAHEKO_STATUS[$data->state], HelloAsso::PROVIDER_NAME, $author_id, $author_name, $data->id, $label, $data->amount, $data);
 		}
 
-		$entity->set('amount', $data->amount);
-		$entity->set('state', $data->state);
-		$entity->set('date', $data->date);
-		$entity->set('transfer_date', $data->transfer_date);
-		$entity->set('person', $data->payer_name);
-		$entity->set('receipt_url', $data->paymentReceiptUrl ?? null);
+		$payment->set('amount', $data->amount);
+		$payment->set('status', self::PAHEKO_STATUS[$data->state]);
+		$payment->set('history', $data->date->format('Y-m-d H:i:s') . ' - '. self::UPDATE_MESSAGE . "\n" . $payment->history);
+		
+		$payment->setExtraData('date', $data->date);
+		$payment->setExtraData('transfer_date', $data->transfer_date);
+		$payment->setExtraData('person', $data->payer_name);
+		$payment->setExtraData('receipt_url', $data->paymentReceiptUrl ?? null);
 
-		$entity->save();
+		$payment->save();
 	}
 
-	static public function transform(\stdClass $data): \stdClass
+	static public function formatData(\stdClass $data): \stdClass
 	{
-		$data->id = (int) $data->id;
-		$data->order_id = (int) $data->order->id ?: null;
-		$data->date = new \DateTime($data->date);
-		$data->status = Payment::STATES[$data->state] ?? '--';
-		$data->transferred = isset($data->cashOutState) && $data->cashOutState == Payment::CASH_OUT_OK ? true : false;
-		$data->transfer_date = isset($data->cashOutDate) ? new \DateTime($data->cashOutDate) : null;
-		$data->payer_name = isset($data->payer) ? Payment::getPayerName($data->payer) : null;
-		$data->payer_infos = isset($data->payer) ? Payment::getPayerInfos($data->payer) : null;
-		$data->form_slug = $data->order->formSlug;
-		$data->org_slug = $data->order->organizationSlug;
+		$formated = clone $data;
+		$formated->id = (int) $data->id;
+		$formated->id_order = (int) $data->order->id ?: null;
+		$formated->date = new \DateTime($data->date);
+		$formated->status = HA\Payment::STATES[$data->state] ?? '--';
+		$formated->transferred = isset($data->cashOutState) && $data->cashOutState == HA\Payment::CASH_OUT_OK ? true : false;
+		$formated->transfer_date = isset($data->cashOutDate) ? new \DateTime($data->cashOutDate) : null;
+		$formated->payer_name = isset($data->payer) ? HA\Payment::getPayerName($data->payer) : null;
+		$formated->payer_infos = isset($data->payer) ? HA\Payment::getPayerInfos($data->payer) : null;
+		$formated->form_slug = $data->order->formSlug;
+		$formated->org_slug = $data->order->organizationSlug;
 
-		return $data;
+		return $formated;
 	}
 	
 	static public function reset(): void
 	{
-		$sql = sprintf('DELETE FROM %s;', Payment::TABLE);
+		$sql = sprintf('DELETE FROM %s WHERE provider = \'%s\';', Payment::TABLE, HelloAsso::PROVIDER_NAME);
 		DB::getInstance()->exec($sql);
 	}
 

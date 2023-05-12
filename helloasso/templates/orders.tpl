@@ -9,11 +9,19 @@
 		<tr>
 			<th class="num"><a href="order.php?id={$row.id}">{$row.id}</a></th>
 			<td>{$row.date|date}</td>
-			<td class="money">{$row.amount|money_currency|raw}</td>
 			<td>{$row.label}</td>
-			<td>{if $row.status}Payé{else}Paiement incomplet{/if}</td>
+			<td class="money">{$row.amount|money_currency|raw}</td>
+			<td>
+				{if $row.id_user && $row.author}
+					<a href="{$admin_url}users/details.php?id={$row.author.id|intval}">{$row.author.nom}</a>
+				{else}
+					{$row.person}
+				{/if}
+			</td>
+			<td>{$row.status}</td>
+			<td class="num"><a href="{$plugin_admin_url}payment.php?ref={$row.id_payment}">{$row.id_payment}</a></td>
 			<td class="actions">
-				{linkbutton href="order.php?id=%s"|args:$row.id shape="help" label="Détails"}
+				{linkbutton href="order.php?id=%s"|args:$row.id_payment shape="help" label="Détails"}
 			</td>
 		</tr>
 

@@ -14,6 +14,8 @@ use function Garradin\garradin_contributor_license;
 class HelloAsso
 {
 	const NAME = 'helloasso';
+	const PROVIDER_NAME = self::NAME;
+	const PROVIDER_LABEL = 'HelloAsso';
 	const PER_PAGE = 100;
 
 	const MERGE_NAMES_FIRST_LAST = 0;

@@ -26,6 +26,10 @@ class Order extends Entity
 
 	const STATUS_PAID = 1;
 	const STATUS_WAITING = 0;
+	const STATUSES = [
+		self::STATUS_PAID => 'Payée',
+		self::STATUS_WAITING => 'En attente'
+	];
 
 	static public function getStatus(\stdClass $order)
 	{

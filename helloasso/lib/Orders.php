@@ -29,15 +29,24 @@ class Orders
 			'date' => [
 				'label' => 'Date',
 			],
+			'label' => [
+				'label' => 'Libellé',
+				'select' => 'json_extract(raw_data, \'$.formSlug\')'
+			],
 			'amount' => [
 				'label' => 'Montant',
 			],
-			'person' => [
+			'id_user' => [
 				'label' => 'Personne',
 			],
+			'person' => [],
 			'status' => [
 				'label' => 'Statut',
 			],
+			'id_payment' => [
+				'label' => 'Paiement',
+				'select' => 'json_extract(raw_data, \'$.payments[0].id\')'
+			]
 		];
 
 		$tables = Order::TABLE;
@@ -45,6 +54,13 @@ class Orders
 
 		$list = new DynamicList($columns, $tables, $conditions);
 		$list->setTitle(sprintf('%s - Commandes', $form->name));
+
+		$list->setModifier(function (&$row) {
+			$row->status = Order::STATUSES[$row->status];
+			if ($row->id_user) {
+				$row->author = EM::findOneById(User::class, (int)$row->id_user);
+			}
+		});
 
 		$list->setExportCallback(function (&$row) {
 			$row->amount = $row->amount ? Utils::money_format($row->amount, '.', '', false) : null;
