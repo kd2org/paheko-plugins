@@ -75,7 +75,7 @@ class Stats
 			ORDER BY hits DESC LIMIT 50;');
 	}
 
-	static public function graph()
+	static public function graph(): ?string
 	{
 		$plot = new Plot(900, 300);
 
@@ -93,19 +93,23 @@ class Stats
 			}
 		}
 
-		$graph = new Plot_Data($data['hits']);
+		if (!isset($data['date'])) {
+			return null;
+		}
+
+		$graph = new Plot_Data($data['hits'] ?? []);
 		$graph->title = 'Pages vues';
 		$graph->color = 'Crimson';
 		$graph->width = 3;
 		$plot->add($graph);
 
-		$graph = new Plot_Data($data['visits']);
+		$graph = new Plot_Data($data['visits'] ?? []);
 		$graph->title = 'Visites';
 		$graph->color = 'CadetBlue';
 		$graph->width = 3;
 		$plot->add($graph);
 
-		$graph = new Plot_Data($data['mobile_visits']);
+		$graph = new Plot_Data($data['mobile_visits'] ?? []);
 		$graph->title = 'Mobiles';
 		$graph->color = 'Salmon';
 		$graph->width = 3;
