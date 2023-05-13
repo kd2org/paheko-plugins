@@ -2,7 +2,7 @@
 
 	{foreach from=$list->iterate() item="row"}
 		<tr>
-			<td class="num"><a href="payment.php?id={$row.reference}">{$row.reference}</a></td>
+			<td class="num"><a href="payment.php?id={$row.id}">{$row.reference}</a></td>
 			<td class="num">{if $row.id_transaction}{link href="!acc/transactions/details.php?id=%d"|args:$row.id_transaction label="#%d"|args:$row.id_transaction}{/if}</td>
 			<td>{$row.label}</td>
 			<td>{$row.date|date}</td>

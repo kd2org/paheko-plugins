@@ -16,6 +16,8 @@ class HelloAsso
 	const NAME = 'helloasso';
 	const PROVIDER_NAME = self::NAME;
 	const PROVIDER_LABEL = 'HelloAsso';
+	const ACCOUNTING_ENABLED = 1;
+	const CHART_ID = 1; // ToDo: make it dynamic
 	const PER_PAGE = 100;
 
 	const MERGE_NAMES_FIRST_LAST = 0;
@@ -46,10 +48,6 @@ class HelloAsso
 		$this->plugin = EntityManager::getInstance(Plugin::class)->one('SELECT * FROM @TABLE WHERE name = ? LIMIT 1;', self::NAME);
 
 		$this->config = $this->plugin->getConfig();
-		if (null === $this->config) {
-			$this->config = new \stdClass();
-			$this->config->client_id = null;
-		}
 	}
 
 	public function plugin(): Plugin
@@ -75,7 +73,7 @@ class HelloAsso
 
 		foreach ($organizations as $org_slug) {
 			Orders::sync($org_slug);
-			Payments::sync($org_slug);
+			Payments::sync($org_slug, $this->config->accounting);
 			Items::sync($org_slug);
 		}
 
@@ -113,11 +111,20 @@ class HelloAsso
 		Items::reset();
 	}
 
-	public function saveConfig(array $map, $merge_names, $match_email_field): bool
+	public function initConfig(): bool {
+		$this->plugin->setConfigProperty('accounting', self::ACCOUNTING_ENABLED);
+		$this->plugin->setConfigProperty('client_id', '');
+		return $this->plugin->save();
+	}
+
+	public function saveConfig(array $data): bool
 	{
+		/* Old code to rebuild
+		 * saveConfig(array $map, $merge_names, $match_email_field)
 		$this->plugin->setConfigProperty('merge_names', (int) $merge_names);
 		$this->plugin->setConfigProperty('match_email_field', (bool) $match_email_field);
-		$this->plugin->setConfigProperty('map_user_fields', $map);
+		$this->plugin->setConfigProperty('map_user_fields', $map);*/
+		$this->plugin->setConfigProperty('accounting', $data['accounting']);
 		return $this->plugin->save();
 	}
 

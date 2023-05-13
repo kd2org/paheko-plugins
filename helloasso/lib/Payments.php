@@ -21,6 +21,7 @@ class Payments extends Paheko_Payments
 {
 	const PAHEKO_STATUS = [ HA\Payment::STATE_OK => Payment::VALIDATED_STATUS ]; // ToDo: complete the list
 	const UPDATE_MESSAGE = 'Mise à jour du paiement';
+	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
 
 	static public function get(int $id): ?Payment
 	{
@@ -30,10 +31,11 @@ class Payments extends Paheko_Payments
 	static public function list($for): DynamicList
 	{
 		$columns = [
+			'id' => [],
 			'reference' => [
 				'label' => 'Référence',
 			],
-			'id_transaction' => [ // Not yet implemented inside Paheko Payment entity
+			'id_transaction' => [
 				'label' => 'Écriture'
 			],
 			'label' => [
@@ -109,7 +111,7 @@ class Payments extends Paheko_Payments
 		return $date;
 	}
 
-	static public function sync(string $org_slug): void
+	static public function sync(string $org_slug, bool $accounting = true): void
 	{
 		$last_payment = self::getLastPaymentDate();
 
@@ -133,7 +135,7 @@ class Payments extends Paheko_Payments
 
 			foreach ($result->data as $payment) {
 				// This API endpoint does not return Pending payments
-				self::syncPayment($payment);
+				self::syncPayment($payment, $accounting);
 			}
 
 			if (HelloAsso::isTrial()) {
@@ -142,31 +144,44 @@ class Payments extends Paheko_Payments
 		}
 	}
 
-	static protected function syncPayment(\stdClass $raw_data): void
+	static protected function syncPayment(\stdClass $raw_data, bool $accounting): void
 	{
 		$payment = self::get($raw_data->id) ?? new Payment;
 		$data = self::formatData($raw_data);
 		$data->raw_data = &$raw_data;
-
-		if (!$payment->exists()) {
-			$author = EM::findOne(User::class, 'SELECT * FROM @TABLE WHERE email = ? LIMIT 1;', $data->payer->email);
-			$author_id = $author->id ?? null;
-			$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
-			$data->id_form = Forms::getId($data->org_slug, $data->form_slug);
-			$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
-			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::PAHEKO_STATUS[$data->state], HelloAsso::PROVIDER_NAME, $author_id, $author_name, $data->id, $label, $data->amount, $data);
+		$data->id_form = Forms::getId($data->org_slug, $data->form_slug);
+		if (!$form = EM::findOneById(Form::class, $data->id_form)) {
+			throw new \RuntimeException(sprintf('Form not found! Form ID: %d.', $data->id_form));
 		}
 
-		$payment->set('amount', $data->amount);
-		$payment->set('status', self::PAHEKO_STATUS[$data->state]);
-		$payment->set('history', $data->date->format('Y-m-d H:i:s') . ' - '. self::UPDATE_MESSAGE . "\n" . $payment->history);
-		
-		$payment->setExtraData('date', $data->date);
-		$payment->setExtraData('transfer_date', $data->transfer_date);
-		$payment->setExtraData('person', $data->payer_name);
-		$payment->setExtraData('receipt_url', $data->paymentReceiptUrl ?? null);
+		if (!$payment->exists()) {
+			// If accounting is enabled, we record the payment only if credit and debit accounts are set
+			if (!$accounting || ($accounting && $form->id_credit_account && $form->id_debit_account)) {
+				$id = DB::getInstance()->firstColumn(sprintf('SELECT id FROM %s WHERE email = \'%s\' LIMIT 1;', User::TABLE, $data->payer->email));
+				$author_id = $id ?? null;
+				$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
+				$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
+				$accounts = $accounting ? [$form->id_credit_account, $form->id_debit_account] : null;
+				$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::PAHEKO_STATUS[$data->state], HelloAsso::PROVIDER_NAME, $accounts, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
+			}
+		}
+		else
+		{
+			if ($accounting && !$payment->id_transaction) { // Happens when the user decided to switch on the accounting while sync had already be done without accounting
+				$transaction = Payments::createTransaction($payment, [$form->id_credit_account, $form->id_debit_account], self::TRANSACTION_NOTE);
+				$payment->set('id_transaction', (int)$transaction->id);
+			}
+			$payment->set('amount', $data->amount);
+			$payment->set('status', self::PAHEKO_STATUS[$data->state]);
+			$payment->set('history', $data->date->format('Y-m-d H:i:s') . ' - '. self::UPDATE_MESSAGE . "\n" . $payment->history);
+			
+			$payment->setExtraData('date', $data->date);
+			$payment->setExtraData('transfer_date', $data->transfer_date);
+			$payment->setExtraData('person', $data->payer_name);
+			$payment->setExtraData('receipt_url', $data->paymentReceiptUrl ?? null);
 
-		$payment->save();
+			$payment->save();
+		}
 	}
 
 	static public function formatData(\stdClass $data): \stdClass

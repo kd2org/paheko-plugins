@@ -29,4 +29,6 @@ $order = Orders::get($payment->extra_data->id_order);
 $tpl->assign(compact('payment', 'author', 'form', 'order'));
 $tpl->assign('current_sub', 'payments');
 
+$tpl->assign('TECH_DETAILS', SHOW_ERRORS && ENABLE_TECH_DETAILS);
+
 $tpl->display(PLUGIN_ROOT . '/templates/payment.tpl');

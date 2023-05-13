@@ -5,6 +5,7 @@
 		{if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
 			{*<li{if $current == 'config'} class="current"{/if}><a href="config.php">Configuration</a></li>*}
 			<li{if $current == 'config_client'} class="current"{/if}><a href="config_client.php">Connexion à HelloAsso</a></li>
+			<li{if $current == 'sync'} class="current"{/if}><a href="sync.php">Synchronisation</a></li>
 		{/if}
 	</ul>
 

@@ -27,8 +27,25 @@
 		<dt>Commande</dt>
 		<dd><a href="{$plugin_admin_url}order.php?id={$order->id}">{$order->person} - {$order->date|date}</a></dd>
 	{/if}
-	<dt>extra_data</dt>
-	<dd><pre>{$payment->extra_data|dump}</pre></dd>
+	<dt>Écriture comptable</dt>
+	<dd>
+		{if $payment->id_transaction}
+			<mark><a href="{$admin_url}acc/transactions/details.php?id={$payment->id_transaction}">{$payment->id_transaction}</a></mark>
+		{else}
+			{if !$plugin->config->accounting && $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
+				Aucune <span class="help">(vous pouvez activer la génération d'écritures depuis <a href="{$plugin_admin_url}config_client.php">la configuration de l'extension</a>)</span>
+			{else}
+			-
+			{/if}
+		{/if}
+	</dd>
 </dl>
+
+{if $TECH_DETAILS}
+	<dl style="background-color: black; color: limegreen; padding-top: 0.8em;" class="describe">
+		<dt style="color: limegreen;">extra_data</dt>
+		<dd><pre>{$payment->extra_data|dump}</pre></dd>
+	</dl>
+{/if}
 
 {include file="_foot.tpl"}

@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_forms (
 	name TEXT NOT NULL,
 	slug TEXT NOT NULL,
 	type TEXT NOT NULL,
-	state TEXT NOT NULL
+	state TEXT NOT NULL,
+	id_credit_account INTEGER NULL REFERENCES acc_accounts (id),
+	id_debit_account INTEGER NULL REFERENCES acc_accounts (id)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_forms_key ON plugin_helloasso_forms(org_slug, slug);

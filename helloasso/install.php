@@ -14,4 +14,7 @@ $provider->set('name', HelloAsso::PROVIDER_NAME);
 $provider->set('label', HelloAsso::PROVIDER_LABEL);
 $provider->save();
 
+$ha = HelloAsso::getInstance();
+$ha->initConfig();
+
 $plugin->registerSignal('cron', 'Garradin\Plugin\HelloAsso\HelloAsso::cron');

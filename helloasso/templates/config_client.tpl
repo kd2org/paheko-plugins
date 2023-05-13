@@ -27,6 +27,31 @@
 		</dl>
 	</fieldset>
 
+	<fieldset>
+		<legend>Comptabilité <b title="Champ obligatoire">(obligatoire)</b></legend>
+		<dl>
+			<dd class="radio-btn">
+				{input type="radio" name="accounting" label=null value="1" source=$plugin->config required=true}
+				<label for="f_accounting_1">
+					<div>
+						<h3>Enregistrer les entrées dans la comptabilité</h3>
+						<p class="help">Génère automatiquement les saisies comptables correspondant aux paiements HelloAsso.</p>
+					</div>
+				</label>
+			</dd>
+			<dd class="radio-btn">
+				{input type="radio" name="accounting" label=null value="0" source=$plugin->config required=true}
+				<label for="f_accounting_0">
+					<div>
+						<h3>Uniquement récupérer les infos HelloAsso</h3>
+						<p class="help">Permet de visualiser les formulaires, commandes et paiements HelloAsso sans impacter votre comptabilité.</p>
+					</div>
+				</label>
+			</dd>
+		</dl>
+		<p class="help block">Cette option n'est pas définitive et pourra être changée plus tard.</p>
+	</fieldset>
+
 	<p class="submit">
 		{csrf_field key=$csrf_key}
 		{button type="submit" class="main" name="save" label="Enregistrer" shape="right"}

@@ -20,6 +20,9 @@ class Form extends Entity
 
 	protected string $type;
 	protected string $slug;
+	
+	protected ?int $id_credit_account;
+	protected ?int $id_debit_account;
 
 	const TYPES = [
 		'CrowdFunding' => 'Crowdfunding',

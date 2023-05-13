@@ -12,6 +12,8 @@ $ha = HelloAsso::getInstance();
 
 $form->runIf('save', function () use ($ha) {
 	$ha->saveClient(f('client_id'), f('client_secret'));
+	// ToDo: add a nice form check
+	$ha->saveConfig($_POST);
 }, $csrf_key, '?ok');
 
 $tpl->assign([
