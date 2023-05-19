@@ -39,6 +39,8 @@
 			{/if}
 		{/if}
 	</dd>
+	<dt>Historique</dt>
+	<dd>{$payment->history|escape|nl2br}</dd>
 </dl>
 
 {if $TECH_DETAILS}
