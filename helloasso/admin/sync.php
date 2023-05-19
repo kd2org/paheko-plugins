@@ -12,7 +12,7 @@ $csrf_key = 'sync';
 
 $form->runIf('sync', function() use ($ha) {
 	$ha->sync();
-}, $csrf_key, PLUGIN_ADMIN_URL);
+}, $csrf_key, PLUGIN_ADMIN_URL . 'sync.php?ok=1');
 
 $tpl->assign('last_sync', $ha->getLastSync());
 $tpl->assign('csrf_key', $csrf_key);
@@ -36,7 +36,6 @@ $form->runIf('form_submit', function() use ($ha) {
 	}
 	Forms::setAccounts($source);
 	$ha->sync();
-	Utils::redirect(PLUGIN_ADMIN_URL . 'sync.php?ok=1');
-});
+}, null, PLUGIN_ADMIN_URL . 'sync.php?ok=1');
 
 $tpl->display(PLUGIN_ROOT . '/templates/sync.tpl');
