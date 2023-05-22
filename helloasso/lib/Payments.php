@@ -19,7 +19,8 @@ use KD2\DB\EntityManager as EM;
 
 class Payments extends Paheko_Payments
 {
-	const PAHEKO_STATUS = [ HA\Payment::STATE_OK => Payment::VALIDATED_STATUS ]; // ToDo: complete the list
+	const AUTHORIZED_STATUS = 'Authorized';
+	const STATUSES = [ self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS ]; // ToDo: complete the list from HA\Payment class
 	const UPDATE_MESSAGE = 'Mise à jour du paiement';
 	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
 
@@ -162,7 +163,7 @@ class Payments extends Paheko_Payments
 				$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
 				$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
 				$accounts = $accounting ? [$form->id_credit_account, $form->id_debit_account] : null;
-				$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::PAHEKO_STATUS[$data->state], HelloAsso::PROVIDER_NAME, $accounts, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
+				$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, $accounts, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
 			}
 		}
 		else
@@ -172,7 +173,7 @@ class Payments extends Paheko_Payments
 				$payment->set('id_transaction', (int)$transaction->id);
 			}
 			$payment->set('amount', $data->amount);
-			$payment->set('status', self::PAHEKO_STATUS[$data->state]);
+			$payment->set('status', self::STATUSES[$data->state]);
 			$payment->set('history', $data->date->format('Y-m-d H:i:s') . ' - '. self::UPDATE_MESSAGE . "\n" . $payment->history);
 			
 			$payment->setExtraData('date', $data->date);

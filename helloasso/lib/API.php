@@ -3,8 +3,12 @@
 namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\UserException;
+use Garradin\Entities\Payments\Payment;
+
+use Garradin\Plugin\HelloAsso\Entities as HA;
 
 use KD2\HTTP;
+use KD2\DB\EntityManager;
 
 class API
 {
@@ -42,13 +46,14 @@ class API
 		return $this->request('GET', $url, $data);
 	}
 
-	protected function POST(string $url, array $data = [])
+	protected function POST(string $url, array $data = [], string $format = HTTP::FORM)
 	{
-		return $this->request('POST', $url, $data);
+		return $this->request('POST', $url, $data, $format);
 	}
 
-	protected function request(string $type, string $url, array $data = [])
+	protected function request(string $type, string $url, array $data = [], string $format = HTTP::FORM)
 	{
+		$allowed_formats = [HTTP::FORM, HTTP::JSON];
 		$url = self::BASE_URL . $url;
 
 		$token = $this->getToken();
@@ -67,7 +72,10 @@ class API
 			$response = (new HTTP)->GET($url, $headers);
 		}
 		else {
-			$response = (new HTTP)->POST($url, $data, HTTP::FORM, $headers);
+			if (!in_array($format, $allowed_formats)) {
+				throw new \InvalidArgumentException(sprintf('Wrong request format: %s. Allowed formats are: %s.', $format, implode(', ', $allowed_formats)));
+			}
+			$response = (new HTTP)->POST($url, $data, $format, $headers);
 		}
 
 		if ($response->fail || $response->status != 200) {
@@ -295,4 +303,33 @@ class API
 		}
 	}
 
+	public function getCheckout(string $organization, int $id): \stdClass
+	{
+		return $this->GET('v5/organizations/' . $organization . '/checkout-intents/' . (int)$id);
+	}
+
+	public function createCheckout(string $organization, int $amount, string $label, int $payment_id, string $url, array $metadata): \stdClass
+	{
+		$params = [
+			'totalAmount'      => $amount,
+			'initialAmount'    => $amount,
+			'itemName'         => $label,
+			'backUrl'          => sprintf('%s?p=%s&action=cancel', $url, $payment_id),
+			'errorUrl'         => sprintf('%s?p=%d&action=cancel', $url, $payment_id),
+			'returnUrl'        => sprintf('%s?p=%d&action=return', $url, $payment_id),
+			'containsDonation' => true,
+			'metadata' => $metadata,
+		];
+
+		$response = $this->POST(sprintf('v5/organizations/%s/checkout-intents', $organization), $params, HTTP::JSON);
+
+		if (!isset($response->id, $response->redirectUrl)) {
+			throw new \RuntimeException('Erreur API HelloAsso: id ou redirectUrl manquants: ' . json_encode($response));
+		}
+
+		return (object) [
+			'id' => (string) $response->id,
+			'url' => $response->redirectUrl
+		];
+	}
 }
