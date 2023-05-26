@@ -147,7 +147,7 @@ class HelloAsso
 		return $this->config;
 	}
 
-	public function createCheckout(string $organization, string $label, int $amount, User $user): \stdClass
+	public function createCheckout(string $organization, string $label, int $amount, User $user, ?array $accounts = null): \stdClass
 	{
 		$label .= ' - ' . $user->nom . ' - ' . self::PROVIDER_LABEL;
 
@@ -174,6 +174,8 @@ class HelloAsso
 		$payment->setExtraData('checkout', $checkout);
 		$payment->set('reference', $checkout->id);
 		$payment->setExtraData('organization', $organization);
+		$payment->setExtraData('id_credit_account', $accounts ? $accounts[0] : null);
+		$payment->setExtraData('id_debit_account', $accounts ? $accounts[1] : null);
 		$payment->addLog(sprintf(self::CHECKOUT_CREATION_LOG_LABEL, (int)$checkout->id));
 		$payment->save();
 
@@ -194,7 +196,7 @@ class HelloAsso
 			throw new \LogicException('This payment does not have a reference.');
 		}
 
-		$checkout = API::getInstance()->getCheckout($payment->organization, (int)$payment->reference);
+		$checkout = API::getInstance()->getCheckout($payment->org_slug, (int)$payment->reference);
 
 		file_put_contents(self::LOG_FILE, sprintf("\n\n==== %s - Fetch: %s ====\n\n%s\n", date('d/m/Y H:i:s'), $payment->reference, json_encode($checkout, JSON_PRETTY_PRINT)), FILE_APPEND);
 

@@ -8,9 +8,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_forms (
 	name TEXT NOT NULL,
 	slug TEXT NOT NULL,
 	type TEXT NOT NULL,
-	state TEXT NOT NULL,
-	id_credit_account INTEGER NULL REFERENCES acc_accounts (id),
-	id_debit_account INTEGER NULL REFERENCES acc_accounts (id)
+	state TEXT NOT NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_forms_key ON plugin_helloasso_forms(org_slug, slug);
@@ -32,14 +30,41 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_items (
 	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
 	id_order INTEGER NOT NULL REFERENCES plugin_helloasso_orders(id) ON DELETE CASCADE,
 	id_user INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
 	type TEXT NOT NULL,
 	state TEXT NOT NULL,
 	person TEXT NOT NULL,
 	label TEXT NOT NULL,
 	amount INTEGER NOT NULL,
+	has_options INTEGER NOT NULL,
 	raw_data TEXT NOT NULL,
 	custom_fields TEXT NULL
 );
+
+CREATE TABLE IF NOT EXISTS plugin_helloasso_item_options (
+	id INTEGER PRIMARY KEY NOT NULL,
+	id_item INTEGER NOT NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
+	-- Redundant but needed by DynamicList since it does not handle JOIN statement
+	id_order INTEGER NOT NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
+	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
+	label TEXT NOT NULL,
+	amount INTEGER NOT NULL,
+	raw_data TEXT NOT NULL,
+	custom_fields TEXT NULL
+);
+
+CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeables (
+	id INTEGER PRIMARY KEY NOT NULL,
+	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
+	id_item INTEGER NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
+	id_credit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
+	id_debit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
+	type INTEGER NOT NULL,
+	label TEXT NOT NULL,
+	amount INTEGER NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_chargeables_key ON plugin_helloasso_chargeables(id_form, id_item, type, label, amount);
 
 /*
 CREATE TABLE IF NOT EXISTS plugin_helloasso_options (
@@ -52,6 +77,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_options (
 );
 */
 
+/* Replaced by the new Paheko native "payment" table
 CREATE TABLE IF NOT EXISTS plugin_helloasso_payments (
 	id INTEGER PRIMARY KEY NOT NULL,
 	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
@@ -66,7 +92,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_payments (
 	receipt_url TEXT NULL,
 	raw_data TEXT NOT NULL
 );
-
+*/
 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_targets (
 -- List of forms that should create users or subscriptions

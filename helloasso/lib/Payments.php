@@ -9,6 +9,7 @@ use Garradin\Plugin\HelloAsso\API;
 
 use Garradin\Payments\Payments as Paheko_Payments;
 use Garradin\Entities\Payments\Payment;
+use Garradin\Entities\Accounting\Transaction;
 use Garradin\Entities\Users\User;
 
 use Garradin\DB;
@@ -24,9 +25,25 @@ class Payments extends Paheko_Payments
 	const UPDATE_MESSAGE = 'Mise à jour du paiement';
 	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
 
+	static protected ?array $payment_ids = null;
+
 	static public function get(int $id): ?Payment
 	{
 		return EM::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE provider = :provider AND json_extract(extra_data, \'$.id\') = :id', HelloAsso::PROVIDER_NAME, $id);
+	}
+
+	static public function getId(int $reference): ?int
+	{
+		if (!isset(self::$payment_ids)) {
+			self::$payment_ids = DB::getInstance()->getAssoc(sprintf('SELECT reference, id FROM %s;', Payment::TABLE));
+		}
+
+		return self::$payment_ids[$reference] ?? null;
+	}
+
+	static public function getByOrderId(int $id_order): ?Payment
+	{
+		return EM::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE provider = :provider AND json_extract(extra_data, \'$.id_order\') = :id_order', HelloAsso::PROVIDER_NAME, $id_order);
 	}
 
 	static public function list($for): DynamicList
@@ -36,8 +53,9 @@ class Payments extends Paheko_Payments
 			'reference' => [
 				'label' => 'Référence',
 			],
-			'id_transaction' => [
-				'label' => 'Écriture'
+			'transactions' => [
+				'label' => 'Écritures',
+				'select' => sprintf('(SELECT GROUP_CONCAT(id, \';\') FROM %s t WHERE t.reference = %s.id)', Transaction::TABLE, Payment::TABLE)
 			],
 			'label' => [
 				'label' => 'Libellé'
@@ -90,6 +108,9 @@ class Payments extends Paheko_Payments
 			$row->state = HA\Payment::STATES[$row->state] ?? 'Inconnu';
 			if ($row->id_author) {
 				$row->author = EM::findOneById(User::class, (int)$row->id_author);
+			}
+			if (isset($row->transactions)) {
+				$row->transactions = explode(';', $row->transactions);
 			}
 		});
 
@@ -151,27 +172,20 @@ class Payments extends Paheko_Payments
 		$data = self::formatData($raw_data);
 		$data->raw_data = &$raw_data;
 		$data->id_form = Forms::getId($data->org_slug, $data->form_slug);
+
 		if (!$form = EM::findOneById(Form::class, $data->id_form)) {
 			throw new \RuntimeException(sprintf('Form not found! Form ID: %d.', $data->id_form));
 		}
 
 		if (!$payment->exists()) {
-			// If accounting is enabled, we record the payment only if credit and debit accounts are set
-			if (!$accounting || ($accounting && $form->id_credit_account && $form->id_debit_account)) {
-				$id = DB::getInstance()->firstColumn(sprintf('SELECT id FROM %s WHERE email = \'%s\' LIMIT 1;', User::TABLE, $data->payer->email));
-				$author_id = $id ?? null;
-				$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
-				$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
-				$accounts = $accounting ? [$form->id_credit_account, $form->id_debit_account] : null;
-				$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, $accounts, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
-			}
+			$id = DB::getInstance()->firstColumn(sprintf('SELECT id FROM %s WHERE email = \'%s\' LIMIT 1;', User::TABLE, $data->payer->email));
+			$author_id = $id ?? null;
+			$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
+			$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
+			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
 		}
 		else
 		{
-			if ($accounting && !$payment->id_transaction) { // Happens when the user decided to switch on the accounting while sync had already be done without accounting
-				$transaction = Payments::createTransaction($payment, [$form->id_credit_account, $form->id_debit_account], self::TRANSACTION_NOTE);
-				$payment->set('id_transaction', (int)$transaction->id);
-			}
 			$payment->set('amount', $data->amount);
 			$payment->set('status', self::STATUSES[$data->state]);
 			$payment->set('history', $data->date->format('Y-m-d H:i:s') . ' - '. self::UPDATE_MESSAGE . "\n" . $payment->history);

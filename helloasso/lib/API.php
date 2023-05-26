@@ -236,7 +236,7 @@ class API
 			$this->assert(isset($r->date));
 			$this->assert(strtotime($r->date));
 			$this->assert(isset($r->id));
-			$this->assert(!isset($r->amount->total) || ctype_digit($r->amount->total)); // This can be empty if it's free
+			$this->assert(!isset($r->amount->total) || ctype_digit((string)$r->amount->total)); // This can be empty if it's free
 		}
 	}
 
@@ -267,7 +267,7 @@ class API
 			$this->assert(isset($r->state));
 			$this->assert(isset($r->id));
 			$this->assert(isset($r->paymentReceiptUrl));
-			$this->assert(isset($r->amount) && ctype_digit($r->amount));
+			$this->assert(isset($r->amount) && ctype_digit((string)$r->amount));
 		}
 	}
 
@@ -299,7 +299,7 @@ class API
 			$this->assert(isset($r->state));
 			$this->assert(isset($r->type));
 			$this->assert(isset($r->id));
-			$this->assert(isset($r->amount) && ctype_digit($r->amount));
+			$this->assert(isset($r->amount) && ctype_digit((string)$r->amount)); // int between -128 and 255 is interpreted as the ASCII value of a single character
 		}
 	}
 

@@ -21,6 +21,10 @@
 
 {include file="%s/templates/_items_list.tpl"|args:$plugin_root list=$items details=false}
 
+<h2 class="ruler">Options de la commande</h2>
+
+{include file="%s/templates/_options_list.tpl"|args:$plugin_root list=$options details=false}
+
 <h2 class="ruler">Paiements</h2>
 
 {include file="%s/templates/_payments_list.tpl"|args:$plugin_root list=$payments details=false}

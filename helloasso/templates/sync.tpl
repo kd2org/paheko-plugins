@@ -22,7 +22,7 @@
 	<form method="post" action="{$self_url}">
 		<p class="submit">
 			{csrf_field key=$csrf_key}
-			{if $plugin->config->accounting && $forms}
+			{if $plugin->config->accounting && $chargeables}
 				{button type="submit" name="sync" value=1 label="Synchroniser les anciennes données uniquement"}
 			{else}
 				{button type="submit" name="sync" value=1 label="Synchroniser les données" shape="right" class="main"}
@@ -31,20 +31,32 @@
 	</form>
 {/if}
 
-{if $plugin->config->accounting && $forms}
+{if $plugin->config->accounting}
+	{if $chargeables}
 	<form method="POST" action="{$self_url}">
-		<p class="alert block">Les types de recette et comptes d'encaissement doivent être renseignés pour formulaires suivants :</p>
-		{foreach from=$forms item='form'}
-			<fieldset>
-				<legend>{$form.name}</legend>
+		{if $chargeables}
+			<p class="alert block">Les types de recette et comptes d'encaissement doivent être renseignés pour articles suivants :</p>
+			{foreach from=$chargeables item='chargeable'}
+				<fieldset>
+					<legend>
+						{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
+							{$chargeable->getForm_name()}
+						{elseif $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::CHECKOUT_TYPE}
+							{$chargeable->label}
+						{else}
+							{$chargeable->getForm_name()} &gt; {if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE}"{$chargeable->getItem_name()}" option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}
+						{/if}
+					</legend>
 					<dl>
-						{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="credit[%d]"|args:$form.id label="Type de recette" required=1}
-						{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="debit[%d]"|args:$form.id label="Compte d'encaissement" required=1}
+						{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1}
+						{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1}
 					</dl>
-			</fieldset>
-		{/foreach}
-		{button type="submit" name="form_submit" label="Enregistrer et lancer la synchronisation" shape="right" class="main"}
+				</fieldset>
+			{/foreach}
+		{/if}
+		{button type="submit" name="accounts_submit" label="Enregistrer et lancer la synchronisation" shape="right" class="main"}
 	</form>
+	{/if}
 {/if}
 
 {include file="_foot.tpl"}

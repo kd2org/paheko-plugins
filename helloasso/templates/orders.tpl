@@ -21,7 +21,7 @@
 			<td>{$row.status}</td>
 			<td class="num"><a href="{$plugin_admin_url}payment.php?ref={$row.id_payment}">{$row.id_payment}</a></td>
 			<td class="actions">
-				{linkbutton href="order.php?id=%s"|args:$row.id_payment shape="help" label="Détails"}
+				{linkbutton href="order.php?id=%s"|args:$row.id shape="help" label="Détails"}
 			</td>
 		</tr>
 

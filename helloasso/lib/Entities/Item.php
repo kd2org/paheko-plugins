@@ -2,13 +2,10 @@
 
 namespace Garradin\Plugin\HelloAsso\Entities;
 
-use Garradin\DB;
 use Garradin\Entity;
-use Garradin\ValidationException;
+use Garradin\Plugin\HelloAsso\ChargeableInterface;
 
-use DateTime;
-
-class Item extends Entity
+class Item extends Entity implements ChargeableInterface
 {
 	const TABLE = 'plugin_helloasso_items';
 
@@ -16,11 +13,13 @@ class Item extends Entity
 	protected int $id_order;
 	protected int $id_form;
 	protected ?int $id_user;
+	protected ?int $id_transaction;
 	protected string $type;
 	protected string $state;
 	protected string $label;
 	protected string $person;
 	protected int $amount;
+	protected int $has_options;
 	protected ?string $custom_fields;
 	protected string $raw_data;
 
@@ -46,4 +45,19 @@ class Item extends Entity
 		'Canceled'   => 'Annulé',
 		'Contested'  => 'Contesté',
 	];
+	
+	public function getItemId(): ?int
+	{
+		return $this->id;
+	}
+
+	public function getLabel(): string
+	{
+		return $this->label;
+	}
+
+	public function getAmount(): ?int
+	{
+		return $this->amount;
+	}
 }

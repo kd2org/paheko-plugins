@@ -2,13 +2,10 @@
 
 namespace Garradin\Plugin\HelloAsso\Entities;
 
-use Garradin\DB;
 use Garradin\Entity;
-use Garradin\ValidationException;
+use Garradin\Plugin\HelloAsso\ChargeableInterface;
 
-use DateTime;
-
-class Form extends Entity
+class Form extends Entity implements ChargeableInterface
 {
 	const TABLE = 'plugin_helloasso_forms';
 
@@ -20,9 +17,6 @@ class Form extends Entity
 
 	protected string $type;
 	protected string $slug;
-	
-	protected ?int $id_credit_account;
-	protected ?int $id_debit_account;
 
 	const TYPES = [
 		'CrowdFunding' => 'Crowdfunding',
@@ -40,4 +34,19 @@ class Form extends Entity
 		'Private'  => 'privé',
 		'Disabled' => 'désactivé',
 	];
+
+	public function getItemId(): ?int
+	{
+		return null;
+	}
+
+	public function getLabel(): string
+	{
+		return $this->name;
+	}
+
+	public function getAmount(): ?int
+	{
+		return null;
+	}
 }

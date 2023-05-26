@@ -6,7 +6,10 @@ require __DIR__ . '/_inc.php';
 
 use KD2\DB\EntityManager;
 use Garradin\Plugin\HelloAsso\Entities\Form;
+use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Forms;
+use Garradin\Plugin\HelloAsso\Entities\Chargeable;
+use Garradin\Plugin\HelloAsso\Chargeables;
 
 $csrf_key = 'sync';
 
@@ -17,24 +20,38 @@ $form->runIf('sync', function() use ($ha) {
 $tpl->assign('last_sync', $ha->getLastSync());
 $tpl->assign('csrf_key', $csrf_key);
 
-$forms = EntityManager::getInstance(Form::class)->all('SELECT * FROM @TABLE WHERE id_credit_account IS NULL');
-$tpl->assign('forms', $forms);
+$chargeables = Chargeables::allPlusExtraFields(
+	sprintf('
+		SELECT c.*, f.name AS _form_name, i.label AS _item_name
+		FROM @TABLE c
+		LEFT JOIN %s f ON (f.id = c.id_form)
+		LEFT JOIN %s i ON (i.id = c.id_item)
+		WHERE c.id_credit_account IS NULL
+		',
+		Form::TABLE, Item::TABLE),
+	['_form_name', '_item_name']
+);
+$tpl->assign('chargeables', $chargeables);
+$tpl->assign('chargeableTypes', Chargeable::TYPES);
+
 $tpl->assign('chart_id', Plugin\HelloAsso\HelloAsso::CHART_ID); // ToDo: make it dynamic
 
-$form->runIf('form_submit', function() use ($ha) {
-	$source = [];
-	foreach ($_POST['credit'] as $id_form => $array)
-	{
-		$id_credit_account = array_keys($array)[0];
-		$id_debit_account = array_keys($_POST['debit'][$id_form])[0];
-		// ToDo: add a nice check
-		if ($id_credit_account && $id_debit_account)
+$form->runIf('accounts_submit', function() use ($ha) {
+	if (array_key_exists('chargeable_credit', $_POST)) {
+		$source = [];
+		foreach ($_POST['chargeable_credit'] as $id_item => $array)
 		{
-			$source[$id_form]['credit'] = (int)$id_credit_account;
-			$source[$id_form]['debit'] = (int)$id_debit_account;
+			$id_credit_account = array_keys($array)[0];
+			$id_debit_account = array_keys($_POST['chargeable_debit'][$id_item])[0];
+			// ToDo: add a nice check
+			if ($id_credit_account && $id_debit_account)
+			{
+				$source[$id_item]['credit'] = (int)$id_credit_account;
+				$source[$id_item]['debit'] = (int)$id_debit_account;
+			}
 		}
+		Chargeables::setAccounts($source);
 	}
-	Forms::setAccounts($source);
 	$ha->sync();
 }, null, PLUGIN_ADMIN_URL . 'sync.php?ok=1');
 

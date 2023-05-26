@@ -3,7 +3,11 @@
 	{foreach from=$list->iterate() item="row"}
 		<tr>
 			<td class="num"><a href="payment.php?id={$row.id}">{$row.reference}</a></td>
-			<td class="num">{if $row.id_transaction}{link href="!acc/transactions/details.php?id=%d"|args:$row.id_transaction label="#%d"|args:$row.id_transaction}{/if}</td>
+			<td class="num">
+				{foreach from=$row.transactions item="id_transaction"}
+					{link href="!acc/transactions/details.php?id=%d"|args:$id_transaction label="#%d"|args:$id_transaction}
+				{/foreach}
+			</td>
 			<td>{$row.label}</td>
 			<td>{$row.date|date}</td>
 			<td class="money">{$row.amount|money_currency|raw}</td>
@@ -21,7 +25,7 @@
 				{if $row.receipt_url}
 					{linkbutton href=$row.receipt_url target="_blank" shape="print" label="Attestation de paiement"}
 				{/if}
-				{if $details}{linkbutton href="payment.php?id=%s"|args:$row.reference shape="help" label="Détails"}{/if}
+				{if $details}{linkbutton href="payment.php?id=%s"|args:$row.id shape="help" label="Détails"}{/if}
 			</td>
 		</tr>
 	{/foreach}

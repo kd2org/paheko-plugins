@@ -26,7 +26,7 @@ $checkout = null;
 $form->runIf('generate_checkout', function () use ($ha, $checkout, $tpl) {
 	// ToDo: add a nice check
 	$user = EM::findOneById(User::class, (int)(array_keys($_POST['user'])[0]));
-	$checkout = $ha->createCheckout($_POST['org_slug'], $_POST['label'], (int)($_POST['amount'] * 100), $user);
+	$checkout = $ha->createCheckout($_POST['org_slug'], $_POST['label'], (int)($_POST['amount'] * 100), $user, [ array_keys($_POST['credit'])[0], array_keys($_POST['debit'])[0] ]);
 
 	$tpl->assign('checkout', $checkout);
 });
@@ -34,5 +34,6 @@ $form->runIf('generate_checkout', function () use ($ha, $checkout, $tpl) {
 $tpl->assign('list', Forms::list());
 $tpl->assign('restricted', $ha::isTrial());
 $tpl->assign('orgOptions', [ $ha->plugin()->getConfig()->default_organization => $ha->plugin()->getConfig()->default_organization ]);
+$tpl->assign('chart_id', Plugin\HelloAsso\HelloAsso::CHART_ID); // ToDo: make it dynamic
 
 $tpl->display(PLUGIN_ROOT . '/templates/index.tpl');

@@ -45,6 +45,10 @@
 				{input type="money" name="amount" label="Montant" required=true}
 				{input type="list" name="user" label="Membre" target="!users/selector.php" can_delete="true" required=true}
 			</dl>
+			<dl>
+				{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="credit" label="Type de recette" required=1}
+				{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="debit" label="Compte d'encaissement" required=1}
+			</dl>
 		</fieldset>
 
 		{**** ToDo: add csrf token ****}

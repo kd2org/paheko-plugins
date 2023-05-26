@@ -3,7 +3,9 @@
 namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
+use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\API;
+use Garradin\Plugin\HelloAsso\Chargeables;
 
 use Garradin\DB;
 
@@ -77,16 +79,24 @@ class Forms
 			$forms = API::getInstance()->listForms($o->organizationSlug);
 
 			foreach ($forms as $form) {
-				$data = $existing[$form->formSlug] ?? new Form;
-				$data->org_name = $o->name;
-				$data->org_slug = $o->organizationSlug;
+				$entity = $existing[$form->formSlug] ?? new Form;
+				$entity->org_name = $o->name;
+				$entity->org_slug = $o->organizationSlug;
 
-				$data->name = strip_tags($form->privateTitle ?? $form->title);
-				$data->type = $form->formType;
-				$data->state = $form->state;
-				$data->slug = $form->formSlug;
+				$entity->name = strip_tags($form->privateTitle ?? $form->title);
+				$entity->type = $form->formType;
+				$entity->state = $form->state;
+				$entity->slug = $form->formSlug;
 
-				$data->save();
+				$entity->save();
+				
+				if ($form->formType === 'Donation' || $form->formType === 'PaymentForm')
+				{
+					$chargeable = Chargeables::get($entity->id, Chargeable::ONLY_ONE_ITEM_FORM_TYPE, $entity->name, null);
+					if (null === $chargeable) {
+						$chargeable = Chargeables::createChargeable($entity->id, $entity, Chargeable::ONLY_ONE_ITEM_FORM_TYPE);
+					}
+				}
 			}
 		}
 	}
@@ -96,17 +106,4 @@ class Forms
 		$sql = sprintf('DELETE FROM %s;', Form::TABLE);
 		DB::getInstance()->exec($sql);
 	}
-	
-	static function setAccounts(array $source): void
-	{
-		foreach ($source as $id_form => $accounts) {
-			if (DB::getInstance()->exec(sprintf('UPDATE %s SET id_credit_account = %d, id_debit_account = %d WHERE id = %d;', Form::TABLE, $accounts['credit'], $accounts['debit'], (int)$id_form)) === false) {
-				throw new \RuntimeException(sprintf('Cannot update %s plugin Forms\' accounting accounts.', HelloAsso::PROVIDER_LABEL));
-			}
-		}
-	}
-	
-	/*static function hasAccounts(int $id): bool {
-		return (bool)DB::getInstance()->firstColumn(sprintf('SELECT id FROM %s WHERE id = %d AND id_credit_account IS NOT NULL AND id_debit_account IS NOT NULL LIMIT 1;', Form::TABLE, $id));
-	}*/
 }
