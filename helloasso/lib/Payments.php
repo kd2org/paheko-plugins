@@ -22,7 +22,7 @@ class Payments extends Paheko_Payments
 {
 	const AUTHORIZED_STATUS = 'Authorized';
 	const STATUSES = [ self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS ]; // ToDo: complete the list from HA\Payment class
-	const UPDATE_MESSAGE = 'Mise à jour du paiement';
+	const UPDATE_MESSAGE = 'Mise à jour du paiement (nouveau statut : %s)';
 	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
 
 	static protected ?array $payment_ids = null;
@@ -183,20 +183,23 @@ class Payments extends Paheko_Payments
 			$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
 			$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
 			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
+			self::setPaymentExtraDataAndSave($payment, $data);
 		}
-		else
+		elseif ($payment->status !== self::STATUSES[$data->state])
 		{
-			$payment->set('amount', $data->amount);
 			$payment->set('status', self::STATUSES[$data->state]);
-			$payment->set('history', $data->date->format('Y-m-d H:i:s') . ' - '. self::UPDATE_MESSAGE . "\n" . $payment->history);
-			
-			$payment->setExtraData('date', $data->date);
-			$payment->setExtraData('transfer_date', $data->transfer_date);
-			$payment->setExtraData('person', $data->payer_name);
-			$payment->setExtraData('receipt_url', $data->paymentReceiptUrl ?? null);
-
-			$payment->save();
+			$payment->set('history', (new \DateTime($data->meta->updatedAt))->format('Y-m-d H:i:s') . ' - '. sprintf(self::UPDATE_MESSAGE, Payment::STATUSES[$payment->status]) . "\n" . $payment->history);
+			self::setPaymentExtraData($payment, $data);
 		}
+	}
+
+	static protected function setPaymentExtraDataAndSave(Payment $payment, \stdClass $data): void
+	{
+		$payment->setExtraData('date', $data->date);
+		$payment->setExtraData('transfer_date', $data->transfer_date);
+		$payment->setExtraData('person', $data->payer_name);
+		$payment->setExtraData('receipt_url', $data->paymentReceiptUrl ?? null);
+		$payment->save();
 	}
 
 	static public function formatData(\stdClass $data): \stdClass
