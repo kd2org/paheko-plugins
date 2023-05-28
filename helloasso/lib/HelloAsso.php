@@ -124,6 +124,8 @@ class HelloAsso
 	public function initConfig(): bool {
 		$this->plugin->setConfigProperty('accounting', self::ACCOUNTING_ENABLED);
 		$this->plugin->setConfigProperty('client_id', '');
+		$this->plugin->setConfigProperty('id_credit_account', false);
+		$this->plugin->setConfigProperty('id_debit_account', false);
 		return $this->plugin->save();
 	}
 
@@ -135,6 +137,10 @@ class HelloAsso
 		$this->plugin->setConfigProperty('match_email_field', (bool) $match_email_field);
 		$this->plugin->setConfigProperty('map_user_fields', $map);*/
 		$this->plugin->setConfigProperty('accounting', $data['accounting']);
+		if (array_key_exists('default_credit', $data))
+			$this->plugin->setConfigProperty('id_credit_account', array_keys($data['default_credit'])[0]);
+		if (array_key_exists('default_debit', $data))
+			$this->plugin->setConfigProperty('id_debit_account', array_keys($data['default_debit'])[0]);
 		return $this->plugin->save();
 	}
 

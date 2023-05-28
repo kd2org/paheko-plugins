@@ -50,6 +50,10 @@
 			</dd>
 		</dl>
 		<p class="help block">Cette option n'est pas définitive et pourra être changée plus tard.</p>
+		<dl>
+			{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="default_credit" label="Type de recette par défaut" required=false default=$default_credit_account help="Sera proposé par défaut pour vous faire gagner du temps lors de vos saisies."}
+			{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="default_debit" label="Compte d'encaissement par défaut" required=false default=$default_debit_account}
+		</dl>
 	</fieldset>
 
 	<p class="submit">

@@ -4,7 +4,8 @@ namespace Garradin;
 
 require __DIR__ . '/_inc.php';
 
-use KD2\DB\EntityManager;
+use KD2\DB\EntityManager as EM;
+use Garradin\Entities\Accounting\Account;
 
 use Garradin\Plugin\HelloAsso\Forms;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
@@ -16,13 +17,18 @@ $form->runIf('sync', function() use ($ha) {
 	$ha->sync();
 }, $csrf_key, PLUGIN_ADMIN_URL . 'sync.php?ok=1');
 
-$tpl->assign('last_sync', $ha->getLastSync());
-$tpl->assign('csrf_key', $csrf_key);
+$default_ca = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_credit_account);
+$default_da = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_debit_account);
 
-$tpl->assign('chargeables', Chargeables::allForDisplay());
-$tpl->assign('chargeableTypes', Chargeable::TYPES);
-
-$tpl->assign('chart_id', Plugin\HelloAsso\HelloAsso::CHART_ID); // ToDo: make it dynamic
+$tpl->assign([
+	'last_sync' => $ha->getLastSync(),
+	'csrf_key' => $csrf_key,
+	'chargeables' => Chargeables::allForDisplay(),
+	'chargeableTypes' => Chargeable::TYPES,
+	'chart_id' => Plugin\HelloAsso\HelloAsso::CHART_ID, // ToDo: make it dynamic
+	'default_credit_account' => (null !== $default_ca) ? [ $default_ca->id => $default_ca->code . ' — ' . $default_ca->label ] : null,
+	'default_debit_account' => (null !== $default_da) ? [ $default_da->id => $default_da->code . ' — ' . $default_da->label ] : null
+]);
 
 $form->runIf('accounts_submit', function() use ($ha) {
 	if (array_key_exists('chargeable_credit', $_POST)) {

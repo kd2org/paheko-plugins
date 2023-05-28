@@ -11,7 +11,13 @@
 {if $plugin->config->accounting}
 	{if $chargeables}
 	<form method="POST" action="{$self_url}">
-		<p class="alert block">Pour pouvoir synchroniser la comptabilité, merci de renseigner les types de recette et comptes d'encaissement pour articles suivants :</p>
+		<p class="alert block">
+			{if !$default_debit_account && !$default_credit_account}
+				Pour pouvoir synchroniser la comptabilité, merci de renseigner les types de recette et comptes d'encaissement pour articles suivants :
+			{else}
+				Pour pouvoir synchroniser la comptabilité, merci de confirmer les types de recette et comptes d'encaissement pré-remplis pour articles suivants :
+			{/if}
+		</p>
 		{foreach from=$chargeables key='form_name' item='form'}
 			<fieldset>
 				<legend>{if $form_name === 'Checkout'}Paiements isolés{else}{$form_name}{/if}</legend>
@@ -27,8 +33,8 @@
 							{/if}
 						</legend>
 						<dl>
-							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1}
-							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1}
+							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account}
+							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account}
 						</dl>
 					{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
 						</fieldset>
@@ -36,6 +42,9 @@
 				{/foreach}
 			</fieldset>
 		{/foreach}
+		{if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
+			<p class="help block">Vous pouvez définir/changer les valeurs de pré-remplissage depuis <a href="{$plugin_admin_url}config_client.php">la configuration de l'extension</a>.</p>
+		{/if}
 		{button type="submit" name="accounts_submit" label="Finaliser la synchronisation" shape="right" class="main"}
 	</form>
 	{/if}
