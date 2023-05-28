@@ -4,9 +4,16 @@ namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\ChargeableInterface;
+use Garradin\Plugin\HelloAsso\Entities\Form;
+use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\HelloAsso;
+
+use Garradin\Entities\Accounting\Account;
+
 use KD2\DB\EntityManager as EM;
 use Garradin\DB;
+use Garradin\DynamicList;
+use Garradin\Utils;
 
 class Chargeables
 {
@@ -23,6 +30,30 @@ class Chargeables
 		return EM::findOne(Chargeable::class, 'SELECT * FROM @TABLE WHERE id_form = :id_form AND type = :type AND label = :label AND ' . $amount_filter, ...$params);
 	}
 
+	static public function allForDisplay(): array
+	{
+		$chargeables = Chargeables::allPlusExtraFields(
+			sprintf('
+				SELECT c.*, f.name AS _form_name, i.label AS _item_name
+				FROM @TABLE c
+				LEFT JOIN %s f ON (f.id = c.id_form)
+				LEFT JOIN %s i ON (i.id = c.id_item)
+				WHERE c.id_credit_account IS NULL
+				ORDER BY f.name
+				',
+				Form::TABLE, Item::TABLE),
+			['_form_name', '_item_name']
+		);
+		$result = [];
+		$checkouts = [];
+		foreach ($chargeables as $chargeable) {
+			$target = ($chargeable->getForm_name() === 'Checkout') ? 'result' : 'checkouts';
+			${$target}[$chargeable->getForm_name()][] = $chargeable;
+		}
+		$result = array_merge($checkouts, $result); // We place checkouts at the end of the array for display purpose
+		return $result;
+	}
+
 	static public function allPlusExtraFields(string $query, array $extra_fields, ...$params): array
 	{
 		$res = self::iterateWithExtraFields($query, $extra_fields, ...$params);
@@ -33,6 +64,79 @@ class Chargeables
 		}
 
 		return $out;
+	}
+
+	static public function list(Form $for): DynamicList
+	{
+		$columns = [
+			'id' => [
+				'label' => 'Référence',
+				'select' => 'c.id'
+			],
+			'type' => [
+				'label' => 'Type',
+				'select' => 'i.type'
+			],
+			'label' => [
+				'label' => 'Libellé',
+				'select' => 'c.label'
+			],
+			'amount' => [
+				'label' => 'Montant',
+				'select' => 'c.amount'
+			],
+			'credit_account' => [
+				'label' => 'Recette',
+				'select' => 'ca.code'
+			],
+			'id_credit_account' => [
+				'select' => 'c.id_credit_account'
+			],
+			'debit_account' => [
+				'label' => 'Encaissement',
+				'select' => 'da.code'
+			],
+			'id_debit_account' => [
+				'select' => 'c.id_debit_account'
+			],/*,
+			'custom_fields' => [
+				'label' => 'Champs',
+				'select' => 'c.custom_fields'
+			]*/
+		];
+
+		$tables = Chargeable::TABLE . ' c
+			LEFT JOIN ' . Item::TABLE . ' i ON (i.id = c.id_item)
+			LEFT JOIN ' . Account::TABLE . ' ca ON (ca.id = c.id_credit_account)
+			LEFT JOIN ' . Account::TABLE . ' da ON (da.id = c.id_debit_account)
+		';
+
+		$list = new DynamicList($columns, $tables);
+
+		$conditions = sprintf('c.id_form = %d', $for->id);
+		$list->setConditions($conditions);
+		$list->setTitle(sprintf('%s - Items', $for->name));
+
+		$list->setModifier(function ($row) {
+			$row->type = Item::TYPES[$row->type] ?? 'Inconnu';
+
+			if (isset($row->custom_fields)) {
+				$row->custom_fields = json_decode($row->custom_fields, true);
+			}
+		});
+
+		$list->setExportCallback(function (&$row) {
+			$row->amount = $row->amount ? Utils::money_format($row->amount, '.', '', false) : null;
+
+			// Serialize custom fields as a text field
+			if (isset($row->custom_fields)) {
+				$row->custom_fields = implode("\n", array_map(function ($v, $k) { return "$k: $v"; },
+					$row->custom_fields, array_keys($row->custom_fields)));
+			}
+		});
+
+		$list->orderBy('id', true);
+		return $list;
 	}
 
 	static public function iterateWithExtraFields(string $query, ?array $extra_fields, ...$params): iterable

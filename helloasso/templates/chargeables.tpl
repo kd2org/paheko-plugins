@@ -2,7 +2,7 @@
 
 {include file="./_menu.tpl" current="home" current_sub="items" show_export=true}
 
-{include file="./_items_list.tpl" details=true}
+{include file="./_chargeables_list.tpl" details=true}
 
 {*
 {pagination url=$list->paginationURL() page=$list.page bypage=$list.per_page total=$list->count()}

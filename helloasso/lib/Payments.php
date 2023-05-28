@@ -181,7 +181,7 @@ class Payments extends Paheko_Payments
 			$id = DB::getInstance()->firstColumn(sprintf('SELECT id FROM %s WHERE email = \'%s\' LIMIT 1;', User::TABLE, $data->payer->email));
 			$author_id = $id ?? null;
 			$author_name = $data->payer->lastName . ' ' . $data->payer->firstName;
-			$label = ($data->order ? $data->order->formName . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
+			$label = ($data->order ? ($data->order->formName === 'Checkout' ? 'Paiement isolé' : $data->order->formName) . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
 			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
 			self::setPaymentExtraDataAndSave($payment, $data);
 		}
@@ -189,7 +189,7 @@ class Payments extends Paheko_Payments
 		{
 			$payment->set('status', self::STATUSES[$data->state]);
 			$payment->set('history', (new \DateTime($data->meta->updatedAt))->format('Y-m-d H:i:s') . ' - '. sprintf(self::UPDATE_MESSAGE, Payment::STATUSES[$payment->status]) . "\n" . $payment->history);
-			self::setPaymentExtraData($payment, $data);
+			self::setPaymentExtraDataAndSave($payment, $data);
 		}
 	}
 

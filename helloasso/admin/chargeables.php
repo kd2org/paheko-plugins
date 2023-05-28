@@ -3,7 +3,7 @@
 namespace Garradin;
 
 use Garradin\Plugin\HelloAsso\Forms;
-use Garradin\Plugin\HelloAsso\Items;
+use Garradin\Plugin\HelloAsso\Chargeables;
 
 require __DIR__ . '/_inc.php';
 
@@ -13,10 +13,10 @@ if (!$f) {
 	throw new UserException('Formulaire inconnu');
 }
 
-$list = Items::list($f);
+$list = Chargeables::list($f);
 $list->loadFromQueryString();
 
 $tpl->assign('form', $f);
 $tpl->assign(compact('list'));
 
-$tpl->display(PLUGIN_ROOT . '/templates/items.tpl');
+$tpl->display(PLUGIN_ROOT . '/templates/chargeables.tpl');

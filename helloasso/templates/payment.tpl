@@ -27,18 +27,24 @@
 		<dt>Commande</dt>
 		<dd><a href="{$plugin_admin_url}order.php?id={$order->id}">{$order->person} - {$order->date|date}</a></dd>
 	{/if}
-	<dt>Écriture comptable</dt>
-	<dd>
-		{if $payment->id_transaction}
-			<mark><a href="{$admin_url}acc/transactions/details.php?id={$payment->id_transaction}">{$payment->id_transaction}</a></mark>
-		{else}
-			{if !$plugin->config->accounting && $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
-				Aucune <span class="help">(vous pouvez activer la génération d'écritures depuis <a href="{$plugin_admin_url}config_client.php">la configuration de l'extension</a>)</span>
-			{else}
-			-
+	{if $payment->id_transaction}
+		<dt>Écriture comptable</dt>
+		<dd><mark><a href="{$admin_url}acc/transactions/details.php?id={$payment->id_transaction}">{$payment->id_transaction}</a></mark></dd>
+	{else}
+		<dt>Écritures comptables</dt>
+		<dd>
+		{if !$plugin->config->accounting}
+			Aucune
+			{if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
+				<span class="help">(vous pouvez activer la génération d'écritures depuis <a href="{$plugin_admin_url}config_client.php">la configuration de l'extension</a>)</span>
 			{/if}
+		{else}
+			{foreach from=$transactions item='transaction'}
+				<mark><a href="{$admin_url}acc/transactions/details.php?id={$transaction->id}">{$transaction->id}</a></mark>
+			{/foreach}
 		{/if}
-	</dd>
+		</dd>
+	{/if}
 	<dt>Historique</dt>
 	<dd>{$payment->history|escape|nl2br}</dd>
 </dl>

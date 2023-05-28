@@ -26,7 +26,7 @@ class Items
 	const TRANSACTION_PREFIX = 'Item';
 	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
 	const DONATION_LABEL = 'Don';
-	const CHECKOUT_LABEL = 'Paiement orphelin - commande #%d (%s)';
+	const CHECKOUT_LABEL = 'Commande #%d (%s)';
 
 	static public function get(int $id): ?Item
 	{
@@ -37,32 +37,32 @@ class Items
 	{
 		$columns = [
 			'id' => [
-				'label' => 'Référence',
+				'label' => 'Référence'
 			],
 			'id_transaction' => [
 				'label' => 'Écriture'
 			],
 			'amount' => [
-				'label' => 'Montant',
+				'label' => 'Montant'
 			],
 			'type' => [
-				'label' => 'Type',
+				'label' => 'Type'
 			],
 			'label' => [
-				'label' => 'Objet',
+				'label' => 'Objet'
 			],
 			'person' => [
-				'label' => 'Personne',
+				'label' => 'Personne'
 			],
 			'options' => [
 				'label' => 'Options',
 				'select' => "(CASE WHEN has_options THEN 'oui' ELSE '-' END)"
 			], // sprintf("(SELECT (CASE WHEN COUNT(id) > 0 THEN 'oui' ELSE '-' END) FROM %s o WHERE o.id_item = %s.id)", Option::TABLE, Item::TABLE)
 			'custom_fields' => [
-				'label' => 'Champs',
+				'label' => 'Champs'
 			],
 			'state' => [
-				'label' => 'Statut',
+				'label' => 'Statut'
 			],
 			'id_order' => [],
 		];
@@ -212,7 +212,7 @@ class Items
 		return $option;
 	}
 
-	static protected function accountChargeable(int $id_form, ChargeableInterface $entity, int $type, int $id_payment, \DateTime $date): bool
+	static protected function accountChargeable(int $id_form, ChargeableInterface $entity, int $type, int $payment_ref, \DateTime $date): bool
 	{
 		$amount = ($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE ? null : $entity->getAmount());
 		$chargeable = Chargeables::get($id_form, $type, $entity->getLabel(), $amount);
@@ -220,7 +220,7 @@ class Items
 			$chargeable = Chargeables::createChargeable($id_form, $entity, $type);
 		}
 		elseif ($chargeable->id_credit_account && $chargeable->id_debit_account) {
-			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $id_payment, $date);
+			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment_ref, $date);
 			$entity->id_transaction = (int)$transaction->id;
 			$entity->save();
 			return true;
@@ -270,7 +270,7 @@ class Items
 		return $data;
 	}
 
-	static protected function createTransaction(ChargeableInterface $entity, array $accounts, int $id_payment, \DateTime $date): Transaction
+	static protected function createTransaction(ChargeableInterface $entity, array $accounts, int $payment_ref, \DateTime $date): Transaction
 	{
 		if (!$id_year = Years::getOpenYearIdMatchingDate($date)) {
 			throw new \RuntimeException(sprintf('No opened accounting year matching the item date "%s"!', $date->format('Y-m-d')));
@@ -279,13 +279,13 @@ class Items
 
 		$transaction = new Transaction();
 		$transaction->type = Transaction::TYPE_REVENUE;
-		$transaction->reference = (string)Payments::getId($id_payment);
+		$transaction->reference = (string)Payments::getId($payment_ref); // aka $payment->id
 
 		$source = [
 			'status' => Transaction::STATUS_PAID,
 			'label' => self::TRANSACTION_PREFIX . ' - ' . $entity->getLabel(),
 			'notes' => self::TRANSACTION_NOTE,
-			'payment_reference' => $id_payment,
+			'payment_reference' => $payment_ref,
 			'date' => \KD2\DB\Date::createFromInterface($date),
 			'id_year' => (int)$id_year,
 			'amount' => $entity->getAmount() / 100,
