@@ -16,7 +16,9 @@ if (!$f) {
 $list = Chargeables::list($f);
 $list->loadFromQueryString();
 
-$tpl->assign('form', $f);
-$tpl->assign(compact('list'));
+$tpl->assign([
+	'form' => $f,
+	'list' => $list
+]);
 
 $tpl->display(PLUGIN_ROOT . '/templates/chargeables.tpl');
