@@ -4,6 +4,8 @@
 
 {include file="./_chargeables_list.tpl" details=true}
 
+<p class="help block">Les articles (tarifs et options) configurés dans l'administration de HelloAsso ne peuvent apparaître ici qu'uniquement <em>après</em> avoir été commandés au moins une fois.</p>
+
 {*
 {pagination url=$list->paginationURL() page=$list.page bypage=$list.per_page total=$list->count()}
 *}
