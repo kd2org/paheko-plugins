@@ -4,7 +4,11 @@
 
 {if isset($_GET['ok'])}
 <p class="confirm block">
-	Connexion à l'API HelloAsso effectuée !
+	{if $_GET.ok === 'connection'}
+		Connexion à l'API HelloAsso effectuée !
+	{elseif $_GET.ok === 'config'}
+		Configuration mise à jour avec succès.
+	{/if}
 </p>
 {/if}
 
@@ -23,7 +27,7 @@
 		</p>
 		<dl>
 			{input type="text" name="client_id" default=$client_id label="ID (Mon clientId)" required=true}
-			{input type="password" name="client_secret" value="1" default=$secret label="Secret (Mon clientSecret)" required=true}
+			{input type="password" name="client_secret" value="1" default=$secret label="Secret (Mon clientSecret)" required=false} {* If not provided only the rest of the configuration is updated *}
 		</dl>
 	</fieldset>
 

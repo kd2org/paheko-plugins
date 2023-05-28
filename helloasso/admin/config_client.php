@@ -14,10 +14,13 @@ $csrf_key = sprintf('config_plugin_%s', $plugin->id);
 $ha = HelloAsso::getInstance();
 
 $form->runIf('save', function () use ($ha) {
-	$ha->saveClient(f('client_id'), f('client_secret'));
+	if ($client_secret = f('client_secret')) {
+		$ha->saveClient(f('client_id'), $client_secret);
+	}
 	// ToDo: add a nice form check
 	$ha->saveConfig($_POST);
-}, $csrf_key, '?ok');
+	Utils::redirect('?ok=' . ($client_secret ? 'connection' : 'config'));
+}, $csrf_key, null);
 
 $credit_account = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_credit_account);
 $debit_account = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_debit_account);
