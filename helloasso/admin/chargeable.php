@@ -49,7 +49,7 @@ $tpl->assign([
 	'credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 	'debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
 	'csrf_key' => $csrf_key,
-	'current_sub' => 'items'
+	'current_sub' => 'chargeables'
 ]);
 
 $tpl->assign('TECH_DETAILS', SHOW_ERRORS && ENABLE_TECH_DETAILS);

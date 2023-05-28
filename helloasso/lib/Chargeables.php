@@ -74,6 +74,9 @@ class Chargeables
 				'select' => 'c.id'
 			],
 			'type' => [
+				'select' => 'c.type'
+			],
+			'item_type' => [
 				'label' => 'Type',
 				'select' => 'i.type'
 			],
@@ -102,10 +105,20 @@ class Chargeables
 			'custom_fields' => [
 				'label' => 'Champs',
 				'select' => 'c.custom_fields'
-			]*/
+			],*/
+			'id_form' => [
+				'select' => 'c.id_form'
+			],
+			'form_type' => [
+				'select' => 'f.type'
+			],
+			'id_item' => [
+				'select' => 'c.id_item'
+			]
 		];
 
 		$tables = Chargeable::TABLE . ' c
+			INNER JOIN ' . Form::TABLE . ' f ON (f.id = c.id_form)
 			LEFT JOIN ' . Item::TABLE . ' i ON (i.id = c.id_item)
 			LEFT JOIN ' . Account::TABLE . ' ca ON (ca.id = c.id_credit_account)
 			LEFT JOIN ' . Account::TABLE . ' da ON (da.id = c.id_debit_account)
@@ -118,7 +131,10 @@ class Chargeables
 		$list->setTitle(sprintf('%s - Items', $for->name));
 
 		$list->setModifier(function ($row) {
-			$row->type = Item::TYPES[$row->type] ?? 'Inconnu';
+			$row->type_label = ($row->id_item !== null) ? (Item::TYPES[$row->item_type] ?? 'Inconnu') : (Form::TYPES[$row->form_type] ?? 'Inconnu');
+			if ($row->type === Chargeable::OPTION_TYPE) {
+				$row->type_label .= ' - ' . Chargeable::TYPES[$row->type];
+			}
 
 			if (isset($row->custom_fields)) {
 				$row->custom_fields = json_decode($row->custom_fields, true);

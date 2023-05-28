@@ -13,11 +13,17 @@
 	<dd>{$chargeable->label}</dd>
 	<dt>Type</dt>
 	<dd>
-		{assign var='types' value=Plugin\HelloAsso\Entities\Chargeable::TYPES}
-		{$types[$chargeable->type]}
+		{if $chargeable->id_item !== null}
+			{assign var='types' value=Plugin\HelloAsso\Entities\Item::TYPES}
+			{$types[$parent_item->type]}
+			{if $chargeable->type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE}- Option{/if}
+		{else}
+			{assign var='types' value=Plugin\HelloAsso\Entities\Form::TYPES}
+			{$types[$form->type]}
+		{/if}
 	</dd>
 	<dt>Montant</dt>
-	<dd>{$chargeable->amount|money_currency|raw}</dd>
+	<dd>{if null === $chargeable->amount}S'applique peu importe le montant.{else}{$chargeable->amount|money_currency|raw}{/if}</dd>
 	<dt>Formulaire</dt>
 	<dd>{$form->name}</dd>
 	{if $plugin->config->accounting}

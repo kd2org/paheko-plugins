@@ -25,8 +25,6 @@
 			{/if}
 		</tr>
 
-
-
 	{/foreach}
 
 	</tbody>

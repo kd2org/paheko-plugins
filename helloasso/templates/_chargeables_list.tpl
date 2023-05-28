@@ -7,7 +7,7 @@
 
 		<tr {if $plugin.config.accounting && (!$row.id_credit_account || !$row.id_debit_account)}class="awaits_account_configuration"{/if}>
 			<td class="num"><a href="{"chargeable.php?id=%s"|args:$row.id}">{$row.id}</a></td>
-			<td>{$row.type}</td>
+			<td>{$row.type_label}</td>
 			<td>{$row.label}</td>
 			<td class="money">{$row.amount|money_currency|raw}</td>
 			<td class="num"><a href="{$admin_url}acc/accounts/journal.php?id={$row.id_credit_account|intval}">{$row.credit_account}</a></td>
