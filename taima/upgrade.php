@@ -35,7 +35,7 @@ if (version_compare($old_version, '0.4.1', '<')) {
 }
 
 // Change ON DELETE CASCADE to ON DELETE SET NULL
-if (version_compare($old_version, '0.5.1', '<')) {
+if (version_compare($old_version, '0.6.0', '<')) {
 	$db->beginSchemaUpdate();
 	$db->exec('ALTER TABLE plugin_taima_entries RENAME TO plugin_taima_entries_old;
 
