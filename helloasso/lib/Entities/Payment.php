@@ -57,30 +57,30 @@ class Payment extends Entity
 		'dateOfBirth' => 'Date de naissance',
 	];
 
-	static public function getPayerName(\stdClass $payer)
+	static public function getPersonName(\stdClass $person)
 	{
-		$names = [!empty($payer->company) ? $payer->company . ' — ' : null, $payer->firstName ?? null, $payer->lastName ?? null];
+		$names = [!empty($person->company) ? $person->company . ' — ' : null, $person->firstName ?? null, $person->lastName ?? null];
 		$names = array_filter($names);
 
 		$names = implode(' ', $names);
 
-		if (!empty($payer->city)) {
-			$names .= sprintf(' (%s)', $payer->city);
+		if (!empty($person->city)) {
+			$names .= sprintf(' (%s)', $person->city);
 		}
 
 		return $names;
 	}
 
-	static public function getPayerInfos(\stdClass $payer)
+	static public function formatPersonInfos(\stdClass $person)
 	{
 		$data = [];
 
 		foreach (self::PAYER_FIELDS as $key => $name) {
-			if (!isset($payer->$key)) {
+			if (!isset($person->$key)) {
 				continue;
 			}
 
-			$value = $payer->$key;
+			$value = $person->$key;
 
 			if ($key == 'dateOfBirth') {
 				$value = new \DateTime($value);

@@ -8,14 +8,23 @@
 	{/if}
 {/if}
 
+{if isset($exceptions)}
+	<p class="alert block">
+		Les erreurs suivantes sont survenues durant la synchronisation.<br />Les autres entrées ont été synchronisées normalement.
+	</p>
+	{foreach from=$exceptions item='e'}
+		<p class="error block">{$e->getMessage()|escape|nl2br}</p>
+	{/foreach}
+{/if}
+
 {if $plugin->config->accounting}
 	{if $chargeables}
-	<form method="POST" action="{$self_url}">
+	<form method="POST" action="{$self_url_no_qs}">
 		<p class="alert block">
 			{if !$default_debit_account && !$default_credit_account}
-				Pour pouvoir synchroniser la comptabilité, merci de renseigner les types de recette et comptes d'encaissement pour articles suivants :
+				Pour pouvoir synchroniser la comptabilité, merci de renseigner les types de recette et comptes d'encaissement pour les articles suivants :
 			{else}
-				Pour pouvoir synchroniser la comptabilité, merci de confirmer les types de recette et comptes d'encaissement pré-remplis pour articles suivants :
+				Pour pouvoir synchroniser la comptabilité, merci de confirmer les types de recette et comptes d'encaissement pré-remplis pour les articles suivants :
 			{/if}
 		</p>
 		{foreach from=$chargeables key='form_name' item='form'}
@@ -35,6 +44,7 @@
 						<dl>
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account}
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account}
+							{input type="checkbox" name="register_user[%d]"|args:$chargeable.id value="1" label="Inscrire comme membre" source=$chargeable help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
 						</dl>
 					{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
 						</fieldset>

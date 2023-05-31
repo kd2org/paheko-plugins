@@ -50,7 +50,7 @@ class Order extends Entity
 	public function getPayerInfos(): array
 	{
 		$data = json_decode($this->raw_data);
-		return $data ? Payment::getPayerInfos($data->payer) : [];
+		return $data ? Payment::formatPersonInfos($data->payer) : [];
 	}
 
 	public function listItems(): array

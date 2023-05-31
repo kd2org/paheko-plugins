@@ -39,8 +39,14 @@
 	{/if}
 </dl>
 
-{if $plugin->config->accounting}
-	<form method="post" action="{$self_url}">
+<form method="post" action="{$self_url}">
+	<fieldset>
+		<legend>Options</legend>
+		<dl>
+			{input type="checkbox" name="register_user" value="1" label="Inscrire comme membre" source=$chargeable help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+		</dl>
+	</fieldset>
+	{if $plugin->config->accounting}
 		<fieldset>
 			<legend>Comptabilité</legend>
 			<dl>
@@ -49,12 +55,12 @@
 			</dl>
 			<p class="help block">Cette modification impacte uniquement les <em>futures</em> synchronisations. Elle n'est pas rétro-active.</p>
 		</fieldset>
-		<p class="submit">
-			{csrf_field key=$csrf_key}
-			{button type="submit" class="main" name="save" label="Enregistrer" shape="right"}
-		</p>
-	</form>
-{/if}
+	{/if}
+	<p class="submit">
+		{csrf_field key=$csrf_key}
+		{button type="submit" class="main" name="save" label="Enregistrer" shape="right"}
+	</p>
+</form>
 
 {if $TECH_DETAILS}
 	<dl style="background-color: black; color: limegreen; padding-top: 0.8em;" class="describe">

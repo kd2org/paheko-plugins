@@ -8,14 +8,19 @@ use KD2\DB\EntityManager as EM;
 use Garradin\Entities\Accounting\Account;
 
 use Garradin\Plugin\HelloAsso\Forms;
+use Garradin\Plugin\HelloAsso\Items;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\Chargeables;
 
 $csrf_key = 'sync';
 
-$form->runIf('sync', function() use ($ha) {
+$form->runIf('sync', function() use ($ha, $tpl) {
 	$ha->sync();
-}, $csrf_key, PLUGIN_ADMIN_URL . 'sync.php?ok=1');
+	if (!$exceptions = Items::getExceptions()) {
+		Utils::redirect(PLUGIN_ADMIN_URL . 'sync.php?ok=1');
+	}
+	$tpl->assign('exceptions', $exceptions);
+}, $csrf_key);
 
 $default_ca = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_credit_account);
 $default_da = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_debit_account);
@@ -45,6 +50,9 @@ $form->runIf('accounts_submit', function() use ($ha) {
 			}
 		}
 		Chargeables::setAccounts($source);
+	}
+	if (array_key_exists('register_user', $_POST)) {
+		Chargeables::setUserRegistrators(array_keys($_POST['register_user']));
 	}
 	$ha->sync();
 }, null, PLUGIN_ADMIN_URL . 'sync.php?ok=1');

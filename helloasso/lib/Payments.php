@@ -211,8 +211,8 @@ class Payments extends Paheko_Payments
 		$formated->status = HA\Payment::STATES[$data->state] ?? '--';
 		$formated->transferred = isset($data->cashOutState) && $data->cashOutState == HA\Payment::CASH_OUT_OK ? true : false;
 		$formated->transfer_date = isset($data->cashOutDate) ? new \DateTime($data->cashOutDate) : null;
-		$formated->payer_name = isset($data->payer) ? HA\Payment::getPayerName($data->payer) : null;
-		$formated->payer_infos = isset($data->payer) ? HA\Payment::getPayerInfos($data->payer) : null;
+		$formated->payer_name = isset($data->payer) ? HA\Payment::getPersonName($data->payer) : null;
+		$formated->payer_infos = isset($data->payer) ? HA\Payment::formatPersonInfos($data->payer) : null;
 		$formated->form_slug = $data->order->formSlug;
 		$formated->org_slug = $data->order->organizationSlug;
 

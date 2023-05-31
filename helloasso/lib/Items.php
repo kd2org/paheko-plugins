@@ -9,7 +9,7 @@ use Garradin\Plugin\HelloAsso\Entities\Option;
 use Garradin\Plugin\HelloAsso\Entities\Order;
 use Garradin\Plugin\HelloAsso\Entities\Payment;
 use Garradin\Plugin\HelloAsso\API;
-use Garradin\Plugin\HelloAsso\HelloAsso;
+use Garradin\Plugin\HelloAsso\HelloAsso as HA;
 use Garradin\Plugin\HelloAsso\ChargeableInterface;
 
 use Garradin\DB;
@@ -17,16 +17,27 @@ use Garradin\DynamicList;
 use Garradin\Utils;
 use Garradin\Entities\Accounting\Transaction;
 use Garradin\Accounting\Years;
+use Garradin\Users\DynamicFields;
+use Garradin\Users\Users;
+use Garradin\Entities\Users\User;
 use Garradin\Plugin\HelloAsso\Payments;
 
 use KD2\DB\EntityManager as EM;
 
+use Garradin\Plugin\HelloAsso\Mock\MockItems;
+
 class Items
 {
 	const TRANSACTION_PREFIX = 'Item';
-	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
+	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HA::PROVIDER_LABEL . '.';
 	const DONATION_LABEL = 'Don';
 	const CHECKOUT_LABEL = 'Commande #%d (%s)';
+	const DUPLICATE_MEMBER_PREFIX = 'Doublon-%s-';
+
+	static protected string	$_nameField;
+	static protected array	$_userFieldsMap;
+	static protected array	$_userIdsByLoginCache = []; // Used when userMatchField is different from the Paheko login field
+	static protected array	$_exceptions = [];
 
 	static public function get(int $id): ?Item
 	{
@@ -37,22 +48,37 @@ class Items
 	{
 		$columns = [
 			'id' => [
-				'label' => 'Référence'
+				'select' => 'i.id'
+			],
+			'id_chargeable' => [
+				'label' => 'Référence',
+				'select' => 'c.id'
 			],
 			'id_transaction' => [
 				'label' => 'Écriture'
 			],
 			'amount' => [
-				'label' => 'Montant'
+				'label' => 'Montant',
+				'select' => 'i.amount'
 			],
 			'type' => [
-				'label' => 'Type'
+				'label' => 'Type',
+				'select' => 'i.type'
 			],
 			'label' => [
-				'label' => 'Objet'
+				'label' => 'Objet',
+				'select' => 'i.label'
 			],
 			'person' => [
 				'label' => 'Personne'
+			],
+			'id_user' => [],
+			'user_name' => [
+				'label' => 'Membre correspondant*',
+				'select' => 'u.nom'
+			],
+			'numero' => [
+				'select' => 'u.numero'
 			],
 			'options' => [
 				'label' => 'Options',
@@ -67,7 +93,9 @@ class Items
 			'id_order' => [],
 		];
 
-		$tables = Item::TABLE;
+		$tables = Item::TABLE . ' i
+			INNER JOIN ' . Chargeable::TABLE . ' c ON (c.id_form = i.id_form AND c.label = i.label AND c.amount = i.amount)
+			LEFT JOIN ' . User::TABLE . ' u ON (u.id = i.id_user)';
 
 		if ($for instanceof Form) {
 			unset($columns['custom_fields']);
@@ -99,20 +127,39 @@ class Items
 			$row->amount = $row->amount ? Utils::money_format($row->amount, '.', '', false) : null;
 
 			// Serialize custom fields as a text field
-			if (isset($row->custom_fields)) {
+			/*if (isset($row->custom_fields)) {
 				$row->custom_fields = implode("\n", array_map(function ($v, $k) { return "$k: $v"; },
 					$row->custom_fields, array_keys($row->custom_fields)));
-			}
+			}*/
 		});
 
 		$list->orderBy('id', true);
 		return $list;
 	}
 
+	static protected function init(): void
+	{
+		self::$_nameField = DynamicFields::getFirstNameField();
+		self::setUserFieldsMap();
+	}
+
+	static protected function setUserFieldsMap(): void
+	{
+		$map = clone HA::getInstance()->plugin()->getConfig()->payer_map;
+		unset($map->name); // name has a specific process
+		foreach ($map as $api_field => $user_field) {
+			if (null === $user_field) {
+				unset($map->$api_field);
+			}
+		}
+		self::$_userFieldsMap = array_flip((array)$map);
+	}
+
 	static public function sync(string $org_slug, bool $accounting = true): void
 	{
+		self::init();
 		$params = [
-			'pageSize'  => HelloAsso::getPageSize(),
+			'pageSize'  => HA::getPageSize(),
 		];
 
 		$page_count = 1;
@@ -122,11 +169,17 @@ class Items
 			$result = API::getInstance()->listOrganizationItems($org_slug, $params);
 			$page_count = $result->pagination->totalPages;
 
+			//$result->data = MockItems::donationAndOptions();
+			//$result->data = MockItems::multipleSubscriptions();
+
 			foreach ($result->data as $order) {
-				self::syncItem($order, $accounting);
+				try {
+					self::syncItem($order, $accounting);
+				}
+				catch (SyncException $e) { self::catchSyncException($e); }
 			}
 
-			if (HelloAsso::isTrial()) {
+			if (HA::isTrial()) {
 				break;
 			}
 		}
@@ -134,67 +187,77 @@ class Items
 
 	static protected function syncItem(\stdClass $data, bool $accounting): Item
 	{
-		$entity = self::get($data->id) ?? new Item;
-
-		$entity->set('raw_data', json_encode($data));
+		$item = self::get($data->id) ?? new Item;
+		$item->set('raw_data', json_encode($data));
 
 		$data = self::transform($data);
 
-		if (!$entity->exists()) {
-			$entity->set('id', $data->id);
-			$entity->set('id_order', $data->order_id);
-			$entity->set('id_form', Forms::getId($data->org_slug, $data->form_slug));
+		self::setItem($item, $data);
+		$item->save();
+
+		try {
+			self::handleUserRegistration($data, (int)$item->id_form, $item, Chargeable::TYPE_FROM_FORM[$data->order->formType]);
 		}
-
-		$entity->set('amount', $data->amount);
-		$entity->set('state', $data->state);
-		$entity->set('type', $data->type);
-		$entity->set('person', $data->user_name ?? $data->payer_name);
-		$entity->set('label', self::generateLabel($data, (int)$entity->id_form));
-		$entity->set('custom_fields', count($data->fields) ? json_encode($data->fields) : null);
-		$entity->set('has_options', (int)isset($data->options));
-
-		$entity->save();
-
-		$optionEntities = [];
-		if (isset($data->options)) {
-			foreach ($data->options as $option) {
-				$optionEntities[] = self::syncOption($option, $data, $entity->id, $accounting);
-			}
+		catch (SyncException $e) { self::catchSyncException($e); }
+		
+		try {
+			$optionEntities = self::syncOptions($data, $item, $accounting);
 		}
-		// Creating a transaction only if payment is unique and already done (not pending) and accounts sets
-		if ($accounting && !$entity->id_transaction && (count($data->payments) === 1 && $data->payments[0]->state === Payments::AUTHORIZED_STATUS))
-		{
-			if ($entity->amount) {
-				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
-					self::accountChargeable((int)$entity->id_form, $entity, Chargeable::TYPE_FROM_FORM[$data->order->formType], (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
-				}
-				else
-				{
-					if (!$payment = Payments::get((int)$data->payments[0]->id)) {
-						throw new \RuntimeException(sprintf('Payment #%d matching checkout item #%d not found.', $data->payments[0]->id, $entity->id));
-					}
-					if (isset($payment->id_credit_account) && $payment->id_credit_account && $payment->id_debit_account) {// This feature will be available once the ChekoutIntent callback is fixed
-						$transaction = self::createTransaction($entity, [$payment->id_credit_account, $payment->id_debit_account], (int)$data->payments[0]->id, $payment->date);
-						$payment->set('id_transaction', $transaction->id);
-					}
-					elseif (self::accountChargeable((int)$entity->id_form, $entity, Chargeable::TYPE_FROM_FORM[$data->order->formType], (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date))) {
-						$payment->set('id_transaction', $entity->id_transaction);
-					}
-					$payment->save();
-				}
-			}
-			if (isset($data->options)) {
-				foreach ($optionEntities as $option) {
-					self::accountChargeable((int)$entity->id_form, $option, Chargeable::OPTION_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
-				}
-			}
+		catch (SyncException $e) { self::catchSyncException($e); }
+		
+		try {
+			self::handleAccounting($item, $data, $optionEntities, $accounting);
 		}
+		catch (SyncException $e) { self::catchSyncException($e); }
 
-		return $entity;
+		return $item;
 	}
 
-	static protected function syncOption(\stdClass $data, \stdClass $full_data, int $id_item, bool $accounting): Option
+	static protected function setItem(Item $item, \stdClass $data): void
+	{
+		// ToDo: add some cache for those checks
+		if (!EM::getInstance(Order::class)->col(sprintf('SELECT id FROM @TABLE WHERE id = :id_order;'), $data->order_id)) {
+			throw new SyncException(sprintf('Tried to synchronized the item (ID: %d) of an inexisting (never synchronized?) order #%d.', $data->id, $data->order_id));
+		}
+		$id_form = Forms::getId($data->org_slug, $data->form_slug);
+		if (!EM::getInstance(Form::class)->col(sprintf('SELECT id FROM @TABLE WHERE id = :id_order;'), $id_form)) {
+			throw new SyncException(sprintf('Tried to synchronized the item (ID: %d) of an inexisting (never synchronized?) order #%d.', $data->id, $id_form));
+		}
+
+		if (!$item->exists()) {
+			$item->set('id', $data->id);
+			$item->set('id_order', $data->order_id);
+			$item->set('id_form', $id_form);
+		}
+
+		$item->set('amount', $data->amount);
+		$item->set('state', $data->state);
+		$item->set('type', $data->type);
+		$item->set('person', $data->beneficiary_label ?? $data->payer_name);
+		$item->set('label', self::generateLabel($data, (int)$item->id_form));
+		$item->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
+		$item->set('has_options', (int)isset($data->options));
+
+		$identifier = HA::guessUserIdentifier($data->beneficiary);
+		if ($identifier && ($id_user = HA::getUserId($identifier))) {
+			$item->set('id_user', $id_user);
+		}
+	}
+
+	static protected function syncOptions(\stdClass $data, Item $item, int $accounting): array
+	{
+		if (!isset($data->options)) {
+			return [];
+		}
+
+		$optionEntities = [];
+		foreach ($data->options as $option) {
+			$optionEntities[] = self::syncOption($option, $data, $item->id_form, $item->id, $accounting);
+		}
+		return $optionEntities;
+	}
+
+	static protected function syncOption(\stdClass $data, \stdClass $full_data, int $id_form, int $id_item, bool $accounting): Option
 	{
 		$option = EM::findOne(Option::class, 'SELECT * FROM @TABLE WHERE id_item = :id_item AND label = :name AND amount = :amount', $id_item, $data->name, $data->amount) ?? new Option;
 		$option->set('raw_data', json_encode($data));
@@ -205,21 +268,147 @@ class Items
 			$option->set('id_order', (int)$full_data->order_id);
 		}
 		$option->set('amount', $data->amount);
-		$option->set('label', $data->name ?? Forms::getName($option->id_form));
-		$option->set('custom_fields', count($data->fields) ? json_encode($data->fields) : null);
+		$option->set('label', $data->name ?? Forms::getName($id_form));
+		$option->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
+		$identifier = HA::guessUserIdentifier($full_data->beneficiary);
+		if ($identifier && ($id_user = HA::getUserId($identifier))) {
+			$option->set('id_user', $id_user);
+		}
 		$option->save();
+
+		self::handleUserRegistration($full_data, $id_form, $option, Chargeable::OPTION_TYPE);
 
 		return $option;
 	}
 
-	static protected function accountChargeable(int $id_form, ChargeableInterface $entity, int $type, int $payment_ref, \DateTime $date): bool
+	static protected function handleAccounting(Item $item, \stdClass $data, array $optionEntities, int $accounting): void
+	{
+		// Creating a transaction only if payment is unique and already done (not pending) and accounts sets
+		if ($accounting && !$item->id_transaction && (count($data->payments) === 1 && $data->payments[0]->state === Payments::AUTHORIZED_STATUS))
+		{
+			if ($item->amount) {
+				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
+					self::accountChargeable((int)$item->id_form, $item, Chargeable::TYPE_FROM_FORM[$data->order->formType], (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+				}
+				else
+				{
+					if (!$payment = Payments::get((int)$data->payments[0]->id)) {
+						throw new \RuntimeException(sprintf('Payment #%d matching checkout item #%d not found.', $data->payments[0]->id, $item->id));
+					}
+					if (isset($payment->id_credit_account) && $payment->id_credit_account && $payment->id_debit_account) {// This feature will be available once the ChekoutIntent callback is fixed
+						$transaction = self::createTransaction($item, [$payment->id_credit_account, $payment->id_debit_account], (int)$data->payments[0]->id, $payment->date);
+						$payment->set('id_transaction', $transaction->id);
+					}
+					elseif (self::accountChargeable((int)$item->id_form, $item, Chargeable::TYPE_FROM_FORM[$data->order->formType], (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date))) {
+						$payment->set('id_transaction', $item->id_transaction);
+					}
+					$payment->save();
+				}
+			}
+			if (isset($data->options)) {
+				foreach ($optionEntities as $option) {
+					self::accountChargeable((int)$item->id_form, $option, Chargeable::OPTION_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+				}
+			}
+		}
+	}
+
+	static protected function handleUserRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type)
+	{
+		$chargeable = self::getChargeable($id_form, $entity, $chargeable_type);
+		if (!$chargeable->register_user) {
+			return null;
+		}
+		if (!$identifier = HA::guessUserIdentifier($data->beneficiary)) {
+			throw new SyncException(sprintf(
+				'Commande n°%s : Impossible d\'inscrire le membre "%s". Aucun %s à lui associer comme identifiant.' . "\n" . 'Informations reçues de HelloAsso :' . "\n" . '%s' . "\n\n" .
+				'Soit il n\'y a pas de champ pour saisir cette information dans le formulaire HelloAsso, soit l\'utilisateur/trice n\'a pas renseigné cette information, soit l\'option "Champ utilisé pour savoir si un membre existe déjà" est mal réglée.',
+				$data->order_id,
+				$data->beneficiary_label,
+				HA::USER_MATCH_TYPES[HA::getInstance()->plugin()->getConfig()->user_match_type],
+				json_encode($data->beneficiary, JSON_UNESCAPED_UNICODE)
+			));
+		}
+		if (HA::userAlreadyExists($identifier)) {
+			return true;
+		}
+
+		$source = [
+			'id_parent' => null,
+			self::$_nameField => HA::guessUserName($data->beneficiary),
+			'date_inscription' => new \DateTime($data->order->date)
+		];
+
+		foreach (self::$_userFieldsMap as $user_field => $api_field) {
+			if (isset($data->beneficiary->$api_field))
+				$source[$user_field] = $data->beneficiary->$api_field;
+		}
+		$user_match_field = HA::getUserMatchField();
+
+		// The user match field may not exist (aka. not filled during the HelloAsso checkout) when the payer is also the beneficiary
+		if (isset($data->beneficiary->{$user_match_field[2]})) {
+			$source[$user_match_field[0]] = $data->beneficiary->{$user_match_field[2]};
+		}
+
+		$conflict = false;
+		if ($user_match_field[0] !== DynamicFields::getLoginField())
+		{
+			$db = DB::getInstance();
+			$login_field = DynamicFields::getLoginField();
+			if (array_key_exists($login_field, $source))
+			{
+				$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ? COLLATE NOCASE;', $db->quoteIdentifier($login_field)), $source[$login_field]);
+				if ($id_user) {
+					//$conflict = true;
+					$source[$login_field] = sprintf(self::DUPLICATE_MEMBER_PREFIX . $source[$login_field], uniqid());
+					//unset($source[$login_field]);
+				}
+			}
+		}
+
+		if (!$conflict)
+		{
+			$user = Users::create();
+			$user->importForm($source);
+			$user->set('id_category', (int)HA::getInstance()->plugin()->getConfig()->id_category);
+			$user->setNumberIfEmpty();
+			$user->save();
+			$id_user = (int)$user->id;
+		}
+
+		if (!$conflict)
+		{
+			HA::addUserToCache(HA::guessUserIdentifier($data->beneficiary), $id_user);
+			
+			$entity->setUserId($id_user);
+			$entity->save();
+
+			$order = EM::findOneById(Order::class, (int)$entity->id_order);
+			$order->set('id_user', (int)$id_user);
+			$order->save();
+
+			return $id_user;
+		}
+		return null;
+	}
+
+
+	static protected function getChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
 		$amount = ($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE ? null : $entity->getAmount());
-		$chargeable = Chargeables::get($id_form, $type, $entity->getLabel(), $amount);
+		if ($chargeable = Chargeables::get($id_form, $type, $entity->getLabel(), $amount)) {
+			return $chargeable;
+		}
+		return Chargeables::createChargeable($id_form, $entity, $type);
+	}
+
+	static protected function accountChargeable(int $id_form, ChargeableInterface $entity, int $type, int $payment_ref, \DateTime $date): bool
+	{
+		$chargeable = self::getChargeable($id_form, $entity, $type);
 		if (null === $chargeable) {
 			$chargeable = Chargeables::createChargeable($id_form, $entity, $type);
 		}
-		elseif ($chargeable->id_credit_account && $chargeable->id_debit_account) {
+		elseif ($entity->getAmount() && $chargeable->id_credit_account && $chargeable->id_debit_account) {
 			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment_ref, $date);
 			$entity->id_transaction = (int)$transaction->id;
 			$entity->save();
@@ -232,23 +421,26 @@ class Items
 	{
 		$data->id = (int) $data->id;
 		$data->order_id = (int) $data->order->id;
-		$data->payer_name = isset($data->payer) ? Payment::getPayerName($data->payer) : null;
-		$data->payer_infos = isset($data->payer) ? Payment::getPayerInfos($data->payer) : null;
-		$data->user_name = isset($data->user) ? Payment::getPayerName($data->user) : null;
+		$data->payer_name = isset($data->payer) ? Payment::getPersonName($data->payer) : null;
+		$data->payer_infos = isset($data->payer) ? Payment::formatPersonInfos($data->payer) : null;
 		$data->amount = (int) $data->amount;
 		$data->form_slug = $data->order->formSlug;
 		$data->org_slug = $data->order->organizationSlug;
-		$data->fields = [];
 
-		if (!empty($data->user)) {
-			$data->fields = Payment::getPayerInfos($data->user);
-		}
+		$user_data = (!empty($data->user)) ? Payment::formatPersonInfos($data->user) : null;
+		$data->fields = $user_data ?? [];
 
 		if (!empty($data->customFields)) {
 			foreach ($data->customFields as $field) {
 				$data->fields[$field->name] = $field->answer;
 			}
 		}
+
+		$data->beneficiary = $data->fields ? (object)array_merge($data->fields, (array)$data->user) : $data->payer;
+		if (!isset($data->beneficiary->email) && ($data->payer->firstName === $data->beneficiary->firstName) && ($data->payer->lastName === $data->beneficiary->lastName) && !empty($data->payer->email)) {
+			$data->beneficiary->email = $data->payer->email;
+		}
+		$data->beneficiary_label = isset($data->user) ? Payment::getPersonName($data->user) : null;
 
 		return $data;
 	}
@@ -258,7 +450,7 @@ class Items
 		$data->fields = [];
 
 		if (!empty($data->user)) {
-			$data->fields = Payment::getPayerInfos($data->user);
+			$data->fields = Payment::formatPersonInfos($data->user);
 		}
 
 		if (!empty($data->customFields)) {
@@ -326,6 +518,16 @@ class Items
 		else {
 			return $data->name;
 		}
+	}
+
+	static protected function catchSyncException(SyncException $e): void
+	{
+		self::$_exceptions[] = $e;
+	}
+
+	static public function getExceptions(): array
+	{
+		return self::$_exceptions;
 	}
 
 	static public function reset(): void

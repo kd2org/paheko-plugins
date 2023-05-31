@@ -4,12 +4,13 @@
 	{foreach from=$list->iterate() item="row"}
 
 		<tr>
-			<td class="num"><a href="order.php?id={$row.id_order}">{$row.id}</a></td>
+			<td class="num"><a href="chargeable.php?id={$row.id_chargeable}">{$row.id_chargeable}</a></td>
 			<td class="num"><a href="{$admin_url}acc/transactions/details.php?id={$row.id_transaction}">{$row.id_transaction}</a></td>
 			<td class="money">{$row.amount|money_currency|raw}</td>
 			<td>{$row.type}</td>
 			<td>{$row.label}</td>
-			<td>{$row.person}</td>
+			<td class="num">{$row.person}</td>
+			<td class="num">{if $row.id_user}{$row.user_name} <a href="{$admin_url}users/details.php?id={$row.id_user}">{$row.numero}</a>{/if}</td>
 			<td>{$row.options|escape|nl2br}</td>
 			{if property_exists($row, 'custom_fields')}
 			<td>
@@ -38,3 +39,7 @@
 
 	</tbody>
 </table>
+
+<p class="help block">
+	* Est différent de la "personne" si il y a un doute que le/la payeur/euse soit la même personne (ex: courriel différent).
+</p>

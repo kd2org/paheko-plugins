@@ -14,6 +14,17 @@ class API
 {
 	//const BASE_URL = 'https://api.helloasso.com/';
 	const BASE_URL = 'https://api.helloasso-sandbox.com/';
+	const PAYER_FIELDS = [
+		'firstName' => 'Prénom',
+		'lastName' => 'Nom',
+		'email' => 'Courriel',
+		'address' => 'Adresse',
+		'city' => 'Ville',
+		'zipCode' => 'Code postale',
+		'country' => 'Pays',
+		'dateOfBirth' => 'Date de naissance',
+		'company' => 'Association/entreprise'
+	];
 
 	protected $ha;
 	protected $oauth;

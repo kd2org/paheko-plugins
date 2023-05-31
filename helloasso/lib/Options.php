@@ -4,13 +4,16 @@ namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Option;
 use Garradin\DynamicList;
+use Garradin\Entities\Users\User;
 
 class Options
 {
 	static public function list($for): DynamicList
 	{
 		$columns = [
-			'id' => [],
+			'id' => [
+				'select' => 'o.id'
+			],
 			'id_transaction' => [
 				'label' => 'Écriture'
 			],
@@ -20,12 +23,21 @@ class Options
 			'label' => [
 				'label' => 'Objet',
 			],
+			'id_user' => [],
+			'user_numero' => [
+				'select' => 'u.numero'
+			],
+			'user_name' => [
+				'label' => 'Personne',
+				'select' => 'u.nom'
+			],
 			'custom_fields' => [
 				'label' => 'Champs',
 			]
 		];
 
-		$tables = Option::TABLE;
+		$tables = Option::TABLE . ' o
+			LEFT JOIN  ' . User::TABLE . ' u ON (u.id = o.id_user)';
 
 		$list = new DynamicList($columns, $tables);
 

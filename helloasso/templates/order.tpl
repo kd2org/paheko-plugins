@@ -6,7 +6,7 @@
 
 <dl class="describe">
 	<dt>Personne</dt>
-	<dd>{$order.person}</dd>
+	<dd class="num">{if $order.id_user}{$user->nom} <a href="{$admin_url}users/details.php?id={$user->id|intval}">{$user->numero}</a>{else}{$order.person}{/if}</dd>
 	<dt>Référence</dt>
 	<dd>{$order.id}</dd>
 	<dt>Montant total</dt>

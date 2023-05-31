@@ -3,6 +3,7 @@
 namespace Garradin;
 
 use Garradin\Plugin\HelloAsso\HelloAsso;
+use Garradin\Plugin\HelloAsso\API;
 
 use Garradin\Users\DynamicFields;
 
@@ -16,7 +17,7 @@ if ((array_key_exists('tab', $_GET) && $_GET['tab'] === 'client') || !$ha->isCon
 $csrf_key = sprintf('config_plugin_%s', $plugin->id);
 
 $form->runIf('save', function () use ($ha) {
-	$ha->saveConfig(f('map'), f('merge_names'), f('match_email_field'));
+	$ha->saveConfig(f('payer_map'), f('merge_names'), f('match_email_field'));
 }, $csrf_key, '?ok');
 
 $match_options = [
@@ -26,25 +27,19 @@ $match_options = [
 
 $merge_names_options = $ha::MERGE_NAMES_OPTIONS;
 
-//$fields_names = $ha::PAYER_FIELDS;
-$fields_names = [];
+$payer_fields = API::PAYER_FIELDS;
 
-$champs = DynamicFields::getInstance()->all();
-
-$target_fields = [
+$dynamic_fields = [
 	null => '-- Ne pas importer',
 ];
-
-foreach ($champs as $key => $config) {
+$fields = DynamicFields::getInstance()->all();
+foreach ($fields as $key => $config) {
 	if (!isset($config->label)) {
 		continue;
 	}
-
-	$target_fields[$key] = $config->label;
+	$dynamic_fields[$key] = $config->label;
 }
 
-$plugin_config = $ha->getConfig();
-
-$tpl->assign(compact('merge_names_options', 'match_options', 'csrf_key', 'fields_names', 'target_fields', 'plugin_config'));
+$tpl->assign(compact('merge_names_options', 'match_options', 'csrf_key', 'payer_fields', 'dynamic_fields'));
 
 $tpl->display(PLUGIN_ROOT . '/templates/config.tpl');

@@ -15,7 +15,12 @@
 	<fieldset>
 		<legend>Correspondance des membres</legend>
 		<dl>
-			{input type="select" options=$match_options name="match_email_field" source=$plugin_config required=true label="Champ utilisé pour savoir si un membre existe déjà"}
+			{input type="select" options=$match_options name="match_email_field" source=$plugin.config required=true label="Champ utilisé pour savoir si un membre existe déjà"}
+		</dl>
+		<dl>
+			{foreach from=$payer_fields key='field' item='label'}
+				{input type="select" name="payer_map[%s]"|args:$field label=$label options=$dynamic_fields required=true}
+			{/foreach}
 		</dl>
 	</fieldset>
 

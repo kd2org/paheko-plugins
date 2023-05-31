@@ -29,6 +29,7 @@ class Chargeable extends Entity
 	protected int		$type;
 	protected string	$label;
 	protected ?int		$amount;
+	protected int		$register_user;
 
 	protected ?string	$_form_name = null;
 	protected ?string	$_item_name = null;

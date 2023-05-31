@@ -9,19 +9,20 @@ class Item extends Entity implements ChargeableInterface
 {
 	const TABLE = 'plugin_helloasso_items';
 
-	protected int $id;
-	protected int $id_order;
-	protected int $id_form;
-	protected ?int $id_user;
-	protected ?int $id_transaction;
-	protected string $type;
-	protected string $state;
-	protected string $label;
-	protected string $person;
-	protected int $amount;
-	protected int $has_options;
-	protected ?string $custom_fields;
-	protected string $raw_data;
+	protected int			$id;
+	protected int			$id_order;
+	protected int			$id_form;
+	protected ?int			$id_user;
+	protected ?int			$id_transaction;
+	protected string		$type;
+	protected string		$state;
+	protected string		$label;
+	protected string		$person;
+	protected int			$amount;
+	protected int			$has_options;
+	/*protected ?string $custom_fields;*/
+	protected ?\stdClass	$custom_fields; // Is a mix between real HelloAsso custom fields and plugin generated infos during sync
+	protected string		$raw_data;
 
 	const TYPES = [
 		'Donation'        => 'Don',
@@ -59,5 +60,10 @@ class Item extends Entity implements ChargeableInterface
 	public function getAmount(): ?int
 	{
 		return $this->amount;
+	}
+
+	public function setUserId(?int $id): void
+	{
+		$this->set('id_user', $id);
 	}
 }

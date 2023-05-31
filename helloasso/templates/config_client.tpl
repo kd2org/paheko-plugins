@@ -60,10 +60,47 @@
 		</dl>
 	</fieldset>
 
+	<fieldset>
+		<legend>Correspondance des membres</legend>
+		<dl>
+			{input type="select" options=$user_match_fields name="user_match_type" source=$plugin.config required=true label="Champ utilisé pour savoir si un membre existe déjà"}
+			<span class="user_match_field">
+				{input type="text" name="user_match_field" label='Intitulé du champ HelloAsso correspondant à "%s"'|args:$user_match_fields[1] source=$plugin.config help='Dans la section "Informations relatives à vos tarifs" de la configuration de votre formulaire HelloAsso.'}
+			</span>
+			{input type="select" name="id_category" label="Catégorie" options=$category_options required=true default=$plugin.config.id_category help="Catégorie dans laquelle les membres automatiquement inscrit·e·s seront ajouté·e·s."}
+			{input type="select" name="payer_map[name]" label="Ordre de fusion des champs nom et prénom" options=$merge_names_options required=true default=$plugin.config.payer_map.name}
+		</dl>
+	</fieldset>
+	<fieldset>
+		<legend>Correspondance des payeur/euse.s</legend>
+		<p class="help block">
+			HelloAsso fournit les informations suivantes sur le/la payeur/euse. Choisissez comment vous souhaitez les lier à Paheko.
+		</p>
+		<dl>
+			{input type="select" name="payer_map[email]" label="Courriel" options=$email_fields required=true default=$plugin.config.payer_map.email}
+			{foreach from=$payer_fields key='field' item='label'}
+				{assign var='source' value=$plugin.config.payer_map}
+				{input type="select" name="payer_map[%s]"|args:$field label=$label options=$dynamic_fields required=true default=$source->$field}
+			{/foreach}
+		</dl>
+	</fieldset>
+
 	<p class="submit">
 		{csrf_field key=$csrf_key}
 		{button type="submit" class="main" name="save" label="Enregistrer" shape="right"}
 	</p>
 </form>
+
+<script type="text/javascript">
+{literal}
+(function () {
+	g.toggle('.user_match_field', $('#f_user_match_type').value === '1');
+
+	$('#f_user_match_type').onchange = () => {
+		g.toggle('.user_match_field', $('#f_user_match_type').value === '1');
+	};
+})();
+{/literal}
+</script>
 
 {include file="_foot.tpl"}

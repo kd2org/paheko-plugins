@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_item_options (
 	id_item INTEGER NOT NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
 	-- Redundant but needed by DynamicList since it does not handle JOIN statement
 	id_order INTEGER NOT NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
+	id_user INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
 	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
 	label TEXT NOT NULL,
 	amount INTEGER NOT NULL,
@@ -56,15 +57,17 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_item_options (
 CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeables (
 	id INTEGER PRIMARY KEY NOT NULL,
 	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
-	id_item INTEGER NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
+	id_item INTEGER NULL REFERENCES plugin_helloasso_items(id) ON DELETE SET NULL,
 	id_credit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
 	id_debit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
 	type INTEGER NOT NULL,
 	label TEXT NOT NULL,
-	amount INTEGER NULL
+	amount INTEGER NULL,
+	register_user UNSIGNED INTEGER NOT NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_chargeables_key ON plugin_helloasso_chargeables(id_form, id_item, type, label, amount);
+CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_get ON plugin_helloasso_chargeables(id_form, label, amount);
 
 /*
 CREATE TABLE IF NOT EXISTS plugin_helloasso_options (

@@ -49,4 +49,6 @@ class Form extends Entity implements ChargeableInterface
 	{
 		return null;
 	}
+
+	public function setUserId(?int $id): void {}
 }

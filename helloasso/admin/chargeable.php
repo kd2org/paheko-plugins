@@ -33,6 +33,7 @@ $form->runIf('save', function () use ($chargeable) {
 	// ToDo: add a nice check
 	$chargeable->set('id_credit_account', (int)array_keys($_POST['credit'])[0]);
 	$chargeable->set('id_debit_account', (int)array_keys($_POST['debit'])[0]);
+	$chargeable->set('register_user', (int)isset($_POST['register_user']));
 	$chargeable->save();
 }, $csrf_key, 'chargeable.php?id=' . $id . '&ok');
 

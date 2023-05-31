@@ -88,6 +88,10 @@ class Chargeables
 				'label' => 'Montant',
 				'select' => 'c.amount'
 			],
+			'register_user' => [
+				'label' => 'Inscrip. Auto',
+				'select' => 'c.register_user'
+			],
 			'credit_account' => [
 				'label' => 'Recette',
 				'select' => 'ca.code'
@@ -135,6 +139,8 @@ class Chargeables
 			if ($row->type === Chargeable::OPTION_TYPE) {
 				$row->type_label .= ' - ' . Chargeable::TYPES[$row->type];
 			}
+			
+			$row->register_user = $row->register_user ? 'oui' : '';
 
 			if (isset($row->custom_fields)) {
 				$row->custom_fields = json_decode($row->custom_fields, true);
@@ -191,6 +197,7 @@ class Chargeables
 		$chargeable->set('id_item', $entity->getItemId());
 		$chargeable->set('label', $entity->getLabel());
 		$chargeable->set('amount', ($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE ? null : $entity->getAmount()));
+		$chargeable->set('register_user', 0);
 		$chargeable->save();
 		return $chargeable;
 	}
@@ -201,6 +208,18 @@ class Chargeables
 			if (DB::getInstance()->exec(sprintf('UPDATE %s SET id_credit_account = %d, id_debit_account = %d WHERE id = %d;', Chargeable::TABLE, $accounts['credit'], $accounts['debit'], (int)$id)) === false) {
 				throw new \RuntimeException(sprintf('Cannot update %s plugin Items\' accounting accounts.', HelloAsso::PROVIDER_LABEL));
 			}
+		}
+	}
+
+	static public function setUserRegistrators(array $ids): void
+	{
+		foreach ($ids as $id) {
+			if (!is_int($id)) {
+				throw new \InvalidArgumentException(sprintf('User (Chargeable) registrator ID must be an integer. "%s" provided.', $id));
+			}
+		}
+		if (DB::getInstance()->exec(sprintf('UPDATE %s SET register_user = 1 WHERE id IN (%s);', Chargeable::TABLE, implode(', ', $ids))) === false) {
+			throw new \RuntimeException(sprintf('Cannot set %s plugin Chargeables\' user registrators.', HelloAsso::PROVIDER_LABEL));
 		}
 	}
 }

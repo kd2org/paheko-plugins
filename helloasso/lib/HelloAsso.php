@@ -4,6 +4,7 @@ namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Config;
 use Garradin\DB;
+use Garradin\Users\DynamicFields;
 use Garradin\Entities\Plugin;
 use Garradin\Entities\Users\User;
 use Garradin\Entities\Payments\Payment;
@@ -32,15 +33,22 @@ class HelloAsso
 	const MERGE_NAMES_LAST_FIRST = 1;
 
 	const MERGE_NAMES_OPTIONS = [
-		self::MERGE_NAMES_FIRST_LAST => 'Prénom Nom',
 		self::MERGE_NAMES_LAST_FIRST => 'Nom Prénom',
+		self::MERGE_NAMES_FIRST_LAST => 'Prénom Nom'
 	];
 
-	protected $plugin;
-	protected ?\stdClass $config;
+	const USER_MATCH_NAME = 0;
+	const USER_MATCH_EMAIL = 1;
+	const USER_MATCH_TYPES = [ self::USER_MATCH_NAME => 'Nom et prénom', self::USER_MATCH_EMAIL => 'Courriel' ];
 
+	protected				$plugin;
+	protected ?\stdClass	$config;
 
-	static protected $_instance;
+	static protected ?array	$_userMatchField = null;
+	static protected int	$_mergeNamesOption;
+	static protected array	$_existingUsersCache = [];
+
+	static protected		$_instance;
 
 	static public function getInstance()
 	{
@@ -126,21 +134,21 @@ class HelloAsso
 		$this->plugin->setConfigProperty('client_id', '');
 		$this->plugin->setConfigProperty('id_credit_account', false);
 		$this->plugin->setConfigProperty('id_debit_account', false);
+		$this->plugin->setConfigProperty('id_category', false);
 		return $this->plugin->save();
 	}
 
 	public function saveConfig(array $data): bool
 	{
-		/* Old code to rebuild
-		 * saveConfig(array $map, $merge_names, $match_email_field)
-		$this->plugin->setConfigProperty('merge_names', (int) $merge_names);
-		$this->plugin->setConfigProperty('match_email_field', (bool) $match_email_field);
-		$this->plugin->setConfigProperty('map_user_fields', $map);*/
 		$this->plugin->setConfigProperty('accounting', $data['accounting']);
 		if (array_key_exists('default_credit', $data))
 			$this->plugin->setConfigProperty('id_credit_account', array_keys($data['default_credit'])[0]);
 		if (array_key_exists('default_debit', $data))
 			$this->plugin->setConfigProperty('id_debit_account', array_keys($data['default_debit'])[0]);
+		$this->plugin->setConfigProperty('id_category', (int)$data['id_category']);
+		$this->plugin->setConfigProperty('payer_map', $data['payer_map']);
+		$this->plugin->setConfigProperty('user_match_type', $data['user_match_type']);
+		$this->plugin->setConfigProperty('user_match_field', $data['user_match_field']);
 		return $this->plugin->save();
 	}
 
@@ -400,4 +408,56 @@ class HelloAsso
 		}
 	}
 
+	static public function guessUserIdentifier(\stdClass $source): ?string
+	{
+		if (self::getUserMatchField()[1] === 'name') {
+			return self::guessUserName($source);
+		}
+		if (isset($source->email))
+			return $source->email;
+
+		return $source->{self::getUserMatchField()[2]} ?? null;
+	}
+
+	static public function guessUserName(\stdClass $source): string
+	{
+		if (self::getInstance()->plugin()->getConfig()->payer_map->name === HelloAsso::MERGE_NAMES_FIRST_LAST) {
+			return $source->firstName . ' ' . $source->lastName;
+		}
+		return $source->lastName . ' ' . $source->firstName;
+	}
+
+	static public function userAlreadyExists(string $identifier): bool
+	{
+		return (bool)self::getUserId($identifier);
+	}
+
+	static public function getUserId(string $identifier): ?int
+	{
+		if (array_key_exists($identifier, self::$_existingUsersCache)) {
+			return self::$_existingUsersCache[$identifier];
+		}
+		$id_user = EntityManager::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', self::getUserMatchField()[0]), $identifier);
+		self::$_existingUsersCache[$identifier] = (false === $id_user) ? null : $id_user;
+
+		return self::$_existingUsersCache[$identifier];
+	}
+
+	static public function addUserToCache(string $identifier, int $id_user): void
+	{
+		self::$_existingUsersCache[$identifier] = $id_user;
+	}
+
+	static public function getUserMatchField(): array
+	{
+		if (null === self::$_userMatchField) {
+			if (self::getInstance()->plugin()->getConfig()->user_match_type === self::USER_MATCH_NAME) {
+				self::$_userMatchField = [ DynamicFields::getFirstNameField(), 'name', null ];
+			}
+			else {
+				self::$_userMatchField = [ DynamicFields::getFirstEmailField(), 'email', self::getInstance()->plugin()->getConfig()->user_match_field ];
+			}
+		}
+		return self::$_userMatchField;
+	}
 }

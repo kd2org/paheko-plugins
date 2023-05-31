@@ -4,9 +4,11 @@
 		<tr>
 			<td class="num"><a href="payment.php?id={$row.id}">{$row.reference}</a></td>
 			<td class="num">
-				{foreach from=$row.transactions item="id_transaction"}
-					{link href="!acc/transactions/details.php?id=%d"|args:$id_transaction label="#%d"|args:$id_transaction}
-				{/foreach}
+				{if $row.transactions}
+					{foreach from=$row.transactions item="id_transaction"}
+						{link href="!acc/transactions/details.php?id=%d"|args:$id_transaction label="#%d"|args:$id_transaction}
+					{/foreach}
+				{/if}
 			</td>
 			<td>{$row.label}</td>
 			<td>{$row.date|date}</td>

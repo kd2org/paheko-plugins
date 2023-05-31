@@ -6,10 +6,12 @@ use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\Entities\Order;
 use Garradin\Plugin\HelloAsso\Entities\Payment;
 use Garradin\Plugin\HelloAsso\API;
+use Garradin\Plugin\HelloAsso\HelloAsso as HA;
 
 use Garradin\DB;
 use Garradin\DynamicList;
 use Garradin\Utils;
+use Garradin\Entities\Users\User;
 
 use KD2\DB\EntityManager as EM;
 
@@ -73,7 +75,7 @@ class Orders
 	static public function sync(string $org_slug): void
 	{
 		$params = [
-			'pageSize'  => HelloAsso::getPageSize(),
+			'pageSize'  => HA::getPageSize(),
 		];
 
 		$page_count = 1;
@@ -87,7 +89,7 @@ class Orders
 				self::syncOrder($order);
 			}
 
-			if (HelloAsso::isTrial()) {
+			if (HA::isTrial()) {
 				break;
 			}
 		}
@@ -106,10 +108,12 @@ class Orders
 			$entity->set('id_form', Forms::getId($data->org_slug, $data->form_slug));
 		}
 
+		$entity->set('id_user', HA::getUserId(HA::guessUserIdentifier($data->payer))); // The user may subscribe by himself/herself a long time after his/her order
 		$entity->set('amount', $data->amount);
 		$entity->set('status', $data->status);
 		$entity->set('date', $data->date);
 		$entity->set('person', $data->payer_name);
+
 		$entity->save();
 	}
 
@@ -118,8 +122,8 @@ class Orders
 		$data->id = (int) $data->id;
 		$data->date = new \DateTime($data->date);
 		$data->status = Order::getStatus($data);
-		$data->payer_name = isset($data->payer) ? Payment::getPayerName($data->payer) : null;
-		$data->payer_infos = isset($data->payer) ? Payment::getPayerInfos($data->payer) : null;
+		$data->payer_name = isset($data->payer) ? Payment::getPersonName($data->payer) : null;
+		$data->payer_infos = isset($data->payer) ? Payment::formatPersonInfos($data->payer) : null;
 		$data->amount = (int) ($data->amount->total ?? 0);
 		$data->form_slug = $data->formSlug;
 		$data->org_slug = $data->organizationSlug;
