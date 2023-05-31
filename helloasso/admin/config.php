@@ -88,4 +88,4 @@ $tpl->assign([
 	'merge_names_options' => $ha::MERGE_NAMES_OPTIONS
 ]);
 
-$tpl->display(PLUGIN_ROOT . '/templates/config_client.tpl');
+$tpl->display(PLUGIN_ROOT . '/templates/config.tpl');

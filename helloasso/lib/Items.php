@@ -24,7 +24,7 @@ use Garradin\Plugin\HelloAsso\Payments;
 
 use KD2\DB\EntityManager as EM;
 
-use Garradin\Plugin\HelloAsso\Mock\MockItems;
+//use Garradin\Plugin\HelloAsso\Mock\MockItems;
 
 class Items
 {
