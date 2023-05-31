@@ -69,7 +69,7 @@ if (version_compare($old_version, '0.5.4', '<')) {
 	$db->toggleForeignKeys(true);
 }
 
-if (version_compare($old_version, '0.6.1', '<')) {
+if (version_compare($old_version, '0.6.2', '<')) {
 	$db->beginSchemaUpdate();
 	$identity = DynamicFields::getNameFieldsSQL();
 	$sql = str_replace('@__NAME', $identity, POS::sql(file_get_contents(__DIR__ . '/update_0.6.1.sql')));
