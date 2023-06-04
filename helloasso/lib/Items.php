@@ -133,10 +133,13 @@ class Items
 			$row->amount = $row->amount ? Utils::money_format($row->amount, '.', '', false) : null;
 
 			// Serialize custom fields as a text field
-			/*if (isset($row->custom_fields)) {
-				$row->custom_fields = implode("\n", array_map(function ($v, $k) { return "$k: $v"; },
-					$row->custom_fields, array_keys($row->custom_fields)));
-			}*/
+			if (isset($row->custom_fields)) {
+				$row->custom_fields = implode("\n", array_map(
+					function ($v, $k) { return "$k: $v"; },
+					$row->custom_fields,
+					array_keys($row->custom_fields)
+				));
+			}
 		});
 
 		$list->orderBy('id', true);
@@ -202,7 +205,7 @@ class Items
 		$item->save();
 
 		try {
-			self::handleUserRegistration($data, (int)$item->id_form, $item, self::getItemType($item, $data));
+			self::handleUserRegistration($data, (int)$item->id_form, $item, self::getChargeableType($item, $data));
 		}
 		catch (SyncException $e) { self::catchSyncException($e); }
 		
@@ -296,7 +299,7 @@ class Items
 		{
 			if ($item->amount) {
 				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
-					self::accountChargeable((int)$item->id_form, $item, self::getItemType($item, $data), (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+					self::accountChargeable((int)$item->id_form, $item, self::getChargeableType($item, $data), (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 				}
 				else // Checkout case
 				{
@@ -328,9 +331,8 @@ class Items
 			return null;
 		}
 		if (!$identifier = HA::guessUserIdentifier($data->beneficiary)) {
-			throw new SyncException(sprintf(
-				'Commande n°%s : Impossible d\'inscrire le membre "%s". Aucun %s à lui associer comme identifiant.' . "\n" . 'Informations reçues de HelloAsso :' . "\n" . '%s' . "\n\n" .
-				'Soit il n\'y a pas de champ pour saisir cette information dans le formulaire HelloAsso, soit l\'utilisateur/trice n\'a pas renseigné cette information, soit l\'option "Champ utilisé pour savoir si un membre existe déjà" est mal réglée.',
+			throw new NoFuturIDSyncException(sprintf(
+				'Commande n°%s : Impossible d\'inscrire le membre "%s". Aucun %s à lui associer comme identifiant.' . "\n" . 'Informations reçues de HelloAsso :' . "\n" . '%s',
 				$data->order_id,
 				$data->beneficiary_label,
 				HA::USER_MATCH_TYPES[HA::getInstance()->plugin()->getConfig()->user_match_type],
@@ -400,10 +402,9 @@ class Items
 		return null;
 	}
 
-
 	static protected function getChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
-		$amount = ((($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($type === Chargeable::DONATION_ITEM_TYPE) || ($entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE)) ? null : $entity->getAmount());
+		$amount = (Chargeables::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount());
 		if ($chargeable = Chargeables::get($id_form, $type, $entity->getLabel(), $amount)) {
 			return $chargeable;
 		}
@@ -505,7 +506,7 @@ class Items
 		return $transaction;
 	}
 
-	static protected function getItemType(Item $item, \stdClass $data): int
+	static protected function getChargeableType(Item $item, \stdClass $data): int
 	{
 		$type = Chargeable::TYPE_FROM_FORM[$data->order->formType];
 		if ($type === Chargeable::ITEM_TYPE && $item->type === Item::DONATION_TYPE)

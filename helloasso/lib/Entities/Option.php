@@ -4,6 +4,7 @@ namespace Garradin\Plugin\HelloAsso\Entities;
 
 use Garradin\Entity;
 use Garradin\Plugin\HelloAsso\ChargeableInterface;
+use Garradin\Plugin\HelloAsso\Entities\Item;
 
 class Option extends Entity implements ChargeableInterface
 {
@@ -43,5 +44,13 @@ class Option extends Entity implements ChargeableInterface
 	public function setUserId(?int $id): void
 	{
 		$this->set('id_user', $id);
+	}
+
+	public function selfCheck(): void
+	{
+		parent::selfCheck();
+		if (!array_key_exists($this->price_type, Item::PRICE_TYPES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong option (ID: #%d) price type: %s. Possible values are: %s.', $this->id ?? null, $this->price_type, implode(', ', array_keys(Item::PRICE_TYPES))));
+		}
 	}
 }

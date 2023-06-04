@@ -87,4 +87,18 @@ class Item extends Entity implements ChargeableInterface
 	{
 		$this->set('id_user', $id);
 	}
+
+	public function selfCheck(): void
+	{
+		parent::selfCheck();
+		if (!array_key_exists($this->type, self::TYPES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong item (ID: #%d) type: %s. Possible values are: %s.', $this->id ?? null, $this->type, implode(', ', array_keys(self::TYPES))));
+		}
+		if (!array_key_exists($this->state, self::STATES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong item (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->state, implode(', ', array_keys(self::STATES))));
+		}
+		if (!array_key_exists($this->price_type, self::PRICE_TYPES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong item (ID: #%d) price type: %s. Possible values are: %s.', $this->id ?? null, $this->price_type, implode(', ', array_keys(self::PRICE_TYPES))));
+		}
+	}
 }

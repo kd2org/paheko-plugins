@@ -105,11 +105,7 @@ class Chargeables
 			],
 			'id_debit_account' => [
 				'select' => 'c.id_debit_account'
-			],/*,
-			'custom_fields' => [
-				'label' => 'Champs',
-				'select' => 'c.custom_fields'
-			],*/
+			],
 			'id_form' => [
 				'select' => 'c.id_form'
 			],
@@ -141,20 +137,10 @@ class Chargeables
 			}
 			
 			$row->register_user = $row->register_user ? 'oui' : '';
-
-			if (isset($row->custom_fields)) {
-				$row->custom_fields = json_decode($row->custom_fields, true);
-			}
 		});
 
 		$list->setExportCallback(function (&$row) {
 			$row->amount = $row->amount ? Utils::money_format($row->amount, '.', '', false) : null;
-
-			// Serialize custom fields as a text field
-			if (isset($row->custom_fields)) {
-				$row->custom_fields = implode("\n", array_map(function ($v, $k) { return "$k: $v"; },
-					$row->custom_fields, array_keys($row->custom_fields)));
-			}
 		});
 
 		$list->orderBy('id', true);
@@ -196,10 +182,15 @@ class Chargeables
 		$chargeable->set('id_form', $id_form);
 		$chargeable->set('id_item', $entity->getItemId());
 		$chargeable->set('label', $entity->getLabel());
-		$chargeable->set('amount', ((($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($type === Chargeable::DONATION_ITEM_TYPE) || ($entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE)) ? null : $entity->getAmount()));
+		$chargeable->set('amount', (self::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount()));
 		$chargeable->set('register_user', 0);
 		$chargeable->save();
 		return $chargeable;
+	}
+
+	static public function isMatchingAnyAmount(ChargeableInterface $entity, int $type): bool
+	{
+		return (($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($type === Chargeable::DONATION_ITEM_TYPE) || ($entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE));
 	}
 
 	static public function setAccounts(array $source): void

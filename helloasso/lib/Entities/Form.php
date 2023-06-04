@@ -56,4 +56,15 @@ class Form extends Entity implements ChargeableInterface
 	}
 
 	public function setUserId(?int $id): void {}
+
+	public function selfCheck(): void
+	{
+		parent::selfCheck();
+		if (!array_key_exists($this->type, self::TYPES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong form (ID: #%d) type: %s. Possible values are: %s.', $this->id ?? null, $this->type, implode(', ', array_keys(self::TYPES))));
+		}
+		if (!array_key_exists($this->state, self::STATES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong form (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->state, implode(', ', array_keys(self::STATES))));
+		}
+	}
 }

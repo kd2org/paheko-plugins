@@ -13,7 +13,13 @@
 		Les erreurs suivantes sont survenues durant la synchronisation.<br />Les autres entrées ont été synchronisées normalement.
 	</p>
 	{foreach from=$exceptions item='e'}
-		<p class="error block">{$e->getMessage()|escape|nl2br}</p>
+		<p class="error block">
+			{$e->getMessage()|escape|nl2br}
+			{if $e instanceof Plugin\HelloAsso\NoFuturIDSyncException}
+				<br /><br />
+				Soit il n'y avait pas de champ pour saisir cette information dans le formulaire HelloAsso, soit l'utilisateur/trice n'a pas renseigné cette information, soit l'option "Champ utilisé pour savoir si un membre existe déjà" est mal réglée.
+			{/if}
+		</p>
 	{/foreach}
 {/if}
 
@@ -73,7 +79,7 @@
 {if !$last_sync && $last_sync > (new \DateTime('1 hour ago'))}
 	<p class="alert block">Il n'est pas possible d'effectuer plus d'une synchronisation manuelle par heure.</p>
 {else}
-	<form method="post" action="{$self_url}">
+	<form method="post" action="{$self_url_no_qs}">
 		<p class="submit">
 			{csrf_field key=$csrf_key}
 			{if $plugin->config->accounting && $chargeables}

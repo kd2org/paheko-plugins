@@ -99,4 +99,12 @@ class Order extends Entity
 		$this->set('id_transaction', $transaction->id());
 		$this->save();
 	}
+
+	public function selfCheck(): void
+	{
+		parent::selfCheck();
+		if (!array_key_exists($this->status, self::STATUSES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong order (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->status, implode(', ', array_keys(self::PRICE_TYPES))));
+		}
+	}
 }

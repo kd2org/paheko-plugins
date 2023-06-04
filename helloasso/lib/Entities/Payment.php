@@ -91,4 +91,12 @@ class Payment extends Entity
 
 		return $data;
 	}
+
+	public function selfCheck(): void
+	{
+		parent::selfCheck();
+		if (!array_key_exists($this->state, self::STATES)) {
+			throw new \UnexpectedValueException(sprintf('Wrong payment (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->state, implode(', ', array_keys(self::STATES))));
+		}
+	}
 }

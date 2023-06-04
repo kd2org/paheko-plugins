@@ -24,12 +24,12 @@ class Chargeable extends Entity
 
 	protected int		$id;
 	protected int		$id_form;
-	protected ?int		$id_item; // ONLY_ONE_ITEM_FORM_TYPE forms/payments have always only one item so we do not care about its value
+	protected ?int		$id_item; // Is the first item to generate the Chargeable, or null when handling ONLY_ONE_ITEM_FORM_TYPE forms/payments
 	protected ?int		$id_credit_account;
 	protected ?int		$id_debit_account;
 	protected int		$type;
 	protected string	$label;
-	protected ?int		$amount;
+	protected ?int		$amount; // When null, handles all amounts. See Chargeables::isMatchingAnyAmount() for null scenarii.
 	protected int		$register_user;
 
 	protected ?string	$_form_name = null;
@@ -59,7 +59,11 @@ class Chargeable extends Entity
 	{
 		parent::selfCheck();
 		if (!array_key_exists($this->type, Chargeable::TYPES)) {
-			throw new \RuntimeException('Invalid Chargeable type: %s. Allowed types are: %s.', $type, implode(', ', array_keys(Chargeable::TYPES)));
+			throw new \RuntimeException(sprintf('Invalid Chargeable type: %s (Chargeable ID: #%d). Allowed types are: %s.', $this->type, $this->id ?? null, implode(', ', array_keys(Chargeable::TYPES))));
 		}
+		if (!in_array($this->register_user, [0, 1])) {
+			throw new \RuntimeException(sprintf('Invalid Chargeable register_user option: %s (Chargeable ID: #%d). Allowed values are: %s.', $this->register_user, $this->id ?? null, implode(', ', [0, 1])));
+		}
+		
 	}
 }
