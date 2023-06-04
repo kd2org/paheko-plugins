@@ -80,8 +80,8 @@ input[name="q"] {
 	margin: 0;
 }
 
-.tabs .pos-tabs li a {
-	border-radius: .5rem;
+.tabs .pos-tabs li:first-child::before, .tabs .pos-tabs li:last-child::after {
+	display: none;
 }
 
 .tabs .pos-tabs {
