@@ -25,6 +25,7 @@ class Item extends Entity implements ChargeableInterface
 	protected ?\stdClass	$custom_fields; // Is a mix between real HelloAsso custom fields and plugin generated infos during sync
 	protected string		$raw_data;
 
+	const DONATION_TYPE =	'Donation';
 	const TYPES = [
 		'Donation'        => 'Don',
 		'Payment'         => 'Paiement',

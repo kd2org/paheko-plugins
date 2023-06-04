@@ -94,7 +94,13 @@ class Items
 		];
 
 		$tables = Item::TABLE . ' i
-			INNER JOIN ' . Chargeable::TABLE . ' c ON (c.id_form = i.id_form AND c.label = i.label AND c.amount = i.amount)
+			INNER JOIN ' . Chargeable::TABLE . ' c ON (
+				c.id_form = i.id_form AND c.label = i.label AND (
+					(c.type = ' . Chargeable::DONATION_ITEM_TYPE . ' AND c.amount IS NULL)
+					OR (i.price_type = ' . Item::PAY_WHAT_YOU_WANT_PRICE_TYPE . ' AND c.amount IS NULL)
+					OR (c.type != ' . Chargeable::DONATION_ITEM_TYPE . ' AND c.amount = i.amount)
+				)
+			)
 			LEFT JOIN ' . User::TABLE . ' u ON (u.id = i.id_user)';
 
 		if ($for instanceof Form) {
@@ -196,7 +202,7 @@ class Items
 		$item->save();
 
 		try {
-			self::handleUserRegistration($data, (int)$item->id_form, $item, Chargeable::TYPE_FROM_FORM[$data->order->formType]);
+			self::handleUserRegistration($data, (int)$item->id_form, $item, self::getItemType($item, $data));
 		}
 		catch (SyncException $e) { self::catchSyncException($e); }
 		
@@ -290,9 +296,9 @@ class Items
 		{
 			if ($item->amount) {
 				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
-					self::accountChargeable((int)$item->id_form, $item, Chargeable::TYPE_FROM_FORM[$data->order->formType], (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+					self::accountChargeable((int)$item->id_form, $item, self::getItemType($item, $data), (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 				}
-				else
+				else // Checkout case
 				{
 					if (!$payment = Payments::get((int)$data->payments[0]->id)) {
 						throw new \RuntimeException(sprintf('Payment #%d matching checkout item #%d not found.', $data->payments[0]->id, $item->id));
@@ -397,7 +403,7 @@ class Items
 
 	static protected function getChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
-		$amount = ((($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE)) ? null : $entity->getAmount());
+		$amount = ((($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($type === Chargeable::DONATION_ITEM_TYPE) || ($entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE)) ? null : $entity->getAmount());
 		if ($chargeable = Chargeables::get($id_form, $type, $entity->getLabel(), $amount)) {
 			return $chargeable;
 		}
@@ -497,6 +503,14 @@ class Items
 			throw new \RuntimeException(sprintf('Cannot record item/option transaction. Item/option ID: %d.', $entity->id));
 		}
 		return $transaction;
+	}
+
+	static protected function getItemType(Item $item, \stdClass $data): int
+	{
+		$type = Chargeable::TYPE_FROM_FORM[$data->order->formType];
+		if ($type === Chargeable::ITEM_TYPE && $item->type === Item::DONATION_TYPE)
+			return Chargeable::DONATION_ITEM_TYPE;
+		return $type;
 	}
 
 	static protected function generateLabel(\stdClass $data, int $id_form): string

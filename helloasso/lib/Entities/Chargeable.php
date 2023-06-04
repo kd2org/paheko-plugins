@@ -9,9 +9,10 @@ class Chargeable extends Entity
 	const TABLE = 'plugin_helloasso_chargeables';
 	const ITEM_TYPE = 1;
 	const OPTION_TYPE = 2;
-	const ONLY_ONE_ITEM_FORM_TYPE = 3;
-	const CHECKOUT_TYPE = 4;
-	const TYPES = [ self::ITEM_TYPE => 'Item', self::OPTION_TYPE => 'Option', self::ONLY_ONE_ITEM_FORM_TYPE => 'Don/Vente', self::CHECKOUT_TYPE => 'Checkout' ];
+	const DONATION_ITEM_TYPE = 3;
+	const ONLY_ONE_ITEM_FORM_TYPE = 4;
+	const CHECKOUT_TYPE = 5;
+	const TYPES = [ self::ITEM_TYPE => 'Item', self::OPTION_TYPE => 'Option', self::DONATION_ITEM_TYPE => 'Don', self::ONLY_ONE_ITEM_FORM_TYPE => 'Don/Vente', self::CHECKOUT_TYPE => 'Checkout' ];
 	const TYPE_FROM_FORM = [
 		'Donation' => self::ONLY_ONE_ITEM_FORM_TYPE,
 		'PaymentForm' => self::ONLY_ONE_ITEM_FORM_TYPE,

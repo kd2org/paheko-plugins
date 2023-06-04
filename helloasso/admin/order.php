@@ -6,6 +6,7 @@ use Garradin\Plugin\HelloAsso\Orders;
 use Garradin\Plugin\HelloAsso\Payments;
 use Garradin\Plugin\HelloAsso\Items;
 use Garradin\Plugin\HelloAsso\Options;
+use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\HelloAsso as HA;
 
 use KD2\DB\EntityManager as EM;
@@ -15,6 +16,7 @@ use Garradin\Entities\Users\User;
 require __DIR__ . '/_inc.php';
 
 $order = Orders::get((int)qg('id'));
+$form = EM::findOneById(Form::class, (int)$order->id_form);
 
 if (!$order) {
 	throw new UserException('Commande inconnue');
@@ -33,6 +35,7 @@ $found_user = $mapped_user = [];
 
 $user_match_field_label = (int)$plugin->getConfig()->user_match_type;
 
-$tpl->assign(compact('order', 'user', 'payments', 'items', 'options', 'payer_infos', 'found_user', 'mapped_user', 'user_match_field_label'));
+$tpl->assign('current_sub', 'orders');
+$tpl->assign(compact('order', 'form', 'user', 'payments', 'items', 'options', 'payer_infos', 'found_user', 'mapped_user', 'user_match_field_label'));
 
 $tpl->display(PLUGIN_ROOT . '/templates/order.tpl');
