@@ -14,6 +14,7 @@ class Option extends Entity implements ChargeableInterface
 	protected int			$id_order; // Redundant but needed by DynamicList since it does not handle JOIN statement
 	protected ?int			$id_user;
 	protected ?int			$id_transaction;
+	protected int			$price_type;
 	protected string		$label;
 	protected int			$amount;
 	protected ?\stdClass	$custom_fields;
@@ -32,6 +33,11 @@ class Option extends Entity implements ChargeableInterface
 	public function getAmount(): ?int
 	{
 		return $this->amount;
+	}
+
+	public function getPriceType(): ?int
+	{
+		return $this->price_type;
 	}
 
 	public function setUserId(?int $id): void

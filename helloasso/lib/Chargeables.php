@@ -196,7 +196,7 @@ class Chargeables
 		$chargeable->set('id_form', $id_form);
 		$chargeable->set('id_item', $entity->getItemId());
 		$chargeable->set('label', $entity->getLabel());
-		$chargeable->set('amount', ($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE ? null : $entity->getAmount()));
+		$chargeable->set('amount', ((($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE)) ? null : $entity->getAmount()));
 		$chargeable->set('register_user', 0);
 		$chargeable->save();
 		return $chargeable;

@@ -4,6 +4,7 @@ namespace Garradin\Plugin\HelloAsso\Entities;
 
 use Garradin\Entity;
 use Garradin\Plugin\HelloAsso\ChargeableInterface;
+use Garradin\Plugin\HelloAsso\API;
 
 class Item extends Entity implements ChargeableInterface
 {
@@ -16,11 +17,11 @@ class Item extends Entity implements ChargeableInterface
 	protected ?int			$id_transaction;
 	protected string		$type;
 	protected string		$state;
+	protected int			$price_type;
 	protected string		$label;
 	protected string		$person;
 	protected int			$amount;
 	protected int			$has_options;
-	/*protected ?string $custom_fields;*/
 	protected ?\stdClass	$custom_fields; // Is a mix between real HelloAsso custom fields and plugin generated infos during sync
 	protected string		$raw_data;
 
@@ -46,7 +47,21 @@ class Item extends Entity implements ChargeableInterface
 		'Canceled'   => 'Annulé',
 		'Contested'  => 'Contesté',
 	];
-	
+	const FIXED_PRICE_TYPE = 0;
+	const FREE_PRICE_TYPE = 1;
+	const PAY_WHAT_YOU_WANT_PRICE_TYPE = 2;
+	const PRICE_TYPES = [
+		self::FIXED_PRICE_TYPE => 'Montant fixe',
+		self::PAY_WHAT_YOU_WANT_PRICE_TYPE => 'Prix libre',
+		self::FREE_PRICE_TYPE => 'Gratuit'
+	];
+
+	const API_PRICE_CATEGORIES = [
+		API::FIXED_PRICE_CATEGORY => self::FIXED_PRICE_TYPE,
+		API::FREE_PRICE_CATEGORY => self::FREE_PRICE_TYPE,
+		API::PAY_WHAT_YOU_WANT_PRICE_CATEGORY => self::PAY_WHAT_YOU_WANT_PRICE_TYPE
+	];
+
 	public function getItemId(): ?int
 	{
 		return $this->id;
@@ -60,6 +75,11 @@ class Item extends Entity implements ChargeableInterface
 	public function getAmount(): ?int
 	{
 		return $this->amount;
+	}
+
+	public function getPriceType(): ?int
+	{
+		return $this->price_type;
 	}
 
 	public function setUserId(?int $id): void

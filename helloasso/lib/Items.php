@@ -232,6 +232,7 @@ class Items
 
 		$item->set('amount', $data->amount);
 		$item->set('state', $data->state);
+		$item->set('price_type', Item::API_PRICE_CATEGORIES[$data->priceCategory]);
 		$item->set('type', $data->type);
 		$item->set('person', $data->beneficiary_label ?? $data->payer_name);
 		$item->set('label', self::generateLabel($data, (int)$item->id_form));
@@ -267,6 +268,7 @@ class Items
 			$option->set('id_item', (int)$full_data->id);
 			$option->set('id_order', (int)$full_data->order_id);
 		}
+		$option->set('price_type', Item::API_PRICE_CATEGORIES[$full_data->priceCategory]);
 		$option->set('amount', $data->amount);
 		$option->set('label', $data->name ?? Forms::getName($id_form));
 		$option->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
@@ -395,7 +397,7 @@ class Items
 
 	static protected function getChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
-		$amount = ($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE ? null : $entity->getAmount());
+		$amount = ((($type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE)) ? null : $entity->getAmount());
 		if ($chargeable = Chargeables::get($id_form, $type, $entity->getLabel(), $amount)) {
 			return $chargeable;
 		}

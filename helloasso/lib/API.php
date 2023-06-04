@@ -25,6 +25,9 @@ class API
 		'dateOfBirth' => 'Date de naissance',
 		'company' => 'Association/entreprise'
 	];
+	const FIXED_PRICE_CATEGORY = 'Fixed';
+	const PAY_WHAT_YOU_WANT_PRICE_CATEGORY = 'Pwyw';
+	const FREE_PRICE_CATEGORY = 'Free';
 
 	protected $ha;
 	protected $oauth;
