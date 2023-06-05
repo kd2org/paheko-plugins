@@ -3,27 +3,34 @@
 namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Option;
+use Garradin\Plugin\HelloAsso\Entities\Item;
+use Garradin\Plugin\HelloAsso\Entities\Order;
 use Garradin\DynamicList;
 use Garradin\Entities\Users\User;
 
 class Options
 {
-	static public function list($for): DynamicList
+	static public function list(Order $order): DynamicList
 	{
 		$columns = [
 			'id' => [
 				'select' => 'o.id'
 			],
 			'id_transaction' => [
-				'label' => 'Écriture'
+				'label' => 'Écriture',
+				'select' => 'o.id_transaction'
 			],
 			'amount' => [
 				'label' => 'Montant',
+				'select' => 'o.amount'
 			],
 			'label' => [
 				'label' => 'Objet',
+				'select' => 'o.label'
 			],
-			'id_user' => [],
+			'id_user' => [
+				'select' => 'o.id_user'
+			],
 			'user_numero' => [
 				'select' => 'u.numero'
 			],
@@ -33,17 +40,17 @@ class Options
 			],
 			'custom_fields' => [
 				'label' => 'Champs',
+				'select' => 'o.custom_fields'
 			]
 		];
 
 		$tables = Option::TABLE . ' o
+			INNER JOIN ' . Item::TABLE . ' i ON (i.id = o.id_item)
+			INNER JOIN ' . Order::TABLE . ' ord ON (ord.id = i.id_order AND ord.id = ' . (int)$order->id . ')
 			LEFT JOIN  ' . User::TABLE . ' u ON (u.id = o.id_user)';
 
 		$list = new DynamicList($columns, $tables);
-
-		$conditions = sprintf('id_order = %d', $for->id);
-		$list->setConditions($conditions);
-		$list->setTitle(sprintf('Commande - %d - Items', $for->id));
+		$list->setTitle(sprintf('Commande - %d - Articles', $order->id));
 
 		$list->setModifier(function ($row) {
 			if (isset($row->custom_fields)) {

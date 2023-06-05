@@ -12,7 +12,6 @@ class Option extends Entity implements ChargeableInterface
 
 	protected int			$id;
 	protected int			$id_item;
-	protected int			$id_order; // Redundant but needed by DynamicList since it does not handle JOIN statement
 	protected ?int			$id_user;
 	protected ?int			$id_transaction;
 	protected int			$price_type;

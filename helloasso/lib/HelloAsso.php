@@ -4,7 +4,6 @@ namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Config;
 use Garradin\DB;
-use Garradin\Users\DynamicFields;
 use Garradin\Entities\Plugin;
 use Garradin\Entities\Users\User;
 use Garradin\Entities\Payments\Payment;
@@ -16,37 +15,21 @@ use function Garradin\garradin_contributor_license;
 
 class HelloAsso
 {
-	const NAME = 'helloasso';
-	const PROVIDER_NAME = self::NAME;
-	const PROVIDER_LABEL = 'HelloAsso';
-	const ACCOUNTING_ENABLED = 1;
-	const CHART_ID = 1; // ToDo: make it dynamic
-	const PAYMENT_EXPIRATION = '2 days';
-	const CHECKOUT_LINK_EXPIRATION = '15 minutes';
-	const CHECKOUT_CREATION_LOG_LABEL = 'Tunnel de paiement ' . self::PROVIDER_LABEL . ' n°%d créé.';
-	const PAYMENT_RESUMING_LOG_LABEL = 'Reprise du paiement.';
-	const LOG_FILE = __DIR__ . '/../logs';
-	const REDIRECTION_FILE = 'payer.php';
-	const PER_PAGE = 100;
-
-	const MERGE_NAMES_FIRST_LAST = 0;
-	const MERGE_NAMES_LAST_FIRST = 1;
-
-	const MERGE_NAMES_OPTIONS = [
-		self::MERGE_NAMES_LAST_FIRST => 'Nom Prénom',
-		self::MERGE_NAMES_FIRST_LAST => 'Prénom Nom'
-	];
-
-	const USER_MATCH_NAME = 0;
-	const USER_MATCH_EMAIL = 1;
-	const USER_MATCH_TYPES = [ self::USER_MATCH_NAME => 'Nom et prénom', self::USER_MATCH_EMAIL => 'Courriel' ];
+	const NAME							= 'helloasso';
+	const PROVIDER_NAME					= self::NAME;
+	const PROVIDER_LABEL				= 'HelloAsso';
+	const ACCOUNTING_ENABLED			= 1;
+	const CHART_ID						= 1; // ToDo: make it dynamic
+	const PAYMENT_EXPIRATION			= '2 days';
+	const CHECKOUT_LINK_EXPIRATION		= '15 minutes';
+	const CHECKOUT_CREATION_LOG_LABEL	= 'Tunnel de paiement ' . self::PROVIDER_LABEL . ' n°%d créé.';
+	const PAYMENT_RESUMING_LOG_LABEL	= 'Reprise du paiement.';
+	const LOG_FILE						= __DIR__ . '/../logs';
+	const REDIRECTION_FILE				= 'payer.php';
+	const PER_PAGE						= 100;
 
 	protected				$plugin;
 	protected ?\stdClass	$config;
-
-	static protected ?array	$_userMatchField = null;
-	static protected int	$_mergeNamesOption;
-	static protected array	$_existingUsersCache = [];
 
 	static protected		$_instance;
 
@@ -298,80 +281,7 @@ class HelloAsso
 	{
 		return EM::getInstance(Target::class, 'SELECT * FROM @TABLE ORDER BY label;');
 	}
-
-
-	public function findUserForPayment(\stdClass $payer)
-	{
-		$map = $this->config->map_user_fields;
-		$where = '';
-		$params = [];
-
-		if ($this->config->match_email_field) {
-			$where = sprintf('%s = ? COLLATE NOCASE', $map->email);
-			$params[] = $payer->email;
-		}
-		else {
-			// In case we merge first and last names
-			if ($map->firstName == $map->lastName) {
-				$where = sprintf('%s = ? COLLATE NOCASE', $map->firstName);
-
-				if ($this->config->merge_names == self::MERGE_NAMES_FIRST_LAST) {
-					$params[] = $payer->firstName . ' ' . $payer->lastName;
-				}
-				else {
-					$params[] = $payer->lastName . ' ' . $payer->firstName;
-				}
-			}
-			else {
-				$where = sprintf('%s = ? AND %s = ?', $map->firstName, $map->lastName);
-				$params[] = $payer->firstName;
-				$params[] = $payer->lastName;
-			}
-		}
-
-		$user_identity = Config::getInstance()->get('champ_identite');
-
-		$sql = sprintf('SELECT id, %s AS identity FROM membres WHERE %s;', $user_identity, $where);
-
-		return DB::getInstance()->first($sql, ...$params);
-	}
-
-	public function getMappedUser(\stdClass $payer): array
-	{
-		$out = [];
-		$map = $this->config->map_user_fields;
-
-		foreach ($map as $key => $target) {
-			if (!$target) {
-				continue;
-			}
-
-			if (!isset($payer->$key)) {
-				continue;
-			}
-
-			$value = $payer->$key;
-
-			if ($key == 'country') {
-				$value = substr($value, 0, 2);
-			}
-
-			$out[$target] = $value;
-		}
-
-		if ($map->firstName && $map->firstName == $map->lastName) {
-			if ($this->config->merge_names == self::MERGE_NAMES_FIRST_LAST) {
-				$out[$map->firstName] = $payer->firstName . ' ' . $payer->lastName;
-			}
-			else {
-				$out[$map->firstName] = $payer->lastName . ' ' . $payer->firstName;
-			}
-		}
-
-		return $out;
-	}
 */
-
 	static public function log(string $message): void
 	{
 		file_put_contents(self::LOG_FILE, $message, FILE_APPEND);
@@ -406,58 +316,5 @@ class HelloAsso
 		else {
 			return false;
 		}
-	}
-
-	static public function guessUserIdentifier(\stdClass $source): ?string
-	{
-		if (self::getUserMatchField()[1] === 'name') {
-			return self::guessUserName($source);
-		}
-		if (isset($source->email))
-			return $source->email;
-
-		return $source->{self::getUserMatchField()[2]} ?? null;
-	}
-
-	static public function guessUserName(\stdClass $source): string
-	{
-		if (self::getInstance()->plugin()->getConfig()->payer_map->name === HelloAsso::MERGE_NAMES_FIRST_LAST) {
-			return $source->firstName . ' ' . $source->lastName;
-		}
-		return $source->lastName . ' ' . $source->firstName;
-	}
-
-	static public function userAlreadyExists(string $identifier): bool
-	{
-		return (bool)self::getUserId($identifier);
-	}
-
-	static public function getUserId(string $identifier): ?int
-	{
-		if (array_key_exists($identifier, self::$_existingUsersCache)) {
-			return self::$_existingUsersCache[$identifier];
-		}
-		$id_user = EntityManager::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', self::getUserMatchField()[0]), $identifier);
-		self::$_existingUsersCache[$identifier] = (false === $id_user) ? null : $id_user;
-
-		return self::$_existingUsersCache[$identifier];
-	}
-
-	static public function addUserToCache(string $identifier, int $id_user): void
-	{
-		self::$_existingUsersCache[$identifier] = $id_user;
-	}
-
-	static public function getUserMatchField(): array
-	{
-		if (null === self::$_userMatchField) {
-			if (self::getInstance()->plugin()->getConfig()->user_match_type === self::USER_MATCH_NAME) {
-				self::$_userMatchField = [ DynamicFields::getFirstNameField(), 'name', null ];
-			}
-			else {
-				self::$_userMatchField = [ DynamicFields::getFirstEmailField(), 'email', self::getInstance()->plugin()->getConfig()->user_match_field ];
-			}
-		}
-		return self::$_userMatchField;
 	}
 }

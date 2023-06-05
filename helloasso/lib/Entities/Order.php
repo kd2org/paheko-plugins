@@ -6,7 +6,10 @@ use Garradin\DB;
 use Garradin\Entity;
 use Garradin\ValidationException;
 
-use DateTime;
+use Garradin\UserException;
+use Garradin\Plugin\HelloAsso\NotFoundException;
+use Garradin\Plugin\HelloAsso\Users;
+use Garradin\Plugin\HelloAsso\Payments;
 
 use KD2\DB\EntityManager as EM;
 
@@ -14,15 +17,15 @@ class Order extends Entity
 {
 	const TABLE = 'plugin_helloasso_orders';
 
-	protected int $id;
-	protected int $id_form;
-	protected ?int $id_user;
-	protected ?int $id_transaction;
-	protected \DateTime $date;
-	protected string $person;
-	protected int $amount;
-	protected int $status;
-	protected string $raw_data;
+	protected int		$id;
+	protected int		$id_form;
+	protected ?int		$id_user; // The user linked to the order. Is the payer only if the payer is the same person as the beneficiary.
+	protected ?int		$id_transaction;
+	protected \DateTime	$date;
+	protected string	$person;
+	protected int		$amount;
+	protected int		$status;
+	protected string	$raw_data;
 
 	const STATUS_PAID = 1;
 	const STATUS_WAITING = 0;
@@ -47,15 +50,42 @@ class Order extends Entity
 		return $paid >= $total ? self::STATUS_PAID : self::STATUS_WAITING;
 	}
 
-	public function getPayerInfos(): array
+	public function getRawPayerInfos(): array
 	{
 		$data = json_decode($this->raw_data);
 		return $data ? Payment::formatPersonInfos($data->payer) : [];
 	}
 
+	public function getRawPayer(): ?\stdClass
+	{
+		$data = json_decode($this->raw_data);
+		return $data->payer ?? null;
+	}
+
 	public function listItems(): array
 	{
 		return EM::getInstance(Item::class)->all('SELECT * FROM @TABLE WHERE id_order = ? ORDER BY id DESC;', $this->id());
+	}
+
+	public function registerRawPayer(): void
+	{
+		$raw_payer = $this->getRawPayer();
+		if (!$user = Users::findUserMatchingPayer($raw_payer)) {
+			try {
+				$user = Users::getMappedUser($raw_payer);
+			}
+			catch (NotFoundException $e) {
+				throw new UserException('Catégorie de membre invalide ou non-définit dans la configuration de l\'extension.');
+			}
+			$user->save();
+		}
+		$this->set('id_user', (int)$user->id);
+		$this->save();
+		if (!$payment = Payments::getByOrderId((int)$this->id)) {
+			throw new \RuntimeException(sprintf('No payment found for order #%d while trying to create its payer User.', $this->id));
+		}
+		$payment->set('id_author', (int)$user->id);
+		$payment->save();
 	}
 
 	public function createTransaction(Target $target): Transaction
@@ -80,7 +110,7 @@ class Order extends Entity
 		$transaction->id_year = $target->id_year;
 
 		$transaction->date = $this->date;
-		$transaction->label = 'Commande HelloAsso n°' . $this->id();
+		$transaction->label = 'Commande ' . HelloAsso::PROVIDER_LABEL . ' n°' . $this->id();
 		$transaction->reference = $this->id;
 
 		foreach ($this->listItems() as $item) {

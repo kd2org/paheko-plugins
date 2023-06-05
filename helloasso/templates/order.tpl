@@ -2,6 +2,12 @@
 
 {include file="./_menu.tpl" current="home"}
 
+{if isset($_GET.ok)}
+	<p class="confirm block">
+		Payeur/euse inscrit·e avec succès.
+	</p>
+{/if}
+
 <h2 class="ruler">Informations de la commande</h2>
 
 <dl class="describe">
@@ -42,24 +48,30 @@
 		{/if}
 	</dd>
 	{/foreach}
+	{if $user && $user->nom === \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
+		<dt>Membre correspondant·e</dt>
+		<dd class="num">{$user->nom} <a href="{$admin_url}users/details.php?id={$user->id|intval}">{$user->numero}</a></dd>
+	{elseif $guessed_user}
+		<dt>Membre correspondant·e</dt>
+		<dd class="num">{$guessed_user->nom} <a href="{$admin_url}users/details.php?id={$guessed_user->id|intval}">{$guessed_user->numero}</a></dd>
+	{/if}
 </dl>
 
-{*
-{if $found_user}
-<p class="block confirm">
-	Membre correspondant trouvé : <a href="{$admin_url}users/details.php?id={$found_user.id}">{$found_user.identity}</a>
-</p>
-{else}
-<form method="post" action="{$admin_url}users/new.php">
-<p class="alert block">
-	Aucun membre correspondant n'a été trouvé.<br />
-	{foreach from=$mapped_user key="key" item="value"}
-	<input type="hidden" name="{$key}" value="{$value}" />
-	{/foreach}
-	{button type="submit" shape="plus" label="Créer un membre avec ces informations"}
-</p>
-</form>
+{if !$user || $user->nom !== \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
+	<form method="post" action="{$self_url}">
+		{csrf_field key=$csrf_key}
+		{if $guessed_user}
+			<p class="block confirm">
+				Membre correspondant·e trouvé·e : <a href="{$admin_url}users/details.php?id={$guessed_user.id}">{$guessed_user.nom}</a>
+				{button type="submit" name="create_payer" shape="check" label="Confirmer la correspondance"}
+			</p>
+		{else}
+			<p class="alert block">
+				Aucun·e membre correspondant·e n'a été trouvé·e.<br />
+				{button type="submit" name="create_payer" shape="plus" label="Créer un·e membre avec ces informations"}
+			</p>
+		{/if}
+	</form>
 {/if}
-*}
 
 {include file="_foot.tpl"}

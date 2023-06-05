@@ -44,7 +44,7 @@
 							{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::CHECKOUT_TYPE}
 								{$chargeable->label}
 							{elseif $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
-								{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE}Option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE} de "{$chargeable->getItem_name()}"{/if}
+								{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE}Option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE && $chargeable->id_item} de "{$chargeable->getItem_name()}"{/if}
 							{/if}
 						</legend>
 						<dl>

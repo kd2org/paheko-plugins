@@ -45,8 +45,6 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_items (
 CREATE TABLE IF NOT EXISTS plugin_helloasso_item_options (
 	id INTEGER PRIMARY KEY NOT NULL,
 	id_item INTEGER NOT NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
-	-- Redundant but needed by DynamicList since it does not handle JOIN statement
-	id_order INTEGER NOT NULL REFERENCES plugin_helloasso_items(id) ON DELETE CASCADE,
 	id_user INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
 	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
 	price_type UNSIGNED INT NOT NULL,
@@ -70,34 +68,6 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeables (
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_chargeables_key ON plugin_helloasso_chargeables(id_form, id_item, type, label, amount);
 CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_get ON plugin_helloasso_chargeables(id_form, label, amount);
-
-/*
-CREATE TABLE IF NOT EXISTS plugin_helloasso_options (
-	id INTEGER PRIMARY KEY NOT NULL,
-	id_order INTEGER NOT NULL REFERENCES plugin_helloasso_orders(id) ON DELETE CASCADE,
-	hash TEXT NOT NULL,
-	label TEXT NOT NULL,
-	amount INTEGER NOT NULL,
-	raw_data TEXT NOT NULL
-);
-*/
-
-/* Replaced by the new Paheko native "payment" table
-CREATE TABLE IF NOT EXISTS plugin_helloasso_payments (
-	id INTEGER PRIMARY KEY NOT NULL,
-	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
-	id_order INTEGER NOT NULL REFERENCES plugin_helloasso_orders(id) ON DELETE CASCADE,
-	id_user INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
-	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
-	amount INTEGER NOT NULL,
-	state TEXT NOT NULL,
-	transfer_date TEXT NULL,
-	person TEXT NULL,
-	date TEXT NOT NULL,
-	receipt_url TEXT NULL,
-	raw_data TEXT NOT NULL
-);
-*/
 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_targets (
 -- List of forms that should create users or subscriptions

@@ -18,7 +18,6 @@ use Garradin\Utils;
 use Garradin\Entities\Accounting\Transaction;
 use Garradin\Accounting\Years;
 use Garradin\Users\DynamicFields;
-use Garradin\Users\Users;
 use Garradin\Entities\Users\User;
 use Garradin\Plugin\HelloAsso\Payments;
 
@@ -112,12 +111,12 @@ class Items
 		if ($for instanceof Form) {
 			$conditions = sprintf('id_form = %d', $for->id);
 			$list->setConditions($conditions);
-			$list->setTitle(sprintf('%s - Items', $for->name));
+			$list->setTitle(sprintf('%s - Articles', $for->name));
 		}
 		elseif ($for instanceof Order) {
 			$conditions = sprintf('id_order = %d', $for->id);
 			$list->setConditions($conditions);
-			$list->setTitle(sprintf('Commande - %d - Items', $for->id));
+			$list->setTitle(sprintf('Commande - %d - Articles', $for->id));
 		}
 
 		$list->setModifier(function ($row) {
@@ -248,8 +247,8 @@ class Items
 		$item->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
 		$item->set('has_options', (int)isset($data->options));
 
-		$identifier = HA::guessUserIdentifier($data->beneficiary);
-		if ($identifier && ($id_user = HA::getUserId($identifier))) {
+		$identifier = Users::guessUserIdentifier($data->beneficiary);
+		if ($identifier && ($id_user = Users::getUserId($identifier))) {
 			$item->set('id_user', $id_user);
 		}
 	}
@@ -275,14 +274,13 @@ class Items
 		
 		if (!$option->exists()) {
 			$option->set('id_item', (int)$full_data->id);
-			$option->set('id_order', (int)$full_data->order_id);
 		}
 		$option->set('price_type', Item::API_PRICE_CATEGORIES[$full_data->priceCategory]);
 		$option->set('amount', $data->amount);
 		$option->set('label', $data->name ?? Forms::getName($id_form));
 		$option->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
-		$identifier = HA::guessUserIdentifier($full_data->beneficiary);
-		if ($identifier && ($id_user = HA::getUserId($identifier))) {
+		$identifier = Users::guessUserIdentifier($full_data->beneficiary);
+		if ($identifier && ($id_user = Users::getUserId($identifier))) {
 			$option->set('id_user', $id_user);
 		}
 		$option->save();
@@ -330,22 +328,23 @@ class Items
 		if (!$chargeable->register_user) {
 			return null;
 		}
-		if (!$identifier = HA::guessUserIdentifier($data->beneficiary)) {
+		if (!$identifier = Users::guessUserIdentifier($data->beneficiary)) {
 			throw new NoFuturIDSyncException(sprintf(
-				'Commande n°%s : Impossible d\'inscrire le membre "%s". Aucun %s à lui associer comme identifiant.' . "\n" . 'Informations reçues de HelloAsso :' . "\n" . '%s',
+				'Commande n°%s : Impossible d\'inscrire le membre "%s". Aucun %s à lui associer comme identifiant.' . "\n" . 'Informations reçues de %s :' . "\n" . '%s',
 				$data->order_id,
 				$data->beneficiary_label,
-				HA::USER_MATCH_TYPES[HA::getInstance()->plugin()->getConfig()->user_match_type],
+				Users::USER_MATCH_TYPES[HA::getInstance()->plugin()->getConfig()->user_match_type],
+				HA::PROVIDER_LABEL,
 				json_encode($data->beneficiary, JSON_UNESCAPED_UNICODE)
 			));
 		}
-		if (HA::userAlreadyExists($identifier)) {
+		if (Users::userAlreadyExists($identifier)) {
 			return true;
 		}
 
 		$source = [
 			'id_parent' => null,
-			self::$_nameField => HA::guessUserName($data->beneficiary),
+			self::$_nameField => Users::guessUserName($data->beneficiary),
 			'date_inscription' => new \DateTime($data->order->date)
 		];
 
@@ -353,7 +352,7 @@ class Items
 			if (isset($data->beneficiary->$api_field))
 				$source[$user_field] = $data->beneficiary->$api_field;
 		}
-		$user_match_field = HA::getUserMatchField();
+		$user_match_field = Users::getUserMatchField();
 
 		// The user match field may not exist (aka. not filled during the HelloAsso checkout) when the payer is also the beneficiary
 		if (isset($data->beneficiary->{$user_match_field[2]})) {
@@ -378,7 +377,7 @@ class Items
 
 		if (!$conflict)
 		{
-			$user = Users::create();
+			$user = \Garradin\Users\Users::create();
 			$user->importForm($source);
 			$user->set('id_category', (int)HA::getInstance()->plugin()->getConfig()->id_category);
 			$user->setNumberIfEmpty();
@@ -388,12 +387,12 @@ class Items
 
 		if (!$conflict)
 		{
-			HA::addUserToCache(HA::guessUserIdentifier($data->beneficiary), $id_user);
+			Users::addUserToCache(Users::guessUserIdentifier($data->beneficiary), $id_user);
 			
 			$entity->setUserId($id_user);
 			$entity->save();
 
-			$order = EM::findOneById(Order::class, (int)$entity->id_order);
+			$order = EM::findOneById(Order::class, (int)$data->order_id);
 			$order->set('id_user', (int)$id_user);
 			$order->save();
 

@@ -108,7 +108,7 @@ class Orders
 			$entity->set('id_form', Forms::getId($data->org_slug, $data->form_slug));
 		}
 
-		$entity->set('id_user', HA::getUserId(HA::guessUserIdentifier($data->payer))); // The user may subscribe by himself/herself a long time after his/her order
+		$entity->set('id_user', Users::getUserId(Users::guessUserIdentifier($data->payer))); // The user may subscribe by himself/herself a long time after his/her order
 		$entity->set('amount', $data->amount);
 		$entity->set('status', $data->status);
 		$entity->set('date', $data->date);
