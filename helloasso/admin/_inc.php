@@ -4,10 +4,10 @@ namespace Garradin;
 
 use Garradin\Plugin\HelloAsso\HelloAsso;
 
-$session->requireAccess($session::SECTION_USERS, $session::ACCESS_WRITE);
+$session->requireAccess($session::SECTION_ACCOUNTING, $session::ACCESS_READ);
 
 $ha = HelloAsso::getInstance();
 
 if (!$ha->isConfigured()) {
-	Utils::redirect(PLUGIN_ADMIN_URL . 'config_client.php');
+	Utils::redirect(PLUGIN_ADMIN_URL . 'config.php');
 }

@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeables (
 	type INTEGER NOT NULL,
 	label TEXT NOT NULL,
 	amount INTEGER NULL,
-	register_user UNSIGNED INTEGER NOT NULL
+	register_user UNSIGNED INTEGER NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_chargeables_key ON plugin_helloasso_chargeables(id_form, id_item, type, label, amount);

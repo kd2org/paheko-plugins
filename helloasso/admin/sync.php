@@ -4,6 +4,8 @@ namespace Garradin;
 
 require __DIR__ . '/_inc.php';
 
+$session->requireAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE);
+
 use KD2\DB\EntityManager as EM;
 use Garradin\Entities\Accounting\Account;
 
@@ -28,7 +30,7 @@ $default_da = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_debi
 $tpl->assign([
 	'last_sync' => $ha->getLastSync(),
 	'csrf_key' => $csrf_key,
-	'chargeables' => Chargeables::allForDisplay(),
+	'chargeables' => Chargeables::allForDisplay((bool)$plugin->getConfig()->accounting),
 	'chargeableTypes' => Chargeable::TYPES,
 	'chart_id' => Plugin\HelloAsso\HelloAsso::CHART_ID, // ToDo: make it dynamic
 	'default_credit_account' => (null !== $default_ca) ? [ $default_ca->id => $default_ca->code . ' — ' . $default_ca->label ] : null,
@@ -36,6 +38,7 @@ $tpl->assign([
 ]);
 
 $form->runIf('accounts_submit', function() use ($ha) {
+
 	if (array_key_exists('chargeable_credit', $_POST)) {
 		$source = [];
 		foreach ($_POST['chargeable_credit'] as $id_item => $array)
@@ -51,10 +54,25 @@ $form->runIf('accounts_submit', function() use ($ha) {
 		}
 		Chargeables::setAccounts($source);
 	}
-	if (array_key_exists('register_user', $_POST)) {
-		Chargeables::setUserRegistrators(array_keys($_POST['register_user']));
+
+	$registrators = $to_remove_from_registrators = [];
+	foreach (array_keys($_POST['ids']) as $id) {
+		if (isset($_POST['register_user'][$id])) {
+			$registrators[] = (int)$id;
+		}
+		else {
+			$to_remove_from_registrators[] = (int)$id;
+		}
 	}
+	if ($registrators) {
+		Chargeables::setUserRegistrators($registrators);
+	}
+	if ($to_remove_from_registrators) {
+		Chargeables::unsetUserRegistrators($to_remove_from_registrators);
+	}
+
 	$ha->sync();
+
 }, null, PLUGIN_ADMIN_URL . 'sync.php?ok=1');
 
 $tpl->display(PLUGIN_ROOT . '/templates/sync.tpl');

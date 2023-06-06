@@ -275,7 +275,7 @@ class Items
 		if (!$option->exists()) {
 			$option->set('id_item', (int)$full_data->id);
 		}
-		$option->set('price_type', Item::API_PRICE_CATEGORIES[$full_data->priceCategory]);
+		$option->set('price_type', Item::API_PRICE_CATEGORIES[$data->priceCategory]);
 		$option->set('amount', $data->amount);
 		$option->set('label', $data->name ?? Forms::getName($id_form));
 		$option->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
@@ -285,7 +285,8 @@ class Items
 		}
 		$option->save();
 
-		self::handleUserRegistration($full_data, $id_form, $option, Chargeable::OPTION_TYPE);
+		$type = $option->price_type === Item::FREE_PRICE_TYPE ? Chargeable::FREE_TYPE : Chargeable::OPTION_TYPE;
+		self::handleUserRegistration($full_data, $id_form, $option, $type);
 
 		return $option;
 	}
@@ -295,7 +296,7 @@ class Items
 		// Creating a transaction only if payment is unique and already done (not pending) and accounts sets
 		if ($accounting && !$item->id_transaction && (count($data->payments) === 1 && $data->payments[0]->state === Payments::AUTHORIZED_STATUS))
 		{
-			if ($item->amount) {
+			if ($item->amount && $item->price_type !== Item::FREE_PRICE_TYPE) {
 				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
 					self::accountChargeable((int)$item->id_form, $item, self::getChargeableType($item, $data), (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 				}
@@ -316,7 +317,9 @@ class Items
 			}
 			if (isset($data->options)) {
 				foreach ($optionEntities as $option) {
-					self::accountChargeable((int)$item->id_form, $option, Chargeable::OPTION_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+					if ($option->amount && $option->price_type !== Item::FREE_PRICE_TYPE) {
+						self::accountChargeable((int)$item->id_form, $option, Chargeable::OPTION_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+					}
 				}
 			}
 		}
@@ -505,10 +508,13 @@ class Items
 		return $transaction;
 	}
 
-	static protected function getChargeableType(Item $item, \stdClass $data): int
+	static protected function getChargeableType(ChargeableInterface $entity, \stdClass $data): int
 	{
+		if ($entity->price_type === Item::FREE_PRICE_TYPE) {
+			return Chargeable::FREE_TYPE;
+		}
 		$type = Chargeable::TYPE_FROM_FORM[$data->order->formType];
-		if ($type === Chargeable::ITEM_TYPE && $item->type === Item::DONATION_TYPE)
+		if ($type === Chargeable::ITEM_TYPE && $entity->type === Item::DONATION_TYPE)
 			return Chargeable::DONATION_ITEM_TYPE;
 		return $type;
 	}

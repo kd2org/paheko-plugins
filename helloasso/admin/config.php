@@ -4,6 +4,7 @@ namespace Garradin;
 
 use Garradin\Plugin\HelloAsso\HelloAsso;
 use Garradin\Plugin\HelloAsso\API;
+use Garradin\Plugin\HelloAsso\Users;
 
 use KD2\DB\EntityManager as EM;
 use Garradin\Entities\Accounting\Account;
@@ -84,8 +85,8 @@ $tpl->assign([
 	'payer_fields' => $payer_fields,
 	'dynamic_fields' => $dynamic_fields,
 	'email_fields' => $email_fields,
-	'user_match_fields' => $ha::USER_MATCH_TYPES,
-	'merge_names_options' => $ha::MERGE_NAMES_OPTIONS
+	'user_match_fields' => Users::USER_MATCH_TYPES,
+	'merge_names_options' => Users::MERGE_NAMES_OPTIONS
 ]);
 
 $tpl->display(PLUGIN_ROOT . '/templates/config.tpl');

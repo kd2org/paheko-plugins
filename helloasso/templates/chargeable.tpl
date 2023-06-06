@@ -23,44 +23,52 @@
 		{/if}
 	</dd>
 	<dt>Montant</dt>
-	<dd>{if null === $chargeable->amount}S'applique peu importe le montant.{else}{$chargeable->amount|money_currency|raw}{/if}</dd>
+	<dd>{if null === $chargeable->amount}S'applique peu importe le montant.{elseif $chargeable->type === Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}Gratuit{else}{$chargeable->amount|money_currency|raw}{/if}</dd>
 	<dt>Formulaire</dt>
 	<dd>{$form->name}</dd>
-	{if $plugin->config->accounting}
-		<dt>Statut</dt>
-		<dd>
-			{if !$chargeable->id_credit_account || !$chargeable->id_debit_account}
-				<em>En attente de configuration de votre part.</em>
-				<br />Merci de remplir le formulaire "Comptabilité" ci-dessous.
-			{else}
-				En fonctionnement.
-			{/if}
-		</dd>
-	{/if}
+	<dt>Statut</dt>
+	<dd>
+		{if ($plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE && (!$chargeable->id_credit_account || !$chargeable->id_debit_account)) || ($chargeable->register_user === null)}
+			<em>En attente de configuration {if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}de votre part{else}par un·e administrateur/trice.{/if}</em>
+			{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}<br />Veuillez configurer les options ci-dessous.{/if}
+		{else}
+			En fonctionnement.
+		{/if}
+	</dd>
 </dl>
 
-<form method="post" action="{$self_url}">
-	<fieldset>
-		<legend>Options</legend>
-		<dl>
-			{input type="checkbox" name="register_user" value="1" label="Inscrire comme membre" source=$chargeable help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
-		</dl>
-	</fieldset>
-	{if $plugin->config->accounting}
+{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}
+	<form method="post" action="{$self_url}">
 		<fieldset>
-			<legend>Comptabilité</legend>
-			<dl>
-				{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="credit" label="Type de recette" required=true default=$credit_account}
-				{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="debit" label="Compte d'encaissement" required=true default=$debit_account}
-			</dl>
-			<p class="help block">Cette modification impacte uniquement les <em>futures</em> synchronisations. Elle n'est pas rétro-active.</p>
+			<legend>Inscription</legend>
+			{if !$category}
+				<p class="alert block">Vous devez <a href="{$plugin_admin_url}config.php">configurer une catégorie</a> valide pour pouvoir sélectionner l'option d'inscription de membres.</p>
+			{else}
+				<dl>
+					{input type="radio" name="register_user" label="Inscrire comme membre \"%s\""|args:$category.name source=$chargeable value="1" required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+					{input type="radio" name="register_user" label="Ne pas inscrire" source=$chargeable value="0" required=true}
+				</dl>
+				<p class="help block">
+					La catégorie d'inscription peut être modifiée {if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}dans <a href="{$plugin_admin_url}config.php">la configuration de l'extension</a>{else}par un·e adminstrateur/trice{/if}.
+				</p>
+			{/if}
 		</fieldset>
-	{/if}
-	<p class="submit">
-		{csrf_field key=$csrf_key}
-		{button type="submit" class="main" name="save" label="Enregistrer" shape="right"}
-	</p>
-</form>
+		{if $plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}
+			<fieldset>
+				<legend>Comptabilité</legend>
+				<dl>
+					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="credit" label="Type de recette" required=true default=$credit_account}
+					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="debit" label="Compte d'encaissement" required=true default=$debit_account}
+				</dl>
+				<p class="help block">Cette modification impacte uniquement les <em>futures</em> synchronisations. Elle n'est pas rétro-active.</p>
+			</fieldset>
+		{/if}
+		<p class="submit">
+			{csrf_field key=$csrf_key}
+			{button type="submit" class="main" name="save" label="Enregistrer" shape="right"}
+		</p>
+	</form>
+{/if}
 
 {if $TECH_DETAILS}
 	<dl style="background-color: black; color: limegreen; padding-top: 0.8em;" class="describe">

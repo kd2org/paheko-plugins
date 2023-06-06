@@ -11,8 +11,16 @@ class Chargeable extends Entity
 	const OPTION_TYPE = 2;
 	const DONATION_ITEM_TYPE = 3;
 	const ONLY_ONE_ITEM_FORM_TYPE = 4;
-	const CHECKOUT_TYPE = 5;
-	const TYPES = [ self::ITEM_TYPE => 'Item', self::OPTION_TYPE => 'Option', self::DONATION_ITEM_TYPE => 'Don', self::ONLY_ONE_ITEM_FORM_TYPE => 'Don/Vente', self::CHECKOUT_TYPE => 'Checkout' ];
+	const FREE_TYPE = 5;
+	const CHECKOUT_TYPE = 6;
+	const TYPES = [
+		self::ITEM_TYPE => 'Item',
+		self::OPTION_TYPE => 'Option',
+		self::DONATION_ITEM_TYPE => 'Don',
+		self::ONLY_ONE_ITEM_FORM_TYPE => 'Don/Vente',
+		self::FREE_TYPE => 'Gratuit',
+		self::CHECKOUT_TYPE => 'Checkout'
+	];
 	const TYPE_FROM_FORM = [
 		'Donation' => self::ONLY_ONE_ITEM_FORM_TYPE,
 		'PaymentForm' => self::ONLY_ONE_ITEM_FORM_TYPE,
@@ -30,7 +38,7 @@ class Chargeable extends Entity
 	protected int		$type;
 	protected string	$label;
 	protected ?int		$amount; // When null, handles all amounts. See Chargeables::isMatchingAnyAmount() for null scenarii.
-	protected int		$register_user;
+	protected ?int		$register_user;
 
 	protected ?string	$_form_name = null;
 	protected ?string	$_item_name = null;

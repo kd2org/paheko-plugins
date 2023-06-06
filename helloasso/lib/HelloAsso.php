@@ -10,6 +10,7 @@ use Garradin\Entities\Payments\Payment;
 use KD2\DB\EntityManager;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
+use Garradin\Plugin\HelloAsso\Entities\Payment as HA_Payment;
 
 use function Garradin\garradin_contributor_license;
 
@@ -26,6 +27,7 @@ class HelloAsso
 	const PAYMENT_RESUMING_LOG_LABEL	= 'Reprise du paiement.';
 	const LOG_FILE						= __DIR__ . '/../logs';
 	const REDIRECTION_FILE				= 'payer.php';
+	const DEFAULT_CLIENT_ID				= '';
 	const PER_PAGE						= 100;
 
 	protected				$plugin;
@@ -99,7 +101,7 @@ class HelloAsso
 		$api = API::getInstance();
 		$api->register($client_id, $client_secret);
 		
-		if ($client_id !== $old_client_id) {
+		if ($client_id !== $old_client_id && $old_client_id !== self::DEFAULT_CLIENT_ID) {
 			$this->sync();
 		}
 	}
@@ -114,10 +116,15 @@ class HelloAsso
 
 	public function initConfig(): bool {
 		$this->plugin->setConfigProperty('accounting', self::ACCOUNTING_ENABLED);
-		$this->plugin->setConfigProperty('client_id', '');
+		$this->plugin->setConfigProperty('client_id', self::DEFAULT_CLIENT_ID);
 		$this->plugin->setConfigProperty('id_credit_account', false);
 		$this->plugin->setConfigProperty('id_debit_account', false);
 		$this->plugin->setConfigProperty('id_category', false);
+		$payer_map = new \stdClass();
+		foreach (array_keys(HA_Payment::PAYER_FIELDS) as $field) {
+			$payer_map->$field = null;
+		}
+		$this->plugin->setConfigProperty('payer_map', $payer_map);
 		return $this->plugin->save();
 	}
 

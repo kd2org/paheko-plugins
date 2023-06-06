@@ -23,48 +23,55 @@
 	{/foreach}
 {/if}
 
-{if $plugin->config->accounting}
-	{if $chargeables}
-	<form method="POST" action="{$self_url_no_qs}">
-		<p class="alert block">
+{if $chargeables}
+<form method="POST" action="{$self_url_no_qs}">
+	<p class="alert block">
+		{if $plugin->config->accounting}
 			{if !$default_debit_account && !$default_credit_account}
 				Pour pouvoir synchroniser la comptabilité, merci de renseigner les types de recette et comptes d'encaissement pour les articles suivants :
 			{else}
 				Pour pouvoir synchroniser la comptabilité, merci de confirmer les types de recette et comptes d'encaissement pré-remplis pour les articles suivants :
 			{/if}
-		</p>
-		{foreach from=$chargeables key='form_name' item='form'}
-			<fieldset>
-				<legend>{if $form_name === 'Checkout'}Paiements isolés{else}{$form_name}{/if}</legend>
-				{foreach from=$form item='chargeable'}
-					{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
-						<fieldset>
-							<legend>
-					{/if}
-							{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::CHECKOUT_TYPE}
-								{$chargeable->label}
-							{elseif $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
-								{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE}Option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE && $chargeable->id_item} de "{$chargeable->getItem_name()}"{/if}
-							{/if}
-						</legend>
-						<dl>
+		{else}
+			Pour pouvoir synchroniser les membres, merci de sélectionner quels articles doivent inscrire automatiquement les membres :
+		{/if}
+	</p>
+	{foreach from=$chargeables key='form_name' item='form'}
+		<fieldset>
+			<legend>{if $form_name === 'Checkout'}Paiements isolés{else}{$form_name}{/if}</legend>
+			{foreach from=$form item='chargeable'}
+				{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
+					<fieldset>
+						<legend>
+				{/if}
+						{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::CHECKOUT_TYPE}
+							{$chargeable->label}
+						{elseif $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
+							{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE}Option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE && $chargeable->id_item} de "{$chargeable->getItem_name()}"{/if}
+							{if $chargeable->type === Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}- Gratuit{/if}
+						{/if}
+					</legend>
+					<dl>
+						{if $plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account}
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account}
-							{input type="checkbox" name="register_user[%d]"|args:$chargeable.id value="1" label="Inscrire comme membre" source=$chargeable help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
-						</dl>
-					{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
-						</fieldset>
-					{/if}
-				{/foreach}
-			</fieldset>
-		{/foreach}
-		{if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
-			<p class="help block">Vous pouvez définir/changer les valeurs de pré-remplissage depuis <a href="{$plugin_admin_url}config_client.php">la configuration de l'extension</a>.</p>
-		{/if}
-		{button type="submit" name="accounts_submit" label="Finaliser la synchronisation" shape="right" class="main"}
-	</form>
+						{/if}
+						{input type="checkbox" name="register_user[%d]"|args:$chargeable.id value="1" label="Inscrire comme membre" default=$chargeable.register_user help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+						{input type="hidden" name="ids[%d]"|args:$chargeable.id value="1"}
+					</dl>
+				{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
+					</fieldset>
+				{/if}
+			{/foreach}
+		</fieldset>
+	{/foreach}
+	{if $plugin->config->accounting && $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
+		<p class="help block">Vous pouvez définir/changer les valeurs de pré-remplissage depuis <a href="{$plugin_admin_url}config.php">la configuration de l'extension</a>.</p>
 	{/if}
+	{button type="submit" name="accounts_submit" label="Finaliser la synchronisation" shape="right" class="main"}
+</form>
 {/if}
+
 
 {if !$_GET.ok}
 	{if $last_sync}

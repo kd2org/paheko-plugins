@@ -30,19 +30,21 @@ class Chargeables
 		return EM::findOne(Chargeable::class, 'SELECT * FROM @TABLE WHERE id_form = :id_form AND type = :type AND label = :label AND ' . $amount_filter, ...$params);
 	}
 
-	static public function allForDisplay(): array
+	static public function allForDisplay(bool $accounting = true): array
 	{
+		$params = $accounting ? [ Chargeable::FREE_TYPE ] : [];
 		$chargeables = Chargeables::allPlusExtraFields(
 			sprintf('
 				SELECT c.*, f.name AS _form_name, i.label AS _item_name
 				FROM @TABLE c
 				LEFT JOIN %s f ON (f.id = c.id_form)
 				LEFT JOIN %s i ON (i.id = c.id_item)
-				WHERE c.id_credit_account IS NULL
+				WHERE ' . ($accounting ? '(c.type != :free_type AND c.id_credit_account IS NULL) OR ' : '') . '(c.register_user IS NULL)
 				ORDER BY f.name
 				',
 				Form::TABLE, Item::TABLE),
-			['_form_name', '_item_name']
+			['_form_name', '_item_name' ],
+			...$params
 		);
 		$result = [];
 		$checkouts = [];
@@ -136,7 +138,7 @@ class Chargeables
 				$row->type_label .= ' - ' . Chargeable::TYPES[$row->type];
 			}
 			
-			$row->register_user = $row->register_user ? 'oui' : '';
+			$row->register_user = $row->register_user ? 'oui' : ($row->register_user === 0 ? '' : null);
 		});
 
 		$list->setExportCallback(function (&$row) {
@@ -177,13 +179,16 @@ class Chargeables
 
 	static public function createChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
+		if (!array_key_exists($type, Chargeable::TYPES)) {
+			throw new \InvalidArgumentException(sprintf('Invalid chargeable type: %s. Allowed types are: %s.', $type, implode(', ', array_keys(Chargeable::TYPES))));
+		}
 		$chargeable = new Chargeable();
 		$chargeable->set('type', $type);
 		$chargeable->set('id_form', $id_form);
 		$chargeable->set('id_item', $entity->getItemId());
 		$chargeable->set('label', $entity->getLabel());
 		$chargeable->set('amount', (self::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount()));
-		$chargeable->set('register_user', 0);
+		$chargeable->set('register_user', null);
 		$chargeable->save();
 		return $chargeable;
 	}
@@ -211,6 +216,18 @@ class Chargeables
 		}
 		if (DB::getInstance()->exec(sprintf('UPDATE %s SET register_user = 1 WHERE id IN (%s);', Chargeable::TABLE, implode(', ', $ids))) === false) {
 			throw new \RuntimeException(sprintf('Cannot set %s plugin Chargeables\' user registrators.', HelloAsso::PROVIDER_LABEL));
+		}
+	}
+
+	static function unsetUserRegistrators(array $ids): void
+	{
+		foreach ($ids as $id) {
+			if (!is_int($id)) {
+				throw new \InvalidArgumentException(sprintf('User (Chargeable) registrator ID must be an integer. "%s" provided.', $id));
+			}
+		}
+		if (DB::getInstance()->exec(sprintf('UPDATE %s SET register_user = 0 WHERE id IN (%s);', Chargeable::TABLE, implode(', ', $ids))) === false) {
+			throw new \RuntimeException(sprintf('Cannot unset %s plugin Chargeables\' user registrators.', HelloAsso::PROVIDER_LABEL));
 		}
 	}
 }
