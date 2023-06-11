@@ -67,6 +67,7 @@
 	</table>
 
 	<p class="submit">
+		{input type="hidden" name="id_year" source=$_POST}
 		{csrf_field key=$csrf_key}
 		{button type="submit" name="save" label="Enregistrer cette valorisation dans l'exercice '%s'"|args:$year.label shape="right" class="main"}
 	</p>
