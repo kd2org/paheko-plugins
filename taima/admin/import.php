@@ -6,7 +6,7 @@ use Garradin\Plugin\Taima\Entities\Entry;
 use Garradin\Plugin\Taima\Entities\Task;
 use Garradin\Plugin\Taima\Tracking;
 
-use Garradin\Config;
+use Garradin\Users\DynamicFields;
 use Garradin\DB;
 use Garradin\Utils;
 use Garradin\UserException;
@@ -80,14 +80,14 @@ $form->runIf(f('preview') && $json && count($links), function () use ($json, &$a
 	$add = [];
 
 	$db = DB::getInstance();
-	$id_field = Config::getInstance()->champ_identite;
+	$id_field = DynamicFields::getNameFieldsSQL();
 
 	foreach ($json as $l => $row) {
 		$e = new Entry;
 		$e->setDateString($row['Date']);
 		$e->duration = intval($row['Heures, en décimal'] * 60);
 
-		if ($id = $db->firstColumn(sprintf('SELECT id FROM membres WHERE %s = ?;', $id_field), $row['Bénévole'])) {
+		if ($id = $db->firstColumn(sprintf('SELECT id FROM users WHERE %s = ?;', $id_field), $row['Bénévole'])) {
 			$e->user_id = $id;
 		}
 
