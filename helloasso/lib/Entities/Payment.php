@@ -71,7 +71,7 @@ class Payment extends Entity
 		return $names;
 	}
 
-	static public function formatPersonInfos(\stdClass $person)
+	static public function formatPersonInfos(\stdClass $person): array
 	{
 		$data = [];
 

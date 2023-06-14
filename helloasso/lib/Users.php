@@ -25,12 +25,12 @@ class Users
 	static protected ?array	$_userMatchField = null;
 	static protected array	$_existingUsersCache = [];
 
-	static public function getMappedUser(\stdClass $payer): User
+	static public function getMappedUser(\stdClass $payer, bool $check = true): User
 	{
 		$user = new User();
 
 		$ha = HelloAsso::getInstance();
-		$map = $ha->plugin()->getConfig()->payer_map;
+		$map = clone $ha->plugin()->getConfig()->payer_map;
 
 		$id_category = $ha->plugin()->getConfig()->id_category;
 		if (!$id_category OR !($category = EntityManager::findOneById(Category::class, (int)$id_category))) {
@@ -65,7 +65,9 @@ class Users
 		$user->set('id_parent', null);
 
 		$user->setNumberIfEmpty();
-		$user->selfCheck();
+		if ($check) {
+			$user->selfCheck();
+		}
 
 		return $user;
 	}

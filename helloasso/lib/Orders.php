@@ -22,15 +22,17 @@ class Orders
 		return EM::findOneById(Order::class, $id);
 	}
 
-	static public function list(Form $form): DynamicList
+	static public function list($associate): DynamicList
 	{
 		$columns = [
 			'id' => [
 				'label' => 'Référence',
+				'select' => 'o.id'
 			],
 			'date' => [
 				'label' => 'Date',
 			],
+			'form_name' => [],
 			'label' => [
 				'label' => 'Libellé',
 				'select' => 'json_extract(raw_data, \'$.formSlug\')'
@@ -51,15 +53,41 @@ class Orders
 			]
 		];
 
-		$tables = Order::TABLE;
-		$conditions = sprintf('id_form = %d', $form->id);
+		$tables = Order::TABLE . ' o';
+
+		if (!($associate instanceof Form)) {
+			$tables .= "\n" . 'INNER JOIN ' . Form::TABLE . ' f ON (f.id = o.id_form)';
+			$columns['form_name'] = [ 'label' => 'Formulaire', 'select' => 'f.name' ];
+		}
+
+		if ($associate instanceof Form) {
+			$conditions = sprintf('id_form = %d', $associate->id);
+			$title = sprintf('%s - Commandes', $associate->name);
+		}
+		elseif ($associate instanceof User) {
+			$conditions = sprintf('id_user = %d', $associate->id);
+			$title = sprintf('%s - Commandes', $associate->nom);
+			unset($columns['id_user']);
+			unset($columns['person']);
+		}
+		elseif ($associate instanceof \stdClass) { // Happens when the payer is not a member
+			if (Users::getUserMatchField()[1] === 'email') {
+				$conditions = sprintf('json_extract(raw_data, \'$.payer.email\') = \'%s\'', $associate->email);
+			}
+			else {
+				$conditions = sprintf('json_extract(raw_data, \'$.payer.firstName\') = \'%s\' AND json_extract(raw_data, \'$.payer.lastName\') = \'%s\'', $associate->firstName, $associate->lastName);
+			}
+			$title = sprintf('%s - Commandes', Users::guessUserName($associate));
+			unset($columns['id_user']);
+			unset($columns['person']);
+		}
 
 		$list = new DynamicList($columns, $tables, $conditions);
-		$list->setTitle(sprintf('%s - Commandes', $form->name));
+		$list->setTitle($title);
 
-		$list->setModifier(function (&$row) {
+		$list->setModifier(function (&$row) use ($associate) {
 			$row->status = Order::STATUSES[$row->status];
-			if ($row->id_user) {
+			if (!(($associate instanceof User) || ($associate instanceof \stdClass)) && $row->id_user) {
 				$row->author = EM::findOneById(User::class, (int)$row->id_user);
 			}
 		});
