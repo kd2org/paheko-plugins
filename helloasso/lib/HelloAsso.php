@@ -119,7 +119,6 @@ class HelloAsso
 		$this->plugin->setConfigProperty('client_id', self::DEFAULT_CLIENT_ID);
 		$this->plugin->setConfigProperty('id_credit_account', false);
 		$this->plugin->setConfigProperty('id_debit_account', false);
-		$this->plugin->setConfigProperty('id_category', false);
 		$payer_map = new \stdClass();
 		foreach (array_keys(HA_Payment::PAYER_FIELDS) as $field) {
 			$payer_map->$field = null;
@@ -135,7 +134,6 @@ class HelloAsso
 			$this->plugin->setConfigProperty('id_credit_account', array_keys($data['default_credit'])[0]);
 		if (array_key_exists('default_debit', $data))
 			$this->plugin->setConfigProperty('id_debit_account', array_keys($data['default_debit'])[0]);
-		$this->plugin->setConfigProperty('id_category', (int)$data['id_category']);
 		$this->plugin->setConfigProperty('payer_map', $data['payer_map']);
 		$this->plugin->setConfigProperty('user_match_type', $data['user_match_type']);
 		$this->plugin->setConfigProperty('user_match_field', $data['user_match_field']);

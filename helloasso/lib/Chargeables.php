@@ -14,6 +14,7 @@ use KD2\DB\EntityManager as EM;
 use Garradin\DB;
 use Garradin\DynamicList;
 use Garradin\Utils;
+use Garradin\Entities\Users\Category;
 
 class Chargeables
 {
@@ -39,7 +40,7 @@ class Chargeables
 				FROM @TABLE c
 				LEFT JOIN %s f ON (f.id = c.id_form)
 				LEFT JOIN %s i ON (i.id = c.id_item)
-				WHERE ' . ($accounting ? '(c.type != :free_type AND c.id_credit_account IS NULL) OR ' : '') . '(c.register_user IS NULL)
+				WHERE ' . ($accounting ? '(c.type != :free_type AND c.id_credit_account IS NULL) OR ' : '') . '(c.need_config = 1)
 				ORDER BY f.name
 				',
 				Form::TABLE, Item::TABLE),
@@ -90,9 +91,12 @@ class Chargeables
 				'label' => 'Montant',
 				'select' => 'c.amount'
 			],
-			'register_user' => [
+			'id_category' => [
+				'select' => 'c.id_category'
+			],
+			'category' => [
 				'label' => 'Inscrip. Auto',
-				'select' => 'c.register_user'
+				'select' => 'cat.name'
 			],
 			'credit_account' => [
 				'label' => 'Recette',
@@ -116,6 +120,9 @@ class Chargeables
 			],
 			'id_item' => [
 				'select' => 'c.id_item'
+			],
+			'need_config' => [
+				'select' => 'c.need_config'
 			]
 		];
 
@@ -124,6 +131,7 @@ class Chargeables
 			LEFT JOIN ' . Item::TABLE . ' i ON (i.id = c.id_item)
 			LEFT JOIN ' . Account::TABLE . ' ca ON (ca.id = c.id_credit_account)
 			LEFT JOIN ' . Account::TABLE . ' da ON (da.id = c.id_debit_account)
+			LEFT JOIN ' . Category::TABLE . ' cat ON (cat.id = c.id_category)
 		';
 
 		$list = new DynamicList($columns, $tables);
@@ -138,7 +146,7 @@ class Chargeables
 				$row->type_label .= ' - ' . Chargeable::TYPES[$row->type];
 			}
 			
-			$row->register_user = $row->register_user ? 'oui' : ($row->register_user === 0 ? '' : null);
+			$row->category = $row->category ?? ($row->need_config === 1 ? null : '-');
 		});
 
 		$list->setExportCallback(function (&$row) {
@@ -186,9 +194,10 @@ class Chargeables
 		$chargeable->set('type', $type);
 		$chargeable->set('id_form', $id_form);
 		$chargeable->set('id_item', $entity->getItemId());
+		$chargeable->set('id_category', null);
 		$chargeable->set('label', $entity->getLabel());
 		$chargeable->set('amount', (self::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount()));
-		$chargeable->set('register_user', null);
+		$chargeable->set('need_config', 1);
 		$chargeable->save();
 		return $chargeable;
 	}
@@ -204,30 +213,6 @@ class Chargeables
 			if (DB::getInstance()->exec(sprintf('UPDATE %s SET id_credit_account = %d, id_debit_account = %d WHERE id = %d;', Chargeable::TABLE, $accounts['credit'], $accounts['debit'], (int)$id)) === false) {
 				throw new \RuntimeException(sprintf('Cannot update %s plugin Items\' accounting accounts.', HelloAsso::PROVIDER_LABEL));
 			}
-		}
-	}
-
-	static public function setUserRegistrators(array $ids): void
-	{
-		foreach ($ids as $id) {
-			if (!is_int($id)) {
-				throw new \InvalidArgumentException(sprintf('User (Chargeable) registrator ID must be an integer. "%s" provided.', $id));
-			}
-		}
-		if (DB::getInstance()->exec(sprintf('UPDATE %s SET register_user = 1 WHERE id IN (%s);', Chargeable::TABLE, implode(', ', $ids))) === false) {
-			throw new \RuntimeException(sprintf('Cannot set %s plugin Chargeables\' user registrators.', HelloAsso::PROVIDER_LABEL));
-		}
-	}
-
-	static function unsetUserRegistrators(array $ids): void
-	{
-		foreach ($ids as $id) {
-			if (!is_int($id)) {
-				throw new \InvalidArgumentException(sprintf('User (Chargeable) registrator ID must be an integer. "%s" provided.', $id));
-			}
-		}
-		if (DB::getInstance()->exec(sprintf('UPDATE %s SET register_user = 0 WHERE id IN (%s);', Chargeable::TABLE, implode(', ', $ids))) === false) {
-			throw new \RuntimeException(sprintf('Cannot unset %s plugin Chargeables\' user registrators.', HelloAsso::PROVIDER_LABEL));
 		}
 	}
 }

@@ -28,13 +28,17 @@
 	<dd>{$form->name}</dd>
 	<dt>Statut</dt>
 	<dd>
-		{if ($plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE && (!$chargeable->id_credit_account || !$chargeable->id_debit_account)) || ($chargeable->register_user === null)}
+		{if ($plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE && (!$chargeable->id_credit_account || !$chargeable->id_debit_account)) || ($chargeable->need_config === 1)}
 			<em>En attente de configuration {if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}de votre part{else}par un·e administrateur/trice.{/if}</em>
 			{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}<br />Veuillez configurer les options ci-dessous.{/if}
 		{else}
 			En fonctionnement.
 		{/if}
 	</dd>
+	{if $chargeable->id_category}
+		<dt>Inscription Automatique</dt>
+		<dd>{$category->name}</dd>
+	{/if}
 </dl>
 
 <h2 class="ruler">Commandes comprenant cet article</h2>
@@ -47,17 +51,7 @@
 	<form method="post" action="{$self_url}">
 		<fieldset>
 			<legend>Inscription</legend>
-			{if !$category}
-				<p class="alert block">Vous devez <a href="{$plugin_admin_url}config.php">configurer une catégorie</a> valide pour pouvoir sélectionner l'option d'inscription de membres.</p>
-			{else}
-				<dl>
-					{input type="radio" name="register_user" label="Inscrire comme membre \"%s\""|args:$category.name source=$chargeable value="1" required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
-					{input type="radio" name="register_user" label="Ne pas inscrire" source=$chargeable value="0" required=true}
-				</dl>
-				<p class="help block">
-					La catégorie d'inscription peut être modifiée {if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}dans <a href="{$plugin_admin_url}config.php">la configuration de l'extension</a>{else}par un·e adminstrateur/trice{/if}.
-				</p>
-			{/if}
+			{input type="select" name="id_category" label="Inscrire comme membre dans la catégorie" default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
 		</fieldset>
 		{if $plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}
 			<fieldset>

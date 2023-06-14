@@ -5,6 +5,8 @@ namespace Garradin\Plugin\HelloAsso\Entities;
 use Garradin\DB;
 use Garradin\Entity;
 use Garradin\ValidationException;
+use Garradin\Config;
+use Garradin\Entities\Users\Category;
 
 use Garradin\UserException;
 use Garradin\Plugin\HelloAsso\NotFoundException;
@@ -69,6 +71,10 @@ class Order extends Entity
 
 	public function registerRawPayer(): void
 	{
+		$id_category = (int)Config::getInstance()->default_category;
+		if (!$category = EM::findOneById(Category::class, $id_category)) {
+			throw new \RuntimeException(sprintf('Inexisting default category #%d while trying to register order raw payer.', $id_category));
+		}
 		$raw_payer = $this->getRawPayer();
 		if (!$user = Users::findUserMatchingPayer($raw_payer)) {
 			try {
@@ -77,6 +83,7 @@ class Order extends Entity
 			catch (NotFoundException $e) {
 				throw new UserException('Catégorie de membre invalide ou non-définit dans la configuration de l\'extension.');
 			}
+			$user->set('id_category', (int)$id_category);
 			$user->save();
 		}
 		$this->set('id_user', (int)$user->id);

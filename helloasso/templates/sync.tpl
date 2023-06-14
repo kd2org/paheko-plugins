@@ -56,8 +56,7 @@
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account}
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account}
 						{/if}
-						{input type="checkbox" name="register_user[%d]"|args:$chargeable.id value="1" label="Inscrire comme membre" default=$chargeable.register_user help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
-						{input type="hidden" name="ids[%d]"|args:$chargeable.id value="1"}
+						{input type="select" name="id_category[%d]"|args:$chargeable.id label="Inscrire comme membre dans la catégorie" default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
 					</dl>
 				{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
 					</fieldset>
@@ -68,6 +67,7 @@
 	{if $plugin->config->accounting && $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
 		<p class="help block">Vous pouvez définir/changer les valeurs de pré-remplissage depuis <a href="{$plugin_admin_url}config.php">la configuration de l'extension</a>.</p>
 	{/if}
+	{csrf_field key=$csrf_key}
 	{button type="submit" name="accounts_submit" label="Finaliser la synchronisation" shape="right" class="main"}
 </form>
 {/if}
@@ -89,7 +89,7 @@
 	<form method="post" action="{$self_url_no_qs}">
 		<p class="submit">
 			{csrf_field key=$csrf_key}
-			{if $plugin->config->accounting && $chargeables}
+			{if $chargeables}
 				ou bien
 				{button type="submit" name="sync" value=1 label="Synchroniser uniquement les anciennes données"}
 			{else}

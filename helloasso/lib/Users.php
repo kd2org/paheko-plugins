@@ -7,6 +7,7 @@ use Garradin\Entities\Users\Category;
 use Garradin\Plugin\HelloAsso\HelloAsso;
 use KD2\DB\EntityManager;
 use Garradin\Users\DynamicFields;
+use Garradin\Config;
 
 class Users
 {
@@ -32,7 +33,7 @@ class Users
 		$ha = HelloAsso::getInstance();
 		$map = clone $ha->plugin()->getConfig()->payer_map;
 
-		$id_category = $ha->plugin()->getConfig()->id_category;
+		$id_category = (int)Config::getInstance()->default_category;
 		if (!$id_category OR !($category = EntityManager::findOneById(Category::class, (int)$id_category))) {
 			throw new NotFoundException(sprintf('Cannot map user: Not found category "%s".', $id_category));
 		}

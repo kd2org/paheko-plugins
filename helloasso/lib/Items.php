@@ -328,7 +328,7 @@ class Items
 	static protected function handleUserRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type)
 	{
 		$chargeable = self::getChargeable($id_form, $entity, $chargeable_type);
-		if (!$chargeable->register_user) {
+		if (!$chargeable->id_category) {
 			return null;
 		}
 		if (!$identifier = Users::guessUserIdentifier($data->beneficiary)) {
@@ -382,7 +382,7 @@ class Items
 		{
 			$user = \Garradin\Users\Users::create();
 			$user->importForm($source);
-			$user->set('id_category', (int)HA::getInstance()->plugin()->getConfig()->id_category);
+			$user->set('id_category', (int)$chargeable->id_category);
 			$user->setNumberIfEmpty();
 			$user->save();
 			$id_user = (int)$user->id;

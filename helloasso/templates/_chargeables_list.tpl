@@ -7,7 +7,7 @@
 
 		{if 
 			($plugin.config.accounting && $row.type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE && (!$row.id_credit_account || !$row.id_debit_account))
-			|| ($row.register_user === null)
+			|| ($row.need_config === 1)
 		}
 			{assign var='need_configuration' value=true}
 		{else}
@@ -18,7 +18,7 @@
 			<td>{$row.type_label}</td>
 			<td>{$row.label}</td>
 			<td class="money">{$row.amount|money_currency|raw}</td>
-			<td>{$row.register_user}</td>
+			<td>{$row.category}</td>
 			<td class="num"><a href="{$admin_url}acc/accounts/journal.php?id={$row.id_credit_account|intval}">{$row.credit_account}</a></td>
 			<td class="num"><a href="{$admin_url}acc/accounts/journal.php?id={$row.id_debit_account|intval}">{$row.debit_account}</a></td>
 

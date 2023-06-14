@@ -60,10 +60,11 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeables (
 	id_item INTEGER NULL REFERENCES plugin_helloasso_items(id) ON DELETE SET NULL,
 	id_credit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
 	id_debit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
+	id_category INTEGER NULL REFERENCES users_categories (id) ON DELETE SET NULL,
 	type INTEGER NOT NULL,
 	label TEXT NOT NULL,
 	amount INTEGER NULL,
-	register_user UNSIGNED INTEGER NULL
+	need_config UNSIGNED INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_chargeables_key ON plugin_helloasso_chargeables(id_form, id_item, type, label, amount);

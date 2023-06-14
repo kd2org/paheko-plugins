@@ -67,7 +67,6 @@
 			<span class="user_match_field">
 				{input type="text" name="user_match_field" label='Intitulé du champ HelloAsso correspondant à "%s"'|args:$user_match_fields[1] source=$plugin.config help='Dans la section "Informations relatives à vos tarifs" de la configuration de votre formulaire HelloAsso.'}
 			</span>
-			{input type="select" name="id_category" label="Catégorie" options=$category_options required=true default=$plugin.config.id_category help="Catégorie dans laquelle les membres automatiquement inscrit·e·s seront ajouté·e·s."}
 			{input type="select" name="payer_map[name]" label="Ordre de fusion des champs nom et prénom" options=$merge_names_options required=true default=$plugin.config.payer_map.name}
 		</dl>
 	</fieldset>
