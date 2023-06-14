@@ -4,7 +4,7 @@ namespace Garradin\Plugin\Taima;
 
 use Garradin\Plugin\Taima\Tracking;
 use Garradin\Plugin\Taima\Entities\Entry;
-use Garradin\Membres;
+use Garradin\Users\Users;
 use Garradin\Utils;
 use Garradin\UserException;
 
@@ -19,7 +19,7 @@ $list = null;
 $selected_user = null;
 
 if ($user) {
-	$user = (new Membres)->get((int)$user);
+	$user = Users::get((int)$user);
 
 	if (!$user) {
 		throw new UserException('Membre inconnu');
