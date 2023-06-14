@@ -3,21 +3,22 @@
 namespace Garradin;
 
 use KD2\DB\EntityManager;
+
+use Garradin\Plugin\HelloAsso\HelloAsso;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Entities\Form;
-
-use Garradin\Entities\Accounting\Account;
-
-use Garradin\Payments\Payments;
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Entities\Payments\Payment;
-use Garradin\Entities\Accounting\Transaction;
-use Garradin\UserException;
-use Garradin\Entities\Users\User;
-use Garradin\Entities\Users\Category;
 use Garradin\Plugin\HelloAsso\Forms;
 use Garradin\Plugin\HelloAsso\Orders;
+
+use Garradin\Payments\Payments;
+use Garradin\Entities\Payments\Payment;
+use Garradin\Entities\Accounting\Account;
+use Garradin\Entities\Accounting\Transaction;
+use Garradin\Entities\Users\User;
+use Garradin\Entities\Users\Category;
+
+use Garradin\UserException;
 
 require __DIR__ . '/_inc.php';
 
@@ -56,6 +57,7 @@ $tpl->assign([
 	'credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 	'debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
 	'category' => $category,
+	'orders' => Orders::list($chargeable),
 	'csrf_key' => $csrf_key,
 	'current_sub' => 'chargeables'
 ]);

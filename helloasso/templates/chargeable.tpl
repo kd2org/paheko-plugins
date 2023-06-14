@@ -37,7 +37,13 @@
 	</dd>
 </dl>
 
+<h2 class="ruler">Commandes comprenant cet article</h2>
+
+{include file='./_order_list.tpl' list=$orders}
+
 {if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}
+	<h2 class="ruler">Configuration</h2>
+
 	<form method="post" action="{$self_url}">
 		<fieldset>
 			<legend>Inscription</legend>

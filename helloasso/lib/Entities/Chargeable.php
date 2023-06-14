@@ -3,6 +3,7 @@
 namespace Garradin\Plugin\HelloAsso\Entities;
 
 use Garradin\Entity;
+use Garradin\DB;
 
 class Chargeable extends Entity
 {
@@ -61,6 +62,37 @@ class Chargeable extends Entity
 	public function getItem_name(): ?string
 	{
 		return $this->_item_name;
+	}
+
+	public function getItemsIds(): array
+	{
+		$conditions = 'id_form = :id_form AND label = :label';
+		$params = [ (int)$this->id_form, $this->label ];
+
+		if (!$this->isMatchingAnyAmount()) {
+			$conditions .= ' AND amount = :amount';
+			$params[] = (int)$this->amount;
+		}
+
+		return DB::getInstance()->getAssoc(sprintf('SELECT id, id FROM %s WHERE ' . $conditions, Item::TABLE), ...$params);
+	}
+
+	public function getOptionsIds(): array
+	{
+		$conditions = 'o.label = :label';
+		$params = [ (int)$this->id_form, $this->label ];
+
+		if (!$this->isMatchingAnyAmount()) {
+			$conditions .= ' AND o.amount = :amount';
+			$params[] = (int)$this->amount;
+		}
+
+		return DB::getInstance()->getAssoc(sprintf('SELECT o.id, o.id FROM %s o INNER JOIN %s i ON (i.id = o.id_item AND i.id_form = :id_form) WHERE ' . $conditions, Option::TABLE, Item::TABLE), ...$params);
+	}
+
+	public function isMatchingAnyAmount(): bool
+	{
+		return (($this->type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($this->type === Chargeable::DONATION_ITEM_TYPE));
 	}
 
 	public function selfCheck(): void
