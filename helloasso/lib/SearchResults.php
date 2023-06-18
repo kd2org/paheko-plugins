@@ -1,0 +1,116 @@
+<?php
+
+namespace Garradin\Plugin\HelloAsso;
+
+use Garradin\DynamicList;
+use Garradin\UserTemplate\Modifiers;
+
+use Garradin\Plugin\HelloAsso\Entities\Form;
+use Garradin\Plugin\HelloAsso\Entities\Order;
+use Garradin\Entities\Payments\Payment;
+use Garradin\Plugin\HelloAsso\Entities\Chargeable;
+use Garradin\Entities\Users\User;
+
+class SearchResults
+{
+	const FORM_TYPE = 'form';
+	const ORDER_TYPE = 'order';
+	const PAYMENT_TYPE = 'payment';
+	const CHARGEABLE_TYPE = 'chargeable';
+	const USER_TYPE = 'user';
+	const TYPE_LABELS = [
+		self::FORM_TYPE => 'Formulaire',
+		self::ORDER_TYPE => 'Commande',
+		self::PAYMENT_TYPE => 'Paiement',
+		self::CHARGEABLE_TYPE => 'Article',
+		self::USER_TYPE => 'Membre'
+	];
+
+	static public function list(string $searched_text): DynamicList
+	{
+		$columns = [
+			'type' => [
+				'label' => 'Type',
+				'select' => '"' . self::FORM_TYPE . '"'
+			],
+			'id' => [
+				'label' => 'Référence',
+				'select' => 'm.id'
+			],
+			'label' => [
+				'label' => 'Libellé',
+				'select' => 'm.name'
+			],
+			'date' => [
+				'label' => 'Date',
+				'select' => 'null'
+			],
+			'person' => [
+				'label' => 'Tier',
+				'select' => 'null'
+			],
+			'id_user' => [
+				'select' => 'null'
+			],
+			'user_number' => [
+				'select' => 'u2.numero'
+			]
+		];
+
+		if (preg_match('/(^\d+$)/', $searched_text) === 1) {
+			$conditions = 'm.id = :searched_data';
+			$searched_data = (int)$searched_text;
+		}
+		elseif ($searched_data = Modifiers::parse_date($searched_text)) {
+			$conditions = 'date = :searched_data';
+		}
+		else {
+			$searched_text = preg_replace('/[!%_]/', '!$0', trim($searched_text));
+			$conditions = 'label LIKE :searched_data ESCAPE \'!\'';
+			$searched_data = sprintf("%%%s%%", $searched_text);
+		}
+
+		$user_join = 'LEFT JOIN ' . User::TABLE . ' u2 ON (u2.id = id_user)';
+
+		$tables = Form::TABLE . ' m
+			' . $user_join . '
+			WHERE ' . $conditions . '
+
+			UNION
+
+			SELECT "' . self::ORDER_TYPE . '" AS "type", m.id AS "id", null AS "label", m.date AS "date", m.person AS "person", m.id_user AS "id_user", u2.numero AS "user_number"
+			FROM ' . Order::TABLE . ' m
+			' . $user_join . '
+			WHERE ' . $conditions . '
+
+			UNION
+
+			SELECT "' . self::PAYMENT_TYPE . '" AS "type", m.id AS "id", m.label AS "label", m.date AS "date", m.author_name AS "person", m.id_author AS "id_user", u2.numero AS "user_number"
+			FROM ' . Payment::TABLE . ' m
+			' . $user_join . '
+			WHERE ' . str_replace('m.id', 'm.reference', $conditions) . '
+
+			UNION
+
+			SELECT "' . self::CHARGEABLE_TYPE . '" AS "type", m.id AS "id", m.label AS "label", null AS "date", null AS "person", null AS "id_user", u2.numero AS "user_number"
+			FROM ' . Chargeable::TABLE . ' m
+			' . $user_join . '
+			WHERE ' . $conditions . ' AND m.type != ' . (int)Chargeable::CHECKOUT_TYPE . '
+
+			UNION
+
+			SELECT "' . self::USER_TYPE . '" AS "type", m.id AS "id", m.nom AS "label", m.date_inscription AS "date", null AS "person", null AS "id_user", u2.numero AS "user_number"
+			FROM ' . User::TABLE . ' m
+			' . $user_join . '
+		';
+
+		$list = new DynamicList($columns, $tables, $conditions);
+
+		$list->setParameter('searched_data', $searched_data);
+		$list->setModifier(function (&$row) {
+			$row->type_label = self::TYPE_LABELS[$row->type];
+		});
+
+		return $list;
+	}
+}

@@ -24,7 +24,7 @@
 </table>
 
 {if isset($checkout)}
-	<h2 class="ruler">Tunnel de paiement</h2>
+	<h2 class="ruler">Proposition de paiement</h2>
 	<p class="confirm block">Tunnel de paiement généré avec succès.</p>
 	<dl class="describe">
 		<dt>ID</dt>
@@ -34,7 +34,7 @@
 	</dl>
 	<p class="help block">Pour rappel, ce tunnel de paiement/lien n'est valide que 15 minutes.</p>
 {else}
-	<h2 class="ruler">Créer un tunnel de paiement</h2>
+	<h2 class="ruler">Proposer un paiement à un·e membre</h2>
 
 	<form method="POST" action="{$self_url}">
 		<fieldset>

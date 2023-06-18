@@ -1,6 +1,22 @@
 {if !$dialog}
 
 <nav class="tabs">
+	<aside>
+		<form method="GET" action="search.php" class="" id="plugin_search">
+			<p>
+				{input type="search" name="q" placeholder="N°, date, intitulé ou tiers" title="Rechercher" default=$_GET.q}
+				{button type="submit" label="" title="Lancer la recherche" shape="search" class="main_action"}
+				|
+			</p>
+		</form>
+
+		{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}
+			<form method="POST" action="./" class="inline">
+				{button type="submit" label="Proposer un paiement" shape="plus" name="new_button" class="main_action"}
+			</form>
+		{/if}
+	</aside>
+
 	<ul>
 		<li{if $current == 'home'} class="current"{/if}><a href="./">Formulaires</a></li>
 		<li{if $current == 'payers'} class="current"{/if}><a href="payers.php">Payeur/euse·s</a></li>
