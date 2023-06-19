@@ -63,7 +63,7 @@ class Orders
 		$tables = Order::TABLE . ' o';
 
 		if ($associate instanceof Chargeable) {
-			if ($associate->type === Chargeable::OPTION_TYPE) {
+			if ($associate->target_type === Chargeable::OPTION_TARGET_TYPE) {
 				$table = Option::TABLE;
 				$ids = $associate->getOptionsIds();
 				$target = 'i';
@@ -74,7 +74,7 @@ class Orders
 				$target = 'target';
 			}
 			$tables = $table . ' target
-				' . (($associate->type === Chargeable::OPTION_TYPE) ? 'INNER JOIN ' . Item::TABLE . ' i ON (i.id = target.id_item)' : '') .'
+				' . (($associate->target_type === Chargeable::OPTION_TARGET_TYPE) ? 'INNER JOIN ' . Item::TABLE . ' i ON (i.id = target.id_item)' : '') .'
 				INNER JOIN ' . Order::TABLE . ' o ON (o.id = ' . $target . '.id_order)';
 			$conditions = 'target.id IN (' . implode(', ', $ids) . ')';
 		}

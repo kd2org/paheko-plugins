@@ -16,7 +16,7 @@
 		{if $chargeable->id_item !== null}
 			{assign var='types' value=Plugin\HelloAsso\Entities\Item::TYPES}
 			{$types[$parent_item->type]}
-			{if $chargeable->type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TYPE}- Option{/if}
+			{if $chargeable->target_type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TARGET_TYPE}- Option{/if}
 		{else}
 			{assign var='types' value=Plugin\HelloAsso\Entities\Form::TYPES}
 			{$types[$form->type]}

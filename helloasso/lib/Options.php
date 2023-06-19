@@ -5,8 +5,11 @@ namespace Garradin\Plugin\HelloAsso;
 use Garradin\Plugin\HelloAsso\Entities\Option;
 use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Entities\Order;
+use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\DynamicList;
 use Garradin\Entities\Users\User;
+use Garradin\Entities\Services\Fee;
+use Garradin\Entities\Services\Service;
 
 class Options
 {
@@ -16,9 +19,16 @@ class Options
 			'id' => [
 				'select' => 'o.id'
 			],
+			'id_chargeable' => [
+				'label' => 'Référence',
+				'select' => 'c.id'
+			],
 			'id_transaction' => [
 				'label' => 'Écriture',
 				'select' => 'o.id_transaction'
+			],
+			'price_type' => [
+				'select' => 'o.price_type'
 			],
 			'amount' => [
 				'label' => 'Montant',
@@ -41,12 +51,24 @@ class Options
 			'custom_fields' => [
 				'label' => 'Champs',
 				'select' => 'o.custom_fields'
+			],
+			'service' => [
+				'label' => 'Insc. Activité',
+				'select' => 's.label'
 			]
 		];
 
 		$tables = Option::TABLE . ' o
 			INNER JOIN ' . Item::TABLE . ' i ON (i.id = o.id_item)
 			INNER JOIN ' . Order::TABLE . ' ord ON (ord.id = i.id_order AND ord.id = ' . (int)$order->id . ')
+			INNER JOIN ' . Chargeable::TABLE . ' c ON (
+				c.id_form = i.id_form AND c.label = o.label AND (
+					(o.price_type = ' . Item::PAY_WHAT_YOU_WANT_PRICE_TYPE . ' AND c.amount IS NULL)
+					OR (c.amount = o.amount)
+				)
+			)
+			LEFT JOIN ' . Fee::TABLE . ' f ON (f.id = c.id_fee)
+			LEFT JOIN ' . Service::TABLE . ' s ON (s.id = f.id_service)
 			LEFT JOIN  ' . User::TABLE . ' u ON (u.id = o.id_user)';
 
 		$list = new DynamicList($columns, $tables);

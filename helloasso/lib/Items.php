@@ -22,6 +22,8 @@ use Garradin\Users\DynamicFields;
 use Garradin\Entities\Users\User;
 use Garradin\Plugin\HelloAsso\Payments;
 use Garradin\Services\Services_User;
+use Garradin\Entities\Services\Fee;
+use Garradin\Entities\Services\Service;
 
 use KD2\DB\EntityManager as EM;
 
@@ -88,6 +90,10 @@ class Items
 			'custom_fields' => [
 				'label' => 'Champs'
 			],
+			'service' => [
+				'label' => 'Insc. Activité',
+				'select' => 's.label'
+			],
 			'state' => [
 				'label' => 'Statut'
 			],
@@ -102,6 +108,8 @@ class Items
 					OR (c.type != ' . Chargeable::DONATION_ITEM_TYPE . ' AND c.amount = i.amount)
 				)
 			)
+			LEFT JOIN ' . Fee::TABLE . ' f ON (f.id = c.id_fee)
+			LEFT JOIN ' . Service::TABLE . ' s ON (s.id = f.id_service)
 			LEFT JOIN ' . User::TABLE . ' u ON (u.id = i.id_user)';
 
 		if ($for instanceof Form) {
@@ -206,7 +214,7 @@ class Items
 		$item->save();
 
 		try {
-			self::handleUserRegistration($data, (int)$item->id_form, $item, self::getChargeableType($item, $data));
+			self::handleUserRegistration($data, (int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType));
 		}
 		catch (SyncException $e) { self::catchSyncException($e); }
 		
@@ -287,8 +295,7 @@ class Items
 		}
 		$option->save();
 
-		$type = $option->price_type === Item::FREE_PRICE_TYPE ? Chargeable::FREE_TYPE : Chargeable::OPTION_TYPE;
-		self::handleUserRegistration($full_data, $id_form, $option, $type);
+		self::handleUserRegistration($full_data, $id_form, $option, Chargeables::getType($option, $full_data->order->formType));
 
 		return $option;
 	}
@@ -300,7 +307,7 @@ class Items
 		{
 			if ($item->amount && $item->price_type !== Item::FREE_PRICE_TYPE) {
 				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
-					self::accountChargeable((int)$item->id_form, $item, self::getChargeableType($item, $data), (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+					self::accountChargeable((int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType), (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 				}
 				else // Checkout case
 				{
@@ -311,7 +318,7 @@ class Items
 						$transaction = self::createTransaction($item, [$payment->id_credit_account, $payment->id_debit_account], (int)$data->payments[0]->id, $payment->date);
 						$payment->set('id_transaction', $transaction->id);
 					}
-					elseif (self::accountChargeable((int)$item->id_form, $item, Chargeable::TYPE_FROM_FORM[$data->order->formType], (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date))) {
+					elseif (self::accountChargeable((int)$item->id_form, $item, Chargeable::CHECKOUT_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date))) {
 						$payment->set('id_transaction', $item->id_transaction);
 					}
 					$payment->save();
@@ -320,7 +327,7 @@ class Items
 			if (isset($data->options)) {
 				foreach ($optionEntities as $option) {
 					if ($option->amount && $option->price_type !== Item::FREE_PRICE_TYPE) {
-						self::accountChargeable((int)$item->id_form, $option, Chargeable::OPTION_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+						self::accountChargeable((int)$item->id_form, $option, Chargeable::SIMPLE_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 					}
 				}
 			}
@@ -428,7 +435,7 @@ class Items
 	static protected function getChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
 		$amount = (Chargeables::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount());
-		if ($chargeable = Chargeables::get($id_form, $type, $entity->getLabel(), $amount)) {
+		if ($chargeable = Chargeables::get($id_form, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], $type, $entity->getLabel(), $amount)) {
 			return $chargeable;
 		}
 		return Chargeables::createChargeable($id_form, $entity, $type);
@@ -527,17 +534,6 @@ class Items
 			throw new \RuntimeException(sprintf('Cannot record item/option transaction. Item/option ID: %d.', $entity->id));
 		}
 		return $transaction;
-	}
-
-	static protected function getChargeableType(ChargeableInterface $entity, \stdClass $data): int
-	{
-		if ($entity->price_type === Item::FREE_PRICE_TYPE) {
-			return Chargeable::FREE_TYPE;
-		}
-		$type = Chargeable::TYPE_FROM_FORM[$data->order->formType];
-		if ($type === Chargeable::ITEM_TYPE && $entity->type === Item::DONATION_TYPE)
-			return Chargeable::DONATION_ITEM_TYPE;
-		return $type;
 	}
 
 	static protected function generateLabel(\stdClass $data, int $id_form): string

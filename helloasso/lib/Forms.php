@@ -92,7 +92,7 @@ class Forms
 				
 				if ($form->formType === 'Donation' || $form->formType === 'PaymentForm')
 				{
-					$chargeable = Chargeables::get($entity->id, Chargeable::ONLY_ONE_ITEM_FORM_TYPE, $entity->name, null);
+					$chargeable = Chargeables::get($entity->id, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], Chargeable::ONLY_ONE_ITEM_FORM_TYPE, $entity->name, null);
 					if (null === $chargeable) {
 						$chargeable = Chargeables::createChargeable($entity->id, $entity, Chargeable::ONLY_ONE_ITEM_FORM_TYPE);
 					}

@@ -20,17 +20,20 @@ use Garradin\Entities\Services\Service;
 
 class Chargeables
 {
-	static public function get(int $id_form, int $type, string $label, ?int $amount): ?Chargeable
+	static public function get(int $id_form, int $target_type, int $type, string $label, ?int $amount): ?Chargeable
 	{
+		if (!array_key_exists($target_type, Chargeable::TARGET_TYPES)) {
+			throw new \RuntimeException('Invalid Chargeable target type: %s. Allowed types are: %s.', $target_type, implode(', ', array_keys(Chargeable::TARGET_TYPES)));
+		}
 		if (!array_key_exists($type, Chargeable::TYPES)) {
 			throw new \RuntimeException('Invalid Chargeable type: %s. Allowed types are: %s.', $type, implode(', ', array_keys(Chargeable::TYPES)));
 		}
 		$amount_filter = (null === $amount ? 'amount IS NULL' : 'amount = :amount');
-		$params = [ $id_form, $type, $label, $amount ];
+		$params = [ $id_form, $target_type, $type, $label, $amount ];
 		if (null === $amount) {
 			array_pop($params);
 		}
-		return EM::findOne(Chargeable::class, 'SELECT * FROM @TABLE WHERE id_form = :id_form AND type = :type AND label = :label AND ' . $amount_filter, ...$params);
+		return EM::findOne(Chargeable::class, 'SELECT * FROM @TABLE WHERE id_form = :id_form AND target_type = :target_type AND type = :type AND label = :label AND ' . $amount_filter, ...$params);
 	}
 
 	static public function allForDisplay(bool $accounting = true): array
@@ -78,6 +81,9 @@ class Chargeables
 				'label' => 'Référence',
 				'select' => 'c.id'
 			],
+			'target_type' => [
+				'select' => 'c.target_type'
+			],
 			'type' => [
 				'select' => 'c.type'
 			],
@@ -97,11 +103,11 @@ class Chargeables
 				'select' => 'c.id_category'
 			],
 			'category' => [
-				'label' => 'Inscrip. Catég.',
+				'label' => 'Insc. Catégorie',
 				'select' => 'cat.name'
 			],
 			'service' => [
-				'label' => 'Inscrip. Activ.',
+				'label' => 'Insc. Activité',
 				'select' => 's.label'
 			],
 			'credit_account' => [
@@ -150,8 +156,8 @@ class Chargeables
 
 		$list->setModifier(function ($row) {
 			$row->type_label = ($row->id_item !== null) ? (Item::TYPES[$row->item_type] ?? 'Inconnu') : (Form::TYPES[$row->form_type] ?? 'Inconnu');
-			if ($row->type === Chargeable::OPTION_TYPE) {
-				$row->type_label .= ' - ' . Chargeable::TYPES[$row->type];
+			if ($row->target_type === Chargeable::OPTION_TARGET_TYPE) {
+				$row->type_label .= ' - ' . Chargeable::TARGET_TYPES[$row->target_type];
 			}
 			
 			$row->category = $row->category ?? ($row->need_config === 1 ? null : '-');
@@ -194,6 +200,23 @@ class Chargeables
 		$res->finalize();
 	}
 
+	static public function getType(ChargeableInterface $entity, string $raw_form_type): int
+	{
+		if ($entity->getPriceType() === Item::FREE_PRICE_TYPE) {
+			return Chargeable::FREE_TYPE;
+		}
+		if (Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)] === Chargeable::OPTION_TARGET_TYPE) {
+			return Chargeable::SIMPLE_TYPE;
+		}
+		$form_type = Chargeable::TYPE_FROM_FORM[$raw_form_type];
+		if ($form_type !== Chargeable::ONLY_ONE_ITEM_FORM_TYPE && $entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE) {
+			return Chargeable::PAY_WHAT_YOU_WANT_TYPE;
+		}
+		if ($form_type === Chargeable::SIMPLE_TYPE && $entity->type === Item::DONATION_TYPE)
+			return Chargeable::DONATION_ITEM_TYPE;
+		return $form_type;
+	}
+
 	static public function createChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
 		if (!array_key_exists($type, Chargeable::TYPES)) {
@@ -201,6 +224,7 @@ class Chargeables
 		}
 		$chargeable = new Chargeable();
 		$chargeable->set('type', $type);
+		$chargeable->set('target_type', Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)]);
 		$chargeable->set('id_form', $id_form);
 		$chargeable->set('id_item', $entity->getItemId());
 		$chargeable->set('id_category', null);

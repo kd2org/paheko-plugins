@@ -15,27 +15,40 @@ use Garradin\Plugin\HelloAsso\HelloAsso as HA;
 class Chargeable extends Entity
 {
 	const TABLE = 'plugin_helloasso_chargeables';
-	const ITEM_TYPE = 1;
-	const OPTION_TYPE = 2;
-	const DONATION_ITEM_TYPE = 3;
-	const ONLY_ONE_ITEM_FORM_TYPE = 4;
-	const FREE_TYPE = 5;
+
+	const SIMPLE_TYPE = 1;
+	const DONATION_ITEM_TYPE = 2;
+	const ONLY_ONE_ITEM_FORM_TYPE = 3;
+	const FREE_TYPE = 4;
+	const PAY_WHAT_YOU_WANT_TYPE = 5;
 	const CHECKOUT_TYPE = 6;
 	const TYPES = [
-		self::ITEM_TYPE => 'Item',
-		self::OPTION_TYPE => 'Option',
+		self::SIMPLE_TYPE => 'Item/Option classique',
 		self::DONATION_ITEM_TYPE => 'Don',
 		self::ONLY_ONE_ITEM_FORM_TYPE => 'Don/Vente',
 		self::FREE_TYPE => 'Gratuit',
+		self::PAY_WHAT_YOU_WANT_TYPE => 'Prix libre',
 		self::CHECKOUT_TYPE => 'Checkout'
 	];
 	const TYPE_FROM_FORM = [
 		'Donation' => self::ONLY_ONE_ITEM_FORM_TYPE,
 		'PaymentForm' => self::ONLY_ONE_ITEM_FORM_TYPE,
-		'Payment' => self::ITEM_TYPE,
-		'Membership' => self::ITEM_TYPE,
+		'Payment' => self::SIMPLE_TYPE,
+		'Membership' => self::SIMPLE_TYPE,
 		'Checkout' => self::CHECKOUT_TYPE,
-		'Shop' => self::ITEM_TYPE
+		'Shop' => self::SIMPLE_TYPE
+	];
+
+	const ITEM_TARGET_TYPE = 1;
+	const OPTION_TARGET_TYPE = 2;
+	const TARGET_TYPES = [
+		self::ITEM_TARGET_TYPE => 'Item',
+		self::OPTION_TARGET_TYPE => 'Option'
+	];
+	const TARGET_TYPE_FROM_CLASS = [
+		Item::class => self::ITEM_TARGET_TYPE,
+		Option::class => self::OPTION_TARGET_TYPE,
+		Form::class => self::ITEM_TARGET_TYPE // Same behavior for Form and Item
 	];
 
 	protected int		$id;
@@ -45,6 +58,7 @@ class Chargeable extends Entity
 	protected ?int		$id_debit_account;
 	protected ?int		$id_category;
 	protected ?int		$id_fee;
+	protected ?int		$target_type;
 	protected int		$type;
 	protected string	$label;
 	protected ?int		$amount; // When null, handles all amounts. See Chargeables::isMatchingAnyAmount() for null scenarii.
@@ -104,7 +118,7 @@ class Chargeable extends Entity
 
 	public function isMatchingAnyAmount(): bool
 	{
-		return (($this->type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($this->type === Chargeable::DONATION_ITEM_TYPE));
+		return (($this->type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($this->type === Chargeable::DONATION_ITEM_TYPE) || ($this->type === Chargeable::PAY_WHAT_YOU_WANT_TYPE));
 	}
 
 	public function registerToService(int $id_user, \DateTime $date, bool $paid)

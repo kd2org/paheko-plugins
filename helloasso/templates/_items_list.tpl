@@ -27,6 +27,7 @@
 
 			</td>
 			{/if}
+			<td>{if $row.service}{$row.service}{else}-{/if}</td>
 			<td>{$row.state}</td>
 			<td class="actions">
 				{if $details}{linkbutton href="order.php?id=%s"|args:$row.id_order shape="help" label="Détails"}{/if}
