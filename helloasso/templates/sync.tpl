@@ -25,6 +25,7 @@
 
 {if $chargeables}
 <form method="POST" action="{$self_url_no_qs}">
+
 	<p class="alert block">
 		{if $plugin->config->accounting}
 			{if !$default_debit_account && !$default_credit_account}
@@ -36,6 +37,7 @@
 			Pour pouvoir synchroniser les membres, merci de sélectionner quels articles doivent inscrire automatiquement les membres :
 		{/if}
 	</p>
+
 	{foreach from=$chargeables key='form_name' item='form'}
 		<fieldset>
 			<legend>{if $form_name === 'Checkout'}Paiements isolés{else}{$form_name}{/if}</legend>
@@ -56,7 +58,14 @@
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account}
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account}
 						{/if}
-						{input type="select" name="id_category[%d]"|args:$chargeable.id label="Inscrire comme membre dans la catégorie" default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+						{input type="select" name="id_category[%d]"|args:$chargeable.id label="Inscrire comme membre dans la catégorie" data-chargeable-id=$chargeable.id default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+						<span class="service_fee_registration" id={"service_fee_registration_%d"|args:$chargeable.id} data-chargeable-id="{$chargeable.id|intval}">
+							<?php
+							$fee = $chargeable->fee();
+							$default = $fee ? [ (int)$fee->id => ($chargeable->service()->label . ' - ' . $fee->label) ] : null;
+							?>
+							{input type="list" target="_fee_selector.php" name="id_fee[%d]"|args:$chargeable.id label="Inscrire à l'activité" required=false default=$default can_delete=true help="Les comptes ci-dessus prévalent sur ceux du tarif de l'activité sélectionnée."}
+						</span>
 					</dl>
 				{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
 					</fieldset>
@@ -64,11 +73,13 @@
 			{/foreach}
 		</fieldset>
 	{/foreach}
+
 	{if $plugin->config->accounting && $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
 		<p class="help block">Vous pouvez définir/changer les valeurs de pré-remplissage depuis <a href="{$plugin_admin_url}config.php">la configuration de l'extension</a>.</p>
 	{/if}
+
 	{csrf_field key=$csrf_key}
-	{button type="submit" name="accounts_submit" label="Finaliser la synchronisation" shape="right" class="main"}
+	{button type="submit" name="chargeable_config_submit" label="Finaliser la synchronisation" shape="right" class="main"}
 </form>
 {/if}
 
@@ -98,5 +109,32 @@
 		</p>
 	</form>
 {/if}
+
+<script type="text/javascript">
+{literal}
+(function () {
+	let blocks = $('.service_fee_registration');
+	
+	for (let i = 0; i < blocks.length; ++i) {
+		let chargeable_id = blocks[i].getAttribute('data-chargeable-id');
+		let span = $('#f_id_fee' + chargeable_id + '_container');
+
+		g.toggle('#service_fee_registration_' + chargeable_id, $('#f_id_category' + chargeable_id).value > 0);
+
+		$('#f_id_category' + chargeable_id).onchange = (e) => {
+			let chargeable_id = e.target.getAttribute('data-chargeable-id');
+			let span = $('#f_id_fee' + chargeable_id + '_container');
+			let id_category = e.target.value;
+
+			g.toggle('#service_fee_registration_' + chargeable_id, id_category > 0);
+
+			if (id_category === '0' && span.getElementsByTagName('span').length) {
+				span.getElementsByTagName('span')[0].remove();
+			}
+		};
+	};
+})();
+{/literal}
+</script>
 
 {include file="_foot.tpl"}

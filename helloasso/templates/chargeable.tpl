@@ -37,7 +37,12 @@
 	</dd>
 	{if $chargeable->id_category}
 		<dt>Inscription Automatique</dt>
-		<dd>{$category->name}</dd>
+		<dd>
+			{$category->name}
+			{if $chargeable->service()}
+				- {$chargeable->service()->label} ({$chargeable->fee()->label})
+			{/if}
+		</dd>
 	{/if}
 </dl>
 
@@ -51,7 +56,12 @@
 	<form method="post" action="{$self_url}">
 		<fieldset>
 			<legend>Inscription</legend>
-			{input type="select" name="id_category" label="Inscrire comme membre dans la catégorie" default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+			<dl>
+				{input type="select" name="id_category" label="Inscrire comme membre dans la catégorie" default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+				<span class="service_fee_registration">
+					{input type="list" target="_fee_selector.php" name="id_fee" label="Inscrire à l'activité" required=false default=$selected_fee can_delete=true help="Les comptes ci-dessous prévalent sur ceux du tarif de l'activité sélectionnée."}
+				</span>
+			</dl>
 		</fieldset>
 		{if $plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}
 			<fieldset>
@@ -78,5 +88,20 @@
 		<dd><pre>{if $chargeable->id_item}{$parent_item->raw_data|json_revamp}{else}NULL{/if}</pre></dd>
 	</dl>
 {/if}
+
+<script type="text/javascript">
+{literal}
+(function () {
+	g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
+
+	$('#f_id_category').onchange = () => {
+		g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
+		if ($('#f_id_category').value === '0' && $('#f_id_fee_container').getElementsByTagName('span').length) {
+			$('#f_id_fee_container').getElementsByTagName('span')[0].remove();
+		}
+	};
+})();
+{/literal}
+</script>
 
 {include file="_foot.tpl"}

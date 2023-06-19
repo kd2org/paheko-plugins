@@ -4,6 +4,13 @@ namespace Garradin\Plugin\HelloAsso\Entities;
 
 use Garradin\Entity;
 use Garradin\DB;
+use KD2\DB\EntityManager;
+use Garradin\Entities\Services\Fee;
+use Garradin\Entities\Services\Service;
+use Garradin\Entities\Services\Service_User;
+use Garradin\Users\Users;
+
+use Garradin\Plugin\HelloAsso\HelloAsso as HA;
 
 class Chargeable extends Entity
 {
@@ -37,6 +44,7 @@ class Chargeable extends Entity
 	protected ?int		$id_credit_account;
 	protected ?int		$id_debit_account;
 	protected ?int		$id_category;
+	protected ?int		$id_fee;
 	protected int		$type;
 	protected string	$label;
 	protected ?int		$amount; // When null, handles all amounts. See Chargeables::isMatchingAnyAmount() for null scenarii.
@@ -44,6 +52,9 @@ class Chargeable extends Entity
 
 	protected ?string	$_form_name = null;
 	protected ?string	$_item_name = null;
+
+	protected ?Fee		$_fee = null;
+	protected ?Service	$_service = null;
 
 	public function setForm_name(string $name): void
 	{
@@ -94,6 +105,51 @@ class Chargeable extends Entity
 	public function isMatchingAnyAmount(): bool
 	{
 		return (($this->type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($this->type === Chargeable::DONATION_ITEM_TYPE));
+	}
+
+	public function registerToService(int $id_user, \DateTime $date, bool $paid)
+	{
+		if (!$this->id_fee) {
+			throw new \RuntimeException(sprintf('No fee associated to current chargeable #%d while trying to register user #%d to a service.', $this->id, $id_user));
+		}
+		if (!$this->service()) {
+			throw new \RuntimeException(sprintf('No service associated to fee #%d for chargeable #%d.', $this->id_fee, $this->id));
+		}
+		if (!Users::idExists($id_user)) {
+			throw new \RuntimeException(sprintf('Inexisting user #%d.', $id_user));
+		}
+		$source = [
+			'id_user' => (int)$id_user,
+			'id_service' => (int)$this->service()->id,
+			'id_fee' => (int)$this->id_fee,
+			'paid' => $paid,
+			'amount' => $this->amount,
+			//'expected_amount' => $this->amount,
+			'date' => $date
+		];
+		return Service_User::createFromForm([ $id_user => HA::PROVIDER_LABEL . ' synchronization' ], $id_user, false, $source); // Second parameter should be HelloAsso user ID (to understand the plugin auto-registered the member)
+	}
+
+	public function fee(): ?Fee
+	{
+		if (!$this->id_fee) {
+			return null;
+		}
+		if (null === $this->_fee) {
+			$this->_fee = EntityManager::findOneById(Fee::class, (int)$this->id_fee);
+		}
+		return $this->_fee;
+	}
+
+	public function service(): ?Service
+	{
+		if (!$this->id_fee) {
+			return null;
+		}
+		if (null === $this->_service) {
+			$this->_service = $this->fee() ? EntityManager::findOneById(Service::class, (int)$this->_fee->id_service) : null;
+		}
+		return $this->_service;
 	}
 
 	public function selfCheck(): void

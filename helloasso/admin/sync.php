@@ -29,7 +29,7 @@ $csrf_key = 'sync';
 
 $form->runIf('sync', $synchronize, $csrf_key);
 
-$form->runIf('accounts_submit', function() use ($ha, $tpl, $synchronize) {
+$form->runIf('chargeable_config_submit', function() use ($ha, $tpl, $synchronize) {
 
 	if (array_key_exists('chargeable_credit', $_POST)) {
 		$source = [];
@@ -50,7 +50,10 @@ $form->runIf('accounts_submit', function() use ($ha, $tpl, $synchronize) {
 	$em = EM::getInstance(Chargeable::class);
 	// ToDo: add a nice check
 	foreach ($em->iterate('SELECT * FROM @TABLE WHERE id IN (' . implode(', ', array_keys($_POST['id_category'])) . ')') as $chargeable) {
+		$id_fee = isset($_POST['id_fee'][$chargeable->id]) ? array_keys($_POST['id_fee'][$chargeable->id])[0] : '0';
+
 		$chargeable->set('id_category', $_POST['id_category'][$chargeable->id] === '0' ? null : (int)$_POST['id_category'][$chargeable->id]);
+		$chargeable->set('id_fee', $id_fee === '0' ? null : (int)$id_fee);
 		$chargeable->set('need_config', 0);
 		$chargeable->save();
 	}

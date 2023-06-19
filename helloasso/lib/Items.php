@@ -15,11 +15,13 @@ use Garradin\Plugin\HelloAsso\ChargeableInterface;
 use Garradin\DB;
 use Garradin\DynamicList;
 use Garradin\Utils;
+use Garradin\ValidationException;
 use Garradin\Entities\Accounting\Transaction;
 use Garradin\Accounting\Years;
 use Garradin\Users\DynamicFields;
 use Garradin\Entities\Users\User;
 use Garradin\Plugin\HelloAsso\Payments;
+use Garradin\Services\Services_User;
 
 use KD2\DB\EntityManager as EM;
 
@@ -341,14 +343,16 @@ class Items
 				json_encode($data->beneficiary, JSON_UNESCAPED_UNICODE)
 			));
 		}
-		if (Users::userAlreadyExists($identifier)) {
+		$date = new \DateTime($data->order->date);
+		if ($id_user = Users::getUserId($identifier)) {
+			self::handleFeeRegistration($chargeable, $id_user, $date);
 			return true;
 		}
 
 		$source = [
 			'id_parent' => null,
 			self::$_nameField => Users::guessUserName($data->beneficiary),
-			'date_inscription' => new \DateTime($data->order->date)
+			'date_inscription' => $date
 		];
 
 		foreach (self::$_userFieldsMap as $user_field => $api_field) {
@@ -402,6 +406,23 @@ class Items
 			return $id_user;
 		}
 		return null;
+	}
+
+	static protected function handleFeeRegistration(Chargeable $chargeable, int $id_user, \DateTime $date)
+	{
+		if (null === $chargeable->id_fee) {
+			return null;
+		}
+		if (Services_User::exists($id_user, null, $chargeable->id_fee)) {
+			return true;
+		}
+		try {
+			$su = $chargeable->registerToService($id_user, $date, true);
+		}
+		catch (ValidationException | \LogicException | \RuntimeException $e) {
+			throw new SyncException(sprintf('User service registration failed. Chargeable ID: #%d, user ID: #%d, service ID: #%d, fee ID: #%d.', $chargeable->id, $id_user, $chargeable->service()->id, $chargeable->id_fee), 0, $e);
+		}
+		return $su;
 	}
 
 	static protected function getChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable

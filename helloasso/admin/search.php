@@ -2,8 +2,6 @@
 
 namespace Garradin;
 
-use Garradin\UserTemplate\Modifiers;
-
 use Garradin\Plugin\HelloAsso\SearchResults;
 
 require __DIR__ . '/_inc.php';

@@ -17,6 +17,8 @@ use Garradin\Entities\Accounting\Account;
 use Garradin\Entities\Accounting\Transaction;
 use Garradin\Entities\Users\User;
 use Garradin\Entities\Users\Category;
+use Garradin\Entities\Services\Fee;
+use Garradin\Entities\Services\Service;
 
 use Garradin\UserException;
 
@@ -38,6 +40,7 @@ $form->runIf('save', function () use ($chargeable) {
 		$chargeable->set('id_debit_account', (int)array_keys($_POST['debit'])[0]);
 	}
 	$chargeable->set('id_category', $_POST['id_category'] === '0' ? null : (int)$_POST['id_category']);
+	$chargeable->set('id_fee', isset($_POST['id_fee']) ? (int)array_keys($_POST['id_fee'])[0] : null);
 	$chargeable->set('need_config', 0);
 	$chargeable->save();
 }, $csrf_key, 'chargeable.php?id=' . $id . '&ok');
@@ -54,6 +57,9 @@ foreach ($categories as $category) {
 	$category_options[(int)$category->id] = $category->name;
 }
 
+$fee = $chargeable->fee();
+$service = $fee ? $chargeable->service() : null;
+
 $tpl->assign([
 	'chargeable' => $chargeable,
 	'category' => $chargeable->id_category ? EntityManager::findOneById(Category::class, $chargeable->id_category) : null,
@@ -63,6 +69,7 @@ $tpl->assign([
 	'credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 	'debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
 	'category_options' => $category_options,
+	'selected_fee' => $fee ? [ (int)$fee->id => ($service->label . ' - ' . $fee->label) ] : null,
 	'orders' => Orders::list($chargeable),
 	'csrf_key' => $csrf_key,
 	'current_sub' => 'chargeables'

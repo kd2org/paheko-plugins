@@ -19,6 +19,7 @@
 			<td>{$row.label}</td>
 			<td class="money">{$row.amount|money_currency|raw}</td>
 			<td>{$row.category}</td>
+			<td>{$row.service}</td>
 			<td class="num"><a href="{$admin_url}acc/accounts/journal.php?id={$row.id_credit_account|intval}">{$row.credit_account}</a></td>
 			<td class="num"><a href="{$admin_url}acc/accounts/journal.php?id={$row.id_debit_account|intval}">{$row.debit_account}</a></td>
 

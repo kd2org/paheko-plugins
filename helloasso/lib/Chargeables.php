@@ -15,6 +15,8 @@ use Garradin\DB;
 use Garradin\DynamicList;
 use Garradin\Utils;
 use Garradin\Entities\Users\Category;
+use Garradin\Entities\Services\Fee;
+use Garradin\Entities\Services\Service;
 
 class Chargeables
 {
@@ -95,8 +97,12 @@ class Chargeables
 				'select' => 'c.id_category'
 			],
 			'category' => [
-				'label' => 'Inscrip. Auto',
+				'label' => 'Inscrip. Catég.',
 				'select' => 'cat.name'
+			],
+			'service' => [
+				'label' => 'Inscrip. Activ.',
+				'select' => 's.label'
 			],
 			'credit_account' => [
 				'label' => 'Recette',
@@ -132,6 +138,8 @@ class Chargeables
 			LEFT JOIN ' . Account::TABLE . ' ca ON (ca.id = c.id_credit_account)
 			LEFT JOIN ' . Account::TABLE . ' da ON (da.id = c.id_debit_account)
 			LEFT JOIN ' . Category::TABLE . ' cat ON (cat.id = c.id_category)
+			LEFT JOIN ' . Fee::TABLE . ' fee ON (fee.id = c.id_fee)
+			LEFT JOIN ' . Service::TABLE . ' s ON (s.id = fee.id_service)
 		';
 
 		$list = new DynamicList($columns, $tables);
@@ -147,6 +155,7 @@ class Chargeables
 			}
 			
 			$row->category = $row->category ?? ($row->need_config === 1 ? null : '-');
+			$row->service = $row->service ?? '-';
 		});
 
 		$list->setExportCallback(function (&$row) {

@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeables (
 	id_credit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
 	id_debit_account INTEGER NULL REFERENCES acc_accounts (id) ON DELETE SET NULL,
 	id_category INTEGER NULL REFERENCES users_categories (id) ON DELETE SET NULL,
+	id_fee INTEGER NULL DEFAULT NULL REFERENCES services_fees (id) ON DELETE SET NULL,
 	type INTEGER NOT NULL,
 	label TEXT NOT NULL,
 	amount INTEGER NULL,
