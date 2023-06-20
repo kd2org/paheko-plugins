@@ -9,14 +9,14 @@ class Form extends Entity implements ChargeableInterface
 {
 	const TABLE = 'plugin_helloasso_forms';
 
-	protected int $id;
-	protected string $org_slug;
-	protected string $org_name;
-	protected string $name;
-	protected string $state;
+	protected int		$id;
+	protected string	$org_slug;
+	protected string	$org_name;
+	protected string	$name;
+	protected string	$state;
 
-	protected string $type;
-	protected string $slug;
+	protected string	$type;
+	protected string	$slug;
 
 	const TYPES = [
 		'CrowdFunding' => 'Crowdfunding',
@@ -51,6 +51,11 @@ class Form extends Entity implements ChargeableInterface
 	}
 
 	public function getPriceType(): ?int
+	{
+		return null;
+	}
+
+	public function getCustomFields(): ?\stdClass
 	{
 		return null;
 	}

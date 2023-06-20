@@ -58,14 +58,30 @@
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account}
 							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account}
 						{/if}
-						{input type="select" name="id_category[%d]"|args:$chargeable.id label="Inscrire comme membre dans la catégorie" data-chargeable-id=$chargeable.id default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
-						<span class="service_fee_registration" id={"service_fee_registration_%d"|args:$chargeable.id} data-chargeable-id="{$chargeable.id|intval}">
+
+						{input type="select" name="id_category[%d]"|args:$chargeable.id label="Inscrire comme membre dans la catégorie" data-chargeable-id=$chargeable.id default=$chargeable.id_category options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+
+						<div class="custom_fields_bind" id="custom_fields_{$chargeable->id}_bind">
+							{if $chargeable->customFields()}
+								<dt><label for="custom_fields_{$chargeable->id}">Correspondances</label></dt>
+								<dd>
+									<fieldset id="custom_fields_{$chargeable->id}">
+										{foreach from=$chargeable->customFields() item='field'}
+											{input type="select" name="custom_fields[%d][%d]"|args:$chargeable->id:$field->id label=$field->name options=$dynamic_fields required=true default=$field->id_dynamic_field}
+										{/foreach}
+									</fieldset>
+								</dd>
+							{/if}
+						</div>
+
+						<div class="service_fee_registration" id={"service_fee_registration_%d"|args:$chargeable.id} data-chargeable-id="{$chargeable.id|intval}">
 							<?php
 							$fee = $chargeable->fee();
 							$default = $fee ? [ (int)$fee->id => ($chargeable->service()->label . ' - ' . $fee->label) ] : null;
 							?>
 							{input type="list" target="_fee_selector.php" name="id_fee[%d]"|args:$chargeable.id label="Inscrire à l'activité" required=false default=$default can_delete=true help="Les comptes ci-dessus prévalent sur ceux du tarif de l'activité sélectionnée."}
-						</span>
+						</div>
+
 					</dl>
 				{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
 					</fieldset>
@@ -120,6 +136,7 @@
 		let span = $('#f_id_fee' + chargeable_id + '_container');
 
 		g.toggle('#service_fee_registration_' + chargeable_id, $('#f_id_category' + chargeable_id).value > 0);
+		g.toggle('#custom_fields_' + chargeable_id + '_bind', $('#f_id_category' + chargeable_id).value > 0);
 
 		$('#f_id_category' + chargeable_id).onchange = (e) => {
 			let chargeable_id = e.target.getAttribute('data-chargeable-id');
@@ -127,6 +144,7 @@
 			let id_category = e.target.value;
 
 			g.toggle('#service_fee_registration_' + chargeable_id, id_category > 0);
+			g.toggle('#custom_fields_' + chargeable_id + '_bind', id_category > 0);
 
 			if (id_category === '0' && span.getElementsByTagName('span').length) {
 				span.getElementsByTagName('span')[0].remove();

@@ -58,6 +58,20 @@
 			<legend>Inscription</legend>
 			<dl>
 				{input type="select" name="id_category" label="Inscrire comme membre dans la catégorie" default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
+
+					<div class="custom_fields_bind" id="custom_fields_bind">
+						{if $chargeable->customFields()}
+							<dt><label for="custom_fields">Correspondances</label></dt>
+							<dd>
+								<fieldset id="custom_fields">
+									{foreach from=$chargeable->customFields() item='field'}
+										{input type="select" name="custom_fields[%d]"|args:$field->id label=$field->name options=$dynamic_fields required=true default=$field->id_dynamic_field}
+									{/foreach}
+								</fieldset>
+							</dd>
+						{/if}
+					</div>
+
 				<span class="service_fee_registration">
 					{input type="list" target="_fee_selector.php" name="id_fee" label="Inscrire à l'activité" required=false default=$selected_fee can_delete=true help="Les comptes ci-dessous prévalent sur ceux du tarif de l'activité sélectionnée."}
 				</span>
@@ -93,9 +107,11 @@
 {literal}
 (function () {
 	g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
+	g.toggle('.custom_fields_bind', $('#f_id_category').value > 0);
 
 	$('#f_id_category').onchange = () => {
 		g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
+		g.toggle('.custom_fields_bind', $('#f_id_category').value > 0);
 		if ($('#f_id_category').value === '0' && $('#f_id_fee_container').getElementsByTagName('span').length) {
 			$('#f_id_fee_container').getElementsByTagName('span')[0].remove();
 		}

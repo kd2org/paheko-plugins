@@ -8,6 +8,7 @@ use KD2\DB\EntityManager;
 use Garradin\Entities\Services\Fee;
 use Garradin\Entities\Services\Service;
 use Garradin\Entities\Services\Service_User;
+use Garradin\Entities\Users\DynamicField;
 use Garradin\Users\Users;
 
 use Garradin\Plugin\HelloAsso\HelloAsso as HA;
@@ -69,6 +70,7 @@ class Chargeable extends Entity
 
 	protected ?Fee		$_fee = null;
 	protected ?Service	$_service = null;
+	protected ?array	$_customFields = null;
 
 	public function setForm_name(string $name): void
 	{
@@ -142,6 +144,29 @@ class Chargeable extends Entity
 			'date' => $date
 		];
 		return Service_User::createFromForm([ $id_user => HA::PROVIDER_LABEL . ' synchronization' ], $id_user, false, $source); // Second parameter should be HelloAsso user ID (to understand the plugin auto-registered the member)
+	}
+
+	public function createCustomField(string $name, ?int $id_dynamic_field = null): CustomField
+	{
+		if ($id_dynamic_field && !EntityManager::findOneById(DynamicField::class, $id_dynamic_field)) {
+			throw new \InvalidArgumentException(sprintf('Dynamic field #%d does not exist!', $id_dynamic_field));
+		}
+
+		$field = new CustomField();
+		$field->set('id_chargeable', (int)$this->id);
+		$field->set('id_dynamic_field', $id_dynamic_field);
+		$field->set('name', $name);
+		$field->save();
+
+		return $field;
+	}
+
+	public function customFields(): array
+	{
+		if (null === $this->_customFields) {
+			$this->_customFields = EntityManager::getInstance(CustomField::class)->all('SELECT * FROM @TABLE WHERE id_chargeable = :id_chargeable;', (int)$this->id);
+		}
+		return $this->_customFields;
 	}
 
 	public function fee(): ?Fee

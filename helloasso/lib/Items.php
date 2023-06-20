@@ -19,6 +19,7 @@ use Garradin\ValidationException;
 use Garradin\Entities\Accounting\Transaction;
 use Garradin\Accounting\Years;
 use Garradin\Users\DynamicFields;
+use Garradin\Entities\Users\DynamicField;
 use Garradin\Entities\Users\User;
 use Garradin\Plugin\HelloAsso\Payments;
 use Garradin\Services\Services_User;
@@ -39,6 +40,7 @@ class Items
 
 	static protected string	$_nameField;
 	static protected array	$_userFieldsMap;
+	static protected array	$_dynamicFieldNameCache = [];
 	static protected array	$_userIdsByLoginCache = []; // Used when userMatchField is different from the Paheko login field
 	static protected array	$_exceptions = [];
 
@@ -159,6 +161,7 @@ class Items
 	{
 		self::$_nameField = DynamicFields::getFirstNameField();
 		self::setUserFieldsMap();
+		self::setDynamicFieldNameCache();
 	}
 
 	static protected function setUserFieldsMap(): void
@@ -171,6 +174,11 @@ class Items
 			}
 		}
 		self::$_userFieldsMap = array_flip((array)$map);
+	}
+
+	static protected function setDynamicFieldNameCache(): void
+	{
+		self::$_dynamicFieldNameCache = DB::getInstance()->getAssoc(sprintf('SELECT id, name FROM %s', DynamicField::TABLE));
 	}
 
 	static public function sync(string $org_slug, bool $accounting = true): void
@@ -337,7 +345,9 @@ class Items
 	static protected function handleUserRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type)
 	{
 		$chargeable = self::getChargeable($id_form, $entity, $chargeable_type);
-		if (!$chargeable->id_category) {
+		self::addNewCustomFields($chargeable, $data);
+
+		if (!$chargeable->id_category) { // Meaning this chargeable does not register members
 			return null;
 		}
 		if (!$identifier = Users::guessUserIdentifier($data->beneficiary)) {
@@ -350,6 +360,7 @@ class Items
 				json_encode($data->beneficiary, JSON_UNESCAPED_UNICODE)
 			));
 		}
+
 		$date = new \DateTime($data->order->date);
 		if ($id_user = Users::getUserId($identifier)) {
 			self::handleFeeRegistration($chargeable, $id_user, $date);
@@ -365,6 +376,15 @@ class Items
 		foreach (self::$_userFieldsMap as $user_field => $api_field) {
 			if (isset($data->beneficiary->$api_field))
 				$source[$user_field] = $data->beneficiary->$api_field;
+		}
+		foreach ($chargeable->customFields() as $customField) {
+			if (isset($data->fields[$customField->name])) { // The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order)
+				if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
+					throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
+				}
+				$name = self::$_dynamicFieldNameCache[$customField->id_dynamic_field];
+				$source[$name] = $data->fields[$customField->name];
+			}
 		}
 		$user_match_field = Users::getUserMatchField();
 
@@ -445,7 +465,7 @@ class Items
 	{
 		$chargeable = self::getChargeable($id_form, $entity, $type);
 		if (null === $chargeable) {
-			$chargeable = Chargeables::createChargeable($id_form, $entity, $type);
+			$chargeable = Chargeables::createChargeable($id_form, $entity, $type);  // To remove. Already done inside getChargeable()
 		}
 		elseif ($entity->getAmount() && $chargeable->id_credit_account && $chargeable->id_debit_account) {
 			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment_ref, $date);
@@ -454,6 +474,18 @@ class Items
 			return true;
 		}
 		return false;
+	}
+
+	static protected function addNewCustomFields(Chargeable $chargeable, \stdClass $data): void
+	{
+		$existings = CustomFields::getNamesForChargeable($chargeable->id);
+		foreach ($data->fields as $name => $value) {
+			if (!in_array($name, $existings)) {
+				$chargeable->createCustomField($name);
+				$chargeable->set('need_config', 1);
+				$chargeable->save();
+			}
+		}
 	}
 
 	static protected function transform(\stdClass $data): \stdClass
@@ -466,8 +498,7 @@ class Items
 		$data->form_slug = $data->order->formSlug;
 		$data->org_slug = $data->order->organizationSlug;
 
-		$user_data = (!empty($data->user)) ? Payment::formatPersonInfos($data->user) : null;
-		$data->fields = $user_data ?? [];
+		$data->fields = [];
 
 		if (!empty($data->customFields)) {
 			foreach ($data->customFields as $field) {
@@ -475,7 +506,7 @@ class Items
 			}
 		}
 
-		$data->beneficiary = $data->fields ? (object)array_merge($data->fields, (array)$data->user) : $data->payer;
+		$data->beneficiary = isset($data->user) ? (object)array_merge($data->fields, (array)$data->user) : $data->payer;
 		if (!isset($data->beneficiary->email) && ($data->payer->firstName === $data->beneficiary->firstName) && ($data->payer->lastName === $data->beneficiary->lastName) && !empty($data->payer->email)) {
 			$data->beneficiary->email = $data->payer->email;
 		}

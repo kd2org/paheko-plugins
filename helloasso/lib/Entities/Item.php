@@ -83,6 +83,11 @@ class Item extends Entity implements ChargeableInterface
 		return $this->price_type;
 	}
 
+	public function getCustomFields(): ?\stdClass
+	{
+		return $this->custom_fields;
+	}
+
 	public function setUserId(?int $id): void
 	{
 		$this->set('id_user', $id);
