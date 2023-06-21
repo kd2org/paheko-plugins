@@ -2,6 +2,12 @@
 
 {include file="./_menu.tpl" current="home" current_sub="orders" show_export=true}
 
+{if $_GET.ok}
+	<p class="confirm block">
+		Correspondances mises à jour.
+	</p>
+{/if}
+
 {include file="common/dynamic_list_head.tpl"}
 
 	{foreach from=$list->iterate() item="row"}
@@ -33,5 +39,27 @@
 {* Not yet supported
 {pagination url=$list->paginationURL() page=$list.page bypage=$list.per_page total=$list->count()}
 *}
+
+{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_ADMIN) && $form->customFields()}
+	{if $form->need_config}
+		<p class="alert block">
+			Une configuration des correspondances suivantes est requise pour la synchronisation des membres.
+		</p>
+	{/if}
+
+	<form method="POST" action="{$self_url}">
+		<fieldset>
+			<legend>Correspondance des champs HelloAsso</legend>
+			<p class="help block">Fait le lien entre les données saisies sur le formulaire HelloAsso et les champs membres de Paheko.</p>
+			<dl>
+				{foreach from=$form->customFields() item='field'}
+					{input type="select" name="custom_fields[%d]"|args:$field->id label=$field->name options=$dynamic_fields required=true default=$field->id_dynamic_field}
+				{/foreach}
+			</dl>
+		</fieldset>
+		{csrf_field key=$csrf_key}
+		{button type="submit" name="custom_fields_config" label="Enregistrer" class="main"}
+	</form>
+{/if}
 
 {include file="_foot.tpl"}

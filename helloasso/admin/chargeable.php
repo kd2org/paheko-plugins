@@ -10,7 +10,7 @@ use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\Forms;
 use Garradin\Plugin\HelloAsso\Orders;
-use Garradin\Plugin\HelloAsso\ChargeableController as Controller;
+use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
 
 use Garradin\Payments\Payments;
 use Garradin\Entities\Payments\Payment;
@@ -41,9 +41,9 @@ $form->runIf('save', function () use ($chargeable) {
 		$chargeable->set('id_debit_account', (int)array_keys($_POST['debit'])[0]);
 	}
 
-	Controller::updateChargeable($chargeable, (int)$_POST['id_category'], isset($_POST['id_fee']) ? (int)array_keys($_POST['id_fee'])[0] : 0);
+	CF::updateChargeable($chargeable, (int)$_POST['id_category'], isset($_POST['id_fee']) ? (int)array_keys($_POST['id_fee'])[0] : 0);
 	if (array_key_exists('custom_fields', $_POST)) {
-		Controller::updateCustomFields($_POST['custom_fields']);
+		CF::updateCustomFields($_POST['custom_fields']);
 	}
 }, $csrf_key, 'chargeable.php?id=' . $id . '&ok');
 
@@ -63,8 +63,8 @@ $tpl->assign([
 	'chart_id' => Plugin\HelloAsso\HelloAsso::CHART_ID, // ToDo: make it dynamic
 	'credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 	'debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
-	'category_options' => Controller::setCategoryOptions(),
-	'dynamic_fields' => Controller::setDynamicFieldOptions(),
+	'category_options' => CF::setCategoryOptions(),
+	'dynamic_fields' => CF::setDynamicFieldOptions(),
 	'selected_fee' => $fee ? [ (int)$fee->id => ($service->label . ' - ' . $fee->label) ] : null,
 	'orders' => Orders::list($chargeable),
 	'csrf_key' => $csrf_key,

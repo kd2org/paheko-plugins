@@ -3,7 +3,7 @@
 {include file="%s/templates/_menu.tpl"|args:$plugin_root current="sync"}
 
 {if $_GET.ok}
-	{if $_GET.ok == 1 && (!$plugin->config->accounting || ($plugin->config->accounting && !$chargeables))}
+	{if $_GET.ok == 1 && ((!$plugin->config->accounting || ($plugin->config->accounting && !$chargeables)) && !$forms)}
 		<p class="confirm block">Synchronisation effectuée avec succès.</p>
 	{/if}
 {/if}
@@ -23,9 +23,11 @@
 	{/foreach}
 {/if}
 
-{if $chargeables}
+{if ($chargeables || $forms)}
 <form method="POST" action="{$self_url_no_qs}">
+{/if}
 
+{if $chargeables}
 	<p class="alert block">
 		{if $plugin->config->accounting}
 			{if !$default_debit_account && !$default_credit_account}
@@ -61,19 +63,6 @@
 
 						{input type="select" name="id_category[%d]"|args:$chargeable.id label="Inscrire comme membre dans la catégorie" data-chargeable-id=$chargeable.id default=$chargeable.id_category options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
 
-						<div class="custom_fields_bind" id="custom_fields_{$chargeable->id}_bind">
-							{if $chargeable->customFields()}
-								<dt><label for="custom_fields_{$chargeable->id}">Correspondances</label></dt>
-								<dd>
-									<fieldset id="custom_fields_{$chargeable->id}">
-										{foreach from=$chargeable->customFields() item='field'}
-											{input type="select" name="custom_fields[%d][%d]"|args:$chargeable->id:$field->id label=$field->name options=$dynamic_fields required=true default=$field->id_dynamic_field}
-										{/foreach}
-									</fieldset>
-								</dd>
-							{/if}
-						</div>
-
 						<div class="service_fee_registration" id={"service_fee_registration_%d"|args:$chargeable.id} data-chargeable-id="{$chargeable.id|intval}">
 							<?php
 							$fee = $chargeable->fee();
@@ -93,7 +82,28 @@
 	{if $plugin->config->accounting && $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
 		<p class="help block">Vous pouvez définir/changer les valeurs de pré-remplissage depuis <a href="{$plugin_admin_url}config.php">la configuration de l'extension</a>.</p>
 	{/if}
+{/if}
 
+{if $forms}
+
+	<p class="alert block">
+		Pour pouvoir synchroniser les membres, merci de renseigner les correspondances entre les champs HelloAsso et Paheko :
+	</p>
+
+	{foreach from=$forms item='form'}
+		<fieldset>
+			<legend>{$form->name}</legend>
+			<dl>
+				{foreach from=$form->customFields() item='field'}
+					{input type="select" name="custom_fields[%d][%d]"|args:$form->id:$field->id label=$field->name options=$dynamic_fields required=true default=$field->id_dynamic_field}
+				{/foreach}
+			</dl>
+		</fieldset>
+	{/foreach}
+
+{/if}
+
+{if ($chargeables || $forms)}
 	{csrf_field key=$csrf_key}
 	{button type="submit" name="chargeable_config_submit" label="Finaliser la synchronisation" shape="right" class="main"}
 </form>
@@ -116,7 +126,7 @@
 	<form method="post" action="{$self_url_no_qs}">
 		<p class="submit">
 			{csrf_field key=$csrf_key}
-			{if $chargeables}
+			{if $chargeables || $forms}
 				ou bien
 				{button type="submit" name="sync" value=1 label="Synchroniser uniquement les anciennes données"}
 			{else}
@@ -136,7 +146,6 @@
 		let span = $('#f_id_fee' + chargeable_id + '_container');
 
 		g.toggle('#service_fee_registration_' + chargeable_id, $('#f_id_category' + chargeable_id).value > 0);
-		g.toggle('#custom_fields_' + chargeable_id + '_bind', $('#f_id_category' + chargeable_id).value > 0);
 
 		$('#f_id_category' + chargeable_id).onchange = (e) => {
 			let chargeable_id = e.target.getAttribute('data-chargeable-id');
@@ -144,7 +153,6 @@
 			let id_category = e.target.value;
 
 			g.toggle('#service_fee_registration_' + chargeable_id, id_category > 0);
-			g.toggle('#custom_fields_' + chargeable_id + '_bind', id_category > 0);
 
 			if (id_category === '0' && span.getElementsByTagName('span').length) {
 				span.getElementsByTagName('span')[0].remove();

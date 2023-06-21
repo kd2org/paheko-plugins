@@ -233,11 +233,6 @@ class Chargeables
 		$chargeable->set('need_config', 1);
 		$chargeable->save();
 
-		if ($entity->custom_fields) {
-			foreach ($entity->custom_fields as $name => $value) {
-				$chargeable->createCustomField($name);
-			}
-		}
 		return $chargeable;
 	}
 

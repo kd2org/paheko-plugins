@@ -8,10 +8,20 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_forms (
 	name TEXT NOT NULL,
 	slug TEXT NOT NULL,
 	type TEXT NOT NULL,
-	state TEXT NOT NULL
+	state TEXT NOT NULL,
+	need_config UNSIGNED INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_forms_key ON plugin_helloasso_forms(org_slug, slug);
+
+CREATE TABLE IF NOT EXISTS plugin_helloasso_form_custom_fields (
+	id INTEGER PRIMARY KEY NOT NULL,
+	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
+	id_dynamic_field INTEGER NULL REFERENCES config_users_fields(id),
+	name TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_form_custom_fields_unique ON plugin_helloasso_form_custom_fields(id_form, id_dynamic_field);
 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_orders (
 	id INTEGER PRIMARY KEY NOT NULL,
@@ -72,14 +82,6 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeables (
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_chargeables_key ON plugin_helloasso_chargeables(id_form, id_item, type, label, amount);
 CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_get ON plugin_helloasso_chargeables(id_form, label, amount);
 
-CREATE TABLE IF NOT EXISTS plugin_helloasso_chargeable_custom_fields (
-	id INTEGER PRIMARY KEY NOT NULL,
-	id_chargeable INTEGER NOT NULL REFERENCES plugin_helloasso_chargeables(id) ON DELETE CASCADE,
-	id_dynamic_field INTEGER NULL REFERENCES config_users_fields(id),
-	name TEXT NOT NULL
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_chargeable_custom_fields_unique ON plugin_helloasso_chargeable_custom_fields(id_chargeable, id_dynamic_field);
 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_targets (
 -- List of forms that should create users or subscriptions

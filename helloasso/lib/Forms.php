@@ -40,6 +40,11 @@ class Forms
 		return self::$forms_names[$id] ?? null;
 	}
 
+	static public function getNeedingConfig(): array
+	{
+		return EM::getInstance(Form::class)->all('SELECT * FROM @TABLE WHERE need_config = 1;');
+	}
+
 	static public function list(): array
 	{
 		$sql = sprintf('SELECT * FROM %s ORDER BY state = \'Disabled\', type, org_name COLLATE NOCASE, name COLLATE NOCASE;', Form::TABLE);
@@ -80,13 +85,14 @@ class Forms
 
 			foreach ($forms as $form) {
 				$entity = $existing[$form->formSlug] ?? new Form;
-				$entity->org_name = $o->name;
-				$entity->org_slug = $o->organizationSlug;
+				$entity->set('org_name', $o->name);
+				$entity->set('org_slug', $o->organizationSlug);
 
-				$entity->name = strip_tags($form->privateTitle ?? $form->title);
-				$entity->type = $form->formType;
-				$entity->state = $form->state;
-				$entity->slug = $form->formSlug;
+				$entity->set('name', strip_tags($form->privateTitle ?? $form->title));
+				$entity->set('type', $form->formType);
+				$entity->set('state', $form->state);
+				$entity->set('slug', $form->formSlug);
+				$entity->set('need_config', 0);
 
 				$entity->save();
 

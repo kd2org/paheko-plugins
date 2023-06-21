@@ -3,6 +3,7 @@
 namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
+use Garradin\Plugin\HelloAsso\Entities\CustomField;
 use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\Entities\Option;
@@ -41,6 +42,8 @@ class Items
 	static protected string	$_nameField;
 	static protected array	$_userFieldsMap;
 	static protected array	$_dynamicFieldNameCache = [];
+	static protected array	$_formsCache = [];
+	static protected array	$_customFieldsCache = [];
 	static protected array	$_userIdsByLoginCache = []; // Used when userMatchField is different from the Paheko login field
 	static protected array	$_exceptions = [];
 
@@ -162,6 +165,8 @@ class Items
 		self::$_nameField = DynamicFields::getFirstNameField();
 		self::setUserFieldsMap();
 		self::setDynamicFieldNameCache();
+		self::setFormsCache();
+		self::setCustomFieldsCache();
 	}
 
 	static protected function setUserFieldsMap(): void
@@ -179,6 +184,22 @@ class Items
 	static protected function setDynamicFieldNameCache(): void
 	{
 		self::$_dynamicFieldNameCache = DB::getInstance()->getAssoc(sprintf('SELECT id, name FROM %s', DynamicField::TABLE));
+	}
+
+	static protected function setFormsCache(): void
+	{
+		foreach (EM::getInstance(Form::class)->all('SELECT id, * FROM @TABLE;') as $form) {
+			self::$_formsCache[(int)$form->id] = $form;
+		}
+	}
+
+	static protected function setCustomFieldsCache(): void
+	{
+		foreach (DB::getInstance()->iterate(sprintf('SELECT * FROM %s ORDER BY id_form', CustomField::TABLE)) as $row) {
+			$customField = new CustomField();
+			$customField->load((array)$row);
+			$_customFieldsCache[(int)$row->id_form][] = $customField;
+		}
 	}
 
 	static public function sync(string $org_slug, bool $accounting = true): void
@@ -344,9 +365,8 @@ class Items
 
 	static protected function handleUserRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type)
 	{
+		self::addNewCustomFields($id_form, $data);
 		$chargeable = self::getChargeable($id_form, $entity, $chargeable_type);
-		self::addNewCustomFields($chargeable, $data);
-
 		if (!$chargeable->id_category) { // Meaning this chargeable does not register members
 			return null;
 		}
@@ -377,13 +397,15 @@ class Items
 			if (isset($data->beneficiary->$api_field))
 				$source[$user_field] = $data->beneficiary->$api_field;
 		}
-		foreach ($chargeable->customFields() as $customField) {
-			if (isset($data->fields[$customField->name])) { // The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order)
-				if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
-					throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
+		if (array_key_exists($id_form, self::$_customFieldsCache)) {
+			foreach (self::$_customFieldsCache[$id_form] as $customField) {
+				if (isset($data->fields[$customField->name])) { // The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order been processed)
+					if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
+						throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
+					}
+					$name = self::$_dynamicFieldNameCache[$customField->id_dynamic_field];
+					$source[$name] = $data->fields[$customField->name];
 				}
-				$name = self::$_dynamicFieldNameCache[$customField->id_dynamic_field];
-				$source[$name] = $data->fields[$customField->name];
 			}
 		}
 		$user_match_field = Users::getUserMatchField();
@@ -446,7 +468,7 @@ class Items
 		try {
 			$su = $chargeable->registerToService($id_user, $date, true);
 		}
-		catch (ValidationException | \LogicException | \RuntimeException $e) {
+		catch (\Exception $e) {
 			throw new SyncException(sprintf('User service registration failed. Chargeable ID: #%d, user ID: #%d, service ID: #%d, fee ID: #%d.', $chargeable->id, $id_user, $chargeable->service()->id, $chargeable->id_fee), 0, $e);
 		}
 		return $su;
@@ -476,14 +498,18 @@ class Items
 		return false;
 	}
 
-	static protected function addNewCustomFields(Chargeable $chargeable, \stdClass $data): void
+	static protected function addNewCustomFields(int $id_form, \stdClass $data): void
 	{
-		$existings = CustomFields::getNamesForChargeable($chargeable->id);
+		if (!array_key_exists($id_form, self::$_formsCache)) {
+			throw new SyncException(sprintf('Tried to add custom fields to an inexisting (never synchronized?) form #%d.', $id_form));
+		}
+		$form = self::$_formsCache[$id_form];
+		$existings = CustomFields::getNamesForForm((int)$form->id);
 		foreach ($data->fields as $name => $value) {
 			if (!in_array($name, $existings)) {
-				$chargeable->createCustomField($name);
-				$chargeable->set('need_config', 1);
-				$chargeable->save();
+				$form->createCustomField($name);
+				$form->set('need_config', 1);
+				$form->save();
 			}
 		}
 	}

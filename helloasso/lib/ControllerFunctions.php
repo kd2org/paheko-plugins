@@ -9,8 +9,9 @@ use Garradin\Entities\Users\DynamicField;
 use Garradin\Entities\Users\Category;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\Entities\CustomField;
+use Garradin\Plugin\HelloAsso\Entities\Form;
 
-class ChargeableController
+class ControllerFunctions
 {
 	static public function setDynamicFieldOptions(): array
 	{
@@ -25,8 +26,11 @@ class ChargeableController
 		return $dynamic_fields;
 	}
 
-	static public function updateCustomFields(array $source): void
+	static public function updateCustomFields(int $id_form, array $source): void
 	{
+		if (!$form = EM::findOneById(Form::class, (int)$id_form)) {
+			throw new \InvalidArgumentException(sprintf('Unable to update custom field of inexisting Form #%d.', $id_form));
+		}
 		foreach ($source as $id_custom_field => $value) {
 			if (!$customField = EM::findOneById(CustomField::class, (int)$id_custom_field)) {
 				throw new \InvalidArgumentException(sprintf('Inexisting CustomField #%s.', $id_custom_field));
@@ -43,6 +47,8 @@ class ChargeableController
 			}
 			$customField->save();
 		}
+		$form->set('need_config', 0);
+		$form->save();
 	}
 
 	static public function updateChargeable(Chargeable $chargeable, int $id_category, int $id_fee): void

@@ -9,13 +9,13 @@ $session->requireAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE);
 use KD2\DB\EntityManager as EM;
 use Garradin\Entities\Accounting\Account;
 
-
 use Garradin\Plugin\HelloAsso\HelloAsso;
 use Garradin\Plugin\HelloAsso\Forms;
 use Garradin\Plugin\HelloAsso\Items;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
+use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\Chargeables;
-use Garradin\Plugin\HelloAsso\ChargeableController as Controller;
+use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
 
 $synchronize = function () use ($ha, $tpl)
 {
@@ -51,8 +51,9 @@ $tpl->assign([
 	'chart_id' => Plugin\HelloAsso\HelloAsso::CHART_ID, // ToDo: make it dynamic
 	'default_credit_account' => (null !== $default_ca) ? [ $default_ca->id => $default_ca->code . ' — ' . $default_ca->label ] : null,
 	'default_debit_account' => (null !== $default_da) ? [ $default_da->id => $default_da->code . ' — ' . $default_da->label ] : null,
-	'category_options' => Controller::setCategoryOptions(),
-	'dynamic_fields' => Controller::setDynamicFieldOptions()
+	'category_options' => CF::setCategoryOptions(),
+	'forms' => Forms::getNeedingConfig(),
+	'dynamic_fields' => CF::setDynamicFieldOptions()
 ]);
 
 $tpl->display(PLUGIN_ROOT . '/templates/sync.tpl');
@@ -79,18 +80,20 @@ function updateAccounting(): void
 
 function updateChargeables(): void
 {
-	$em = EM::getInstance(Chargeable::class);
-	// ToDo: add a nice check
-	foreach ($em->iterate('SELECT * FROM @TABLE WHERE id IN (' . implode(', ', array_keys($_POST['id_category'])) . ')') as $chargeable) {
-		Controller::updateChargeable($chargeable, (int)$_POST['id_category'][$chargeable->id], isset($_POST['id_fee'][$chargeable->id]) ? (int)array_keys($_POST['id_fee'][$chargeable->id])[0] : 0);
+	if (array_key_exists('id_category', $_POST)) {
+		$em = EM::getInstance(Chargeable::class);
+		// ToDo: add a nice check
+		foreach ($em->iterate('SELECT * FROM @TABLE WHERE id IN (' . implode(', ', array_keys($_POST['id_category'])) . ')') as $chargeable) {
+			CF::updateChargeable($chargeable, (int)$_POST['id_category'][$chargeable->id], isset($_POST['id_fee'][$chargeable->id]) ? (int)array_keys($_POST['id_fee'][$chargeable->id])[0] : 0);
+		}
 	}
 }
 
 function updateCustomFields(): void
 {
 	if (isset($_POST['custom_fields'])) {
-		foreach ($_POST['custom_fields'] as $id_chargeable => $fields) {
-			Controller::updateCustomFields($fields);
+		foreach ($_POST['custom_fields'] as $id_form => $fields) {
+			CF::updateCustomFields($id_form, $fields);
 		}
 	}
 }

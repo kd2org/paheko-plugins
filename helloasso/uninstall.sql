@@ -11,4 +11,5 @@ DROP TABLE IF EXISTS plugin_helloasso_orders;
 DROP TABLE IF EXISTS plugin_helloasso_item_options;
 DROP TABLE IF EXISTS plugin_helloasso_items;
 DROP TABLE IF EXISTS plugin_helloasso_chargeables;
+DROP TABLE IF EXISTS plugin_helloasso_form_custom_fields;
 DROP TABLE IF EXISTS plugin_helloasso_forms;
