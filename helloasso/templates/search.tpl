@@ -25,9 +25,16 @@ $target = [
 			<td class="num"><a href="{$target[$row.type]|args:$row.id}">{$row.id}</a></td>
 			<td>{$row.label}</td>
 			<td>{if $row->date}{$row.date|date}{else}-{/if}</td>
-			<td class="num">
+			<td>
 				{if $row.person}
-					{$row.person}{if $row.id_user} <a href="{$admin_url}users/details.php?id={$row.id_user}">{$row.user_number}</a>{/if}
+					{$row.person}
+				{else}
+				-
+				{/if}
+			</td>
+			<td class="num">
+				{if $row.id_user}
+					{$row.beneficiary} <a href="{$admin_url}users/details.php?id={$row.id_user}">{$row.user_number}</a>
 				{else}
 				-
 				{/if}
