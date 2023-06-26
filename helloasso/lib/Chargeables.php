@@ -36,6 +36,15 @@ class Chargeables
 		return EM::findOne(Chargeable::class, 'SELECT * FROM @TABLE WHERE id_form = :id_form AND target_type = :target_type AND type = :type AND label = :label AND ' . $amount_filter, ...$params);
 	}
 
+	static public function getFromEntity(int $id_form, ChargeableInterface $entity, int $type): Chargeable
+	{
+		$amount = (self::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount());
+		if ($chargeable = self::get($id_form, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], $type, $entity->getLabel(), $amount)) {
+			return $chargeable;
+		}
+		return self::createChargeable($id_form, $entity, $type);
+	}
+
 	static public function allForDisplay(bool $accounting = true): array
 	{
 		$params = $accounting ? [ Chargeable::FREE_TYPE ] : [];

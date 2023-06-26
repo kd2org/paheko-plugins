@@ -5,8 +5,16 @@ namespace Garradin\Plugin\HelloAsso;
 use Garradin\Entities\Users\User;
 use Garradin\Entities\Users\Category;
 use Garradin\Plugin\HelloAsso\HelloAsso;
-use KD2\DB\EntityManager;
+use Garradin\Plugin\HelloAsso\Entities\CustomField;
+use Garradin\Plugin\HelloAsso\Entities\Form;
+use Garradin\Plugin\HelloAsso\Entities\Order;
+use Garradin\Plugin\HelloAsso\Entities\Chargeable;
+
+use KD2\DB\EntityManager as EM;
+use Garradin\DB;
 use Garradin\Users\DynamicFields;
+use Garradin\Entities\Users\DynamicField;
+use Garradin\Services\Services_User;
 use Garradin\Config;
 
 class Users
@@ -25,6 +33,11 @@ class Users
 
 	static protected ?array	$_userMatchField = null;
 	static protected array	$_existingUsersCache = [];
+	static protected string	$_nameField;
+	static protected array	$_userFieldsMap;
+	static protected array	$_customFieldsCache = [];
+	static protected array	$_dynamicFieldNameCache = [];
+	static protected array	$_formsCache = [];
 
 	static public function getMappedUser(\stdClass $payer, bool $check = true): User
 	{
@@ -34,7 +47,7 @@ class Users
 		$map = clone $ha->plugin()->getConfig()->payer_map;
 
 		$id_category = (int)Config::getInstance()->default_category;
-		if (!$id_category OR !($category = EntityManager::findOneById(Category::class, (int)$id_category))) {
+		if (!$id_category OR !($category = EM::findOneById(Category::class, (int)$id_category))) {
 			throw new NotFoundException(sprintf('Cannot map user: Not found category "%s".', $id_category));
 		}
 		$user->set('id_category', (int)$category->id);
@@ -78,7 +91,7 @@ class Users
 		if (!($identifier = self::guessUserIdentifier($payer)) || !($id_user = self::getUserId($identifier))) {
 			return null;
 		}
-		return EntityManager::findOneById(User::class, $id_user);
+		return EM::findOneById(User::class, $id_user);
 	}
 
 	static public function guessUserIdentifier(\stdClass $source): ?string
@@ -110,10 +123,198 @@ class Users
 		if (array_key_exists($identifier, self::$_existingUsersCache)) {
 			return self::$_existingUsersCache[$identifier];
 		}
-		$id_user = EntityManager::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', self::getUserMatchField()[0]), $identifier);
+		$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', self::getUserMatchField()[0]), $identifier);
 		self::$_existingUsersCache[$identifier] = (false === $id_user) ? null : $id_user;
 
 		return self::$_existingUsersCache[$identifier];
+	}
+
+	/**
+	 * @return int|bool|null
+	 * true: user already exists (no need to register him/her)
+	 * int: newly registered user's ID
+	 * null: conflict happened
+	 */
+	static public function syncRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type)
+	{
+		self::addNewCustomFields($id_form, $data);
+
+		$chargeable = Chargeables::getFromEntity($id_form, $entity, $chargeable_type);
+		if (!$chargeable->id_category) { // Meaning this chargeable does not register members
+			return null;
+		}
+
+		if (!$identifier = Users::guessUserIdentifier($data->beneficiary)) {
+			throw new NoFuturIDSyncException(sprintf(
+				'Commande n°%s : Impossible d\'inscrire le membre "%s". Aucun %s à lui associer comme identifiant.' . "\n" . 'Informations reçues de %s :' . "\n" . '%s',
+				$data->order_id,
+				$data->beneficiary_label,
+				Users::USER_MATCH_TYPES[HelloAsso::getInstance()->plugin()->getConfig()->user_match_type],
+				HelloAsso::PROVIDER_LABEL,
+				json_encode($data->beneficiary, JSON_UNESCAPED_UNICODE)
+			));
+		}
+
+		$date = new \DateTime($data->order->date);
+		if ($id_user = Users::getUserId($identifier)) {
+			self::handleFeeRegistration($chargeable, $id_user, $date);
+			return true;
+		}
+
+		$source = self::createUserSource($data, $id_form, $date);
+
+		if (!$source['conflict'])
+		{
+			$user = \Garradin\Users\Users::create();
+			$user->importForm($source);
+			$user->set('id_category', (int)$chargeable->id_category);
+			$user->setNumberIfEmpty();
+			$user->save();
+
+			self::addUserToCache(Users::guessUserIdentifier($data->beneficiary), (int)$user->id);
+			self::bindUserToWholeProcess((int)$user->id, $entity, $data);
+			self::handleFeeRegistration($chargeable, (int)$user->id, $date);
+
+			return (int)$user->id;
+		}
+		return null;
+	}
+
+	static protected function createUserSource(\stdClass $data, int $id_form, \DateTime $date): array
+	{
+		$source = [
+			'id_parent' => null,
+			self::$_nameField => Users::guessUserName($data->beneficiary),
+			'date_inscription' => $date
+		];
+
+		foreach (self::$_userFieldsMap as $user_field => $api_field) {
+			if (isset($data->beneficiary->$api_field))
+				$source[$user_field] = $data->beneficiary->$api_field;
+		}
+		if (array_key_exists($id_form, self::$_customFieldsCache)) {
+			foreach (self::$_customFieldsCache[$id_form] as $customField) {
+				if (isset($data->fields[$customField->name])) { // The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order been processed)
+					if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
+						throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
+					}
+					$name = self::$_dynamicFieldNameCache[$customField->id_dynamic_field];
+					$source[$name] = $data->fields[$customField->name];
+				}
+			}
+		}
+		$user_match_field = Users::getUserMatchField();
+
+		// The user match field may not exist (aka. not filled during the HelloAsso checkout) when the payer is also the beneficiary
+		if (isset($data->beneficiary->{$user_match_field[2]})) {
+			$source[$user_match_field[0]] = $data->beneficiary->{$user_match_field[2]};
+		}
+
+		$source['conflict'] = false;
+		if ($user_match_field[0] !== DynamicFields::getLoginField())
+		{
+			$db = DB::getInstance();
+			$login_field = DynamicFields::getLoginField();
+			if (array_key_exists($login_field, $source))
+			{
+				$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ? COLLATE NOCASE;', $db->quoteIdentifier($login_field)), $source[$login_field]);
+				if ($id_user) {
+					$source['conflict'] = true;
+					$source[$login_field] = sprintf(self::DUPLICATE_MEMBER_PREFIX . $source[$login_field], uniqid());
+					//unset($source[$login_field]);
+				}
+			}
+		}
+
+		return $source;
+	}
+
+	static protected function bindUserToWholeProcess(int $id_user, ChargeableInterface $entity, \stdClass $data): void
+	{
+		$entity->setUserId($id_user);
+		$entity->save();
+
+		if (!$order = EM::findOneById(Order::class, (int)$data->order_id)) {
+			throw new \RuntimeException(sprintf('Order #%d not found while trying to associate its user #%d from entity #%d.', $data->order_id, $id_user, $entity->id));
+		}
+		$order->set('id_user', (int)$id_user);
+		$order->save();
+
+		if (!$payment = Payments::getByOrderId((int)$order->id)) {
+			throw new \RuntimeException(sprintf('No payment found for order #%d while trying to associate its payer User.', $order->id));
+		}
+		$payment->set('id_author', (int)$id_user);
+		$payment->save();
+	}
+
+	static protected function addNewCustomFields(int $id_form, \stdClass $data): void
+	{
+		if (!array_key_exists($id_form, self::$_formsCache)) {
+			throw new SyncException(sprintf('Tried to add custom fields to an inexisting (never synchronized?) form #%d.', $id_form));
+		}
+		$form = self::$_formsCache[$id_form];
+		$existings = CustomFields::getNamesForForm((int)$form->id);
+		foreach ($data->fields as $name => $value) {
+			if (!in_array($name, $existings)) {
+				$form->createCustomField($name);
+				$form->set('need_config', 1);
+				$form->save();
+			}
+		}
+	}
+
+	static protected function handleFeeRegistration(Chargeable $chargeable, int $id_user, \DateTime $date)
+	{
+		if (null === $chargeable->id_fee) {
+			return null;
+		}
+		if (Services_User::exists($id_user, null, $chargeable->id_fee)) {
+			return true;
+		}
+		try {
+			$su = $chargeable->registerToService($id_user, $date, true);
+		}
+		catch (\Exception $e) {
+			throw new SyncException(sprintf('User service registration failed. Chargeable ID: #%d, user ID: #%d, service ID: #%d, fee ID: #%d.', $chargeable->id, $id_user, $chargeable->service()->id, $chargeable->id_fee), 0, $e);
+		}
+		return $su;
+	}
+
+	static public function initSync(): void
+	{
+		self::$_nameField = DynamicFields::getFirstNameField();
+		self::setUserFieldsMap();
+		self::setCustomFieldsCache();
+		self::setFormsCache();
+		self::$_dynamicFieldNameCache = DB::getInstance()->getAssoc(sprintf('SELECT id, name FROM %s', DynamicField::TABLE));
+	}
+
+	static protected function setUserFieldsMap(): void
+	{
+		$map = clone HelloAsso::getInstance()->plugin()->getConfig()->payer_map;
+		unset($map->name); // name has a specific process
+		foreach ($map as $api_field => $user_field) {
+			if (null === $user_field) {
+				unset($map->$api_field);
+			}
+		}
+		self::$_userFieldsMap = array_flip((array)$map);
+	}
+
+	static protected function setCustomFieldsCache(): void
+	{
+		foreach (DB::getInstance()->iterate(sprintf('SELECT * FROM %s ORDER BY id_form', CustomField::TABLE)) as $row) {
+			$customField = new CustomField();
+			$customField->load((array)$row);
+			$_customFieldsCache[(int)$row->id_form][] = $customField;
+		}
+	}
+
+	static protected function setFormsCache(): void
+	{
+		foreach (EM::getInstance(Form::class)->all('SELECT id, * FROM @TABLE;') as $form) {
+			self::$_formsCache[(int)$form->id] = $form;
+		}
 	}
 
 	static public function addUserToCache(string $identifier, int $id_user): void

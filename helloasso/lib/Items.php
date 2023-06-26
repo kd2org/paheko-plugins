@@ -3,14 +3,12 @@
 namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Entities\CustomField;
 use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\Entities\Option;
 use Garradin\Plugin\HelloAsso\Entities\Order;
 use Garradin\Plugin\HelloAsso\API;
 use Garradin\Plugin\HelloAsso\HelloAsso as HA;
-use Garradin\Plugin\HelloAsso\ChargeableInterface;
 
 use Garradin\DB;
 use Garradin\DynamicList;
@@ -18,11 +16,8 @@ use Garradin\Utils;
 use Garradin\ValidationException;
 use Garradin\Entities\Accounting\Transaction;
 use Garradin\Accounting\Years;
-use Garradin\Users\DynamicFields;
-use Garradin\Entities\Users\DynamicField;
 use Garradin\Entities\Users\User;
 use Garradin\Plugin\HelloAsso\Payments;
-use Garradin\Services\Services_User;
 use Garradin\Entities\Services\Fee;
 use Garradin\Entities\Services\Service;
 
@@ -38,11 +33,6 @@ class Items
 	const CHECKOUT_LABEL = 'Commande #%d (%s)';
 	const DUPLICATE_MEMBER_PREFIX = 'Doublon-%s-';
 
-	static protected string	$_nameField;
-	static protected array	$_userFieldsMap;
-	static protected array	$_dynamicFieldNameCache = [];
-	static protected array	$_formsCache = [];
-	static protected array	$_customFieldsCache = [];
 	static protected array	$_userIdsByLoginCache = []; // Used when userMatchField is different from the Paheko login field
 	static protected array	$_exceptions = [];
 
@@ -150,51 +140,9 @@ class Items
 		return $list;
 	}
 
-	static protected function init(): void
-	{
-		self::$_nameField = DynamicFields::getFirstNameField();
-		self::setUserFieldsMap();
-		self::setDynamicFieldNameCache();
-		self::setFormsCache();
-		self::setCustomFieldsCache();
-	}
-
-	static protected function setUserFieldsMap(): void
-	{
-		$map = clone HA::getInstance()->plugin()->getConfig()->payer_map;
-		unset($map->name); // name has a specific process
-		foreach ($map as $api_field => $user_field) {
-			if (null === $user_field) {
-				unset($map->$api_field);
-			}
-		}
-		self::$_userFieldsMap = array_flip((array)$map);
-	}
-
-	static protected function setDynamicFieldNameCache(): void
-	{
-		self::$_dynamicFieldNameCache = DB::getInstance()->getAssoc(sprintf('SELECT id, name FROM %s', DynamicField::TABLE));
-	}
-
-	static protected function setFormsCache(): void
-	{
-		foreach (EM::getInstance(Form::class)->all('SELECT id, * FROM @TABLE;') as $form) {
-			self::$_formsCache[(int)$form->id] = $form;
-		}
-	}
-
-	static protected function setCustomFieldsCache(): void
-	{
-		foreach (DB::getInstance()->iterate(sprintf('SELECT * FROM %s ORDER BY id_form', CustomField::TABLE)) as $row) {
-			$customField = new CustomField();
-			$customField->load((array)$row);
-			$_customFieldsCache[(int)$row->id_form][] = $customField;
-		}
-	}
-
 	static public function sync(string $org_slug, bool $accounting = true): void
 	{
-		self::init();
+		self::initSync();
 		$params = [
 			'pageSize'  => HA::getPageSize(),
 		];
@@ -232,8 +180,9 @@ class Items
 		self::setItem($item, $data);
 		$item->save();
 
+		// Different try/catch blocks because we want to do all steps even if an exception occured
 		try {
-			self::handleUserRegistration($data, (int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType));
+			Users::syncRegistration($data, (int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType));
 		}
 		catch (SyncException $e) { self::catchSyncException($e); }
 		
@@ -314,7 +263,7 @@ class Items
 		}
 		$option->save();
 
-		self::handleUserRegistration($full_data, $id_form, $option, Chargeables::getType($option, $full_data->order->formType));
+		Users::syncRegistration($full_data, $id_form, $option, Chargeables::getType($option, $full_data->order->formType));
 
 		return $option;
 	}
@@ -353,155 +302,16 @@ class Items
 		}
 	}
 
-	static protected function handleUserRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type)
-	{
-		self::addNewCustomFields($id_form, $data);
-		$chargeable = self::getChargeable($id_form, $entity, $chargeable_type);
-		if (!$chargeable->id_category) { // Meaning this chargeable does not register members
-			return null;
-		}
-		if (!$identifier = Users::guessUserIdentifier($data->beneficiary)) {
-			throw new NoFuturIDSyncException(sprintf(
-				'Commande n°%s : Impossible d\'inscrire le membre "%s". Aucun %s à lui associer comme identifiant.' . "\n" . 'Informations reçues de %s :' . "\n" . '%s',
-				$data->order_id,
-				$data->beneficiary_label,
-				Users::USER_MATCH_TYPES[HA::getInstance()->plugin()->getConfig()->user_match_type],
-				HA::PROVIDER_LABEL,
-				json_encode($data->beneficiary, JSON_UNESCAPED_UNICODE)
-			));
-		}
-
-		$date = new \DateTime($data->order->date);
-		if ($id_user = Users::getUserId($identifier)) {
-			self::handleFeeRegistration($chargeable, $id_user, $date);
-			return true;
-		}
-
-		$source = [
-			'id_parent' => null,
-			self::$_nameField => Users::guessUserName($data->beneficiary),
-			'date_inscription' => $date
-		];
-
-		foreach (self::$_userFieldsMap as $user_field => $api_field) {
-			if (isset($data->beneficiary->$api_field))
-				$source[$user_field] = $data->beneficiary->$api_field;
-		}
-		if (array_key_exists($id_form, self::$_customFieldsCache)) {
-			foreach (self::$_customFieldsCache[$id_form] as $customField) {
-				if (isset($data->fields[$customField->name])) { // The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order been processed)
-					if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
-						throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
-					}
-					$name = self::$_dynamicFieldNameCache[$customField->id_dynamic_field];
-					$source[$name] = $data->fields[$customField->name];
-				}
-			}
-		}
-		$user_match_field = Users::getUserMatchField();
-
-		// The user match field may not exist (aka. not filled during the HelloAsso checkout) when the payer is also the beneficiary
-		if (isset($data->beneficiary->{$user_match_field[2]})) {
-			$source[$user_match_field[0]] = $data->beneficiary->{$user_match_field[2]};
-		}
-
-		$conflict = false;
-		if ($user_match_field[0] !== DynamicFields::getLoginField())
-		{
-			$db = DB::getInstance();
-			$login_field = DynamicFields::getLoginField();
-			if (array_key_exists($login_field, $source))
-			{
-				$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ? COLLATE NOCASE;', $db->quoteIdentifier($login_field)), $source[$login_field]);
-				if ($id_user) {
-					//$conflict = true;
-					$source[$login_field] = sprintf(self::DUPLICATE_MEMBER_PREFIX . $source[$login_field], uniqid());
-					//unset($source[$login_field]);
-				}
-			}
-		}
-
-		if (!$conflict)
-		{
-			$user = \Garradin\Users\Users::create();
-			$user->importForm($source);
-			$user->set('id_category', (int)$chargeable->id_category);
-			$user->setNumberIfEmpty();
-			$user->save();
-			$id_user = (int)$user->id;
-		}
-
-		if (!$conflict)
-		{
-			Users::addUserToCache(Users::guessUserIdentifier($data->beneficiary), $id_user);
-			
-			$entity->setUserId($id_user);
-			$entity->save();
-
-			$order = EM::findOneById(Order::class, (int)$data->order_id);
-			$order->set('id_user', (int)$id_user);
-			$order->save();
-
-			return $id_user;
-		}
-		return null;
-	}
-
-	static protected function handleFeeRegistration(Chargeable $chargeable, int $id_user, \DateTime $date)
-	{
-		if (null === $chargeable->id_fee) {
-			return null;
-		}
-		if (Services_User::exists($id_user, null, $chargeable->id_fee)) {
-			return true;
-		}
-		try {
-			$su = $chargeable->registerToService($id_user, $date, true);
-		}
-		catch (\Exception $e) {
-			throw new SyncException(sprintf('User service registration failed. Chargeable ID: #%d, user ID: #%d, service ID: #%d, fee ID: #%d.', $chargeable->id, $id_user, $chargeable->service()->id, $chargeable->id_fee), 0, $e);
-		}
-		return $su;
-	}
-
-	static protected function getChargeable(int $id_form, ChargeableInterface $entity, int $type): Chargeable
-	{
-		$amount = (Chargeables::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount());
-		if ($chargeable = Chargeables::get($id_form, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], $type, $entity->getLabel(), $amount)) {
-			return $chargeable;
-		}
-		return Chargeables::createChargeable($id_form, $entity, $type);
-	}
-
 	static protected function accountChargeable(int $id_form, ChargeableInterface $entity, int $type, int $payment_ref, \DateTime $date): bool
 	{
-		$chargeable = self::getChargeable($id_form, $entity, $type);
-		if (null === $chargeable) {
-			$chargeable = Chargeables::createChargeable($id_form, $entity, $type);  // To remove. Already done inside getChargeable()
-		}
-		elseif ($entity->getAmount() && $chargeable->id_credit_account && $chargeable->id_debit_account) {
+		$chargeable = Chargeables::getFromEntity($id_form, $entity, $type);
+		if ($entity->getAmount() && $chargeable->id_credit_account && $chargeable->id_debit_account) {
 			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment_ref, $date);
 			$entity->id_transaction = (int)$transaction->id;
 			$entity->save();
 			return true;
 		}
 		return false;
-	}
-
-	static protected function addNewCustomFields(int $id_form, \stdClass $data): void
-	{
-		if (!array_key_exists($id_form, self::$_formsCache)) {
-			throw new SyncException(sprintf('Tried to add custom fields to an inexisting (never synchronized?) form #%d.', $id_form));
-		}
-		$form = self::$_formsCache[$id_form];
-		$existings = CustomFields::getNamesForForm((int)$form->id);
-		foreach ($data->fields as $name => $value) {
-			if (!in_array($name, $existings)) {
-				$form->createCustomField($name);
-				$form->set('need_config', 1);
-				$form->save();
-			}
-		}
 	}
 
 	static protected function transform(\stdClass $data): \stdClass
@@ -581,6 +391,11 @@ class Items
 			throw new \RuntimeException(sprintf('Cannot record item/option transaction. Item/option ID: %d.', $entity->id));
 		}
 		return $transaction;
+	}
+
+	static protected function initSync(): void
+	{
+		Users::initSync();
 	}
 
 	static protected function generateLabel(\stdClass $data, int $id_form): string
