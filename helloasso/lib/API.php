@@ -18,12 +18,12 @@ class API
 		'firstName' => 'Prénom',
 		'lastName' => 'Nom',
 		'email' => 'Courriel',
-		'address' => 'Adresse',
+		'address' => 'Adresse postale',
 		'city' => 'Ville',
 		'zipCode' => 'Code postale',
 		'country' => 'Pays',
 		'dateOfBirth' => 'Date de naissance',
-		'company' => 'Association/entreprise'
+		'company' => 'Organisme'
 	];
 	const FIXED_PRICE_CATEGORY = 'Fixed';
 	const PAY_WHAT_YOU_WANT_PRICE_CATEGORY = 'Pwyw';

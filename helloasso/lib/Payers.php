@@ -81,4 +81,39 @@ class Payers
 
 		return $list;
 	}
+
+	static public function getPersonName(\stdClass $person)
+	{
+		$names = [!empty($person->company) ? $person->company . ' — ' : null, $person->firstName ?? null, $person->lastName ?? null];
+		$names = array_filter($names);
+
+		$names = implode(' ', $names);
+
+		if (!empty($person->city)) {
+			$names .= sprintf(' (%s)', $person->city);
+		}
+
+		return $names;
+	}
+
+	static public function formatPersonInfos(\stdClass $person): array
+	{
+		$data = [];
+
+		foreach (API::PAYER_FIELDS as $key => $name) {
+			if (!isset($person->$key)) {
+				continue;
+			}
+
+			$value = $person->$key;
+
+			if ($key == 'dateOfBirth') {
+				$value = new \DateTime($value);
+			}
+
+			$data[$name] = $value;
+		}
+
+		return $data;
+	}
 }

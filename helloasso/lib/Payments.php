@@ -21,9 +21,29 @@ use KD2\DB\EntityManager as EM;
 class Payments extends Paheko_Payments
 {
 	const AUTHORIZED_STATUS = 'Authorized';
-	const STATUSES = [ self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS ]; // ToDo: complete the list from HA\Payment class
+	const STATUSES = [
+		self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS
+	]; // ToDo: complete the list from the const STATES bellow
 	const UPDATE_MESSAGE = 'Mise à jour du paiement (nouveau statut : %s)';
 	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
+
+	const STATES = [
+		'Pending'               => 'À venir',
+		'Authorized'            => 'Autorisé',
+		'Refused'               => 'Refusé',
+		'Unknown'               => 'Inconnu',
+		'Registered'            => 'Enregistré',
+		'Error'                 => 'Erreur',
+		'Refunded'              => 'Remboursé',
+		'Abandoned'             => 'Abandonné',
+		'Refunding'             => 'En remboursement',
+		'Canceled'              => 'Annulé',
+		'Contested'             => 'Contesté',
+		'WaitingBankValidation' => 'Attente de validation de la banque',
+		'WaitingBankWithdraw'   => 'Attente retrait de la banque',
+	];
+	const STATE_OK = 'Authorized';
+	const CASH_OUT_OK = 'CashedOut';
 
 	static protected ?array $payment_ids = null;
 
@@ -105,7 +125,7 @@ class Payments extends Paheko_Payments
 		}
 
 		$list->setModifier(function ($row) {
-			$row->state = HA\Payment::STATES[$row->state] ?? 'Inconnu';
+			$row->state = self::STATES[$row->state] ?? 'Inconnu';
 			if ($row->id_author) {
 				$row->author = EM::findOneById(User::class, (int)$row->id_author);
 			}
@@ -140,7 +160,7 @@ class Payments extends Paheko_Payments
 		$params = [
 			'pageSize'  => HelloAsso::getPageSize(),
 			// Only return new Authorized payments, we are no expecting
-			'states'    => HA\Payment::STATE_OK,
+			'states'    => self::STATE_OK,
 		];
 
 		$page_count = 1;
@@ -208,11 +228,11 @@ class Payments extends Paheko_Payments
 		$formated->id = (int) $data->id;
 		$formated->id_order = (int) $data->order->id ?: null;
 		$formated->date = new \DateTime($data->date);
-		$formated->status = HA\Payment::STATES[$data->state] ?? '--';
-		$formated->transferred = isset($data->cashOutState) && $data->cashOutState == HA\Payment::CASH_OUT_OK ? true : false;
+		$formated->status = self::STATES[$data->state] ?? '--';
+		$formated->transferred = isset($data->cashOutState) && $data->cashOutState == self::CASH_OUT_OK ? true : false;
 		$formated->transfer_date = isset($data->cashOutDate) ? new \DateTime($data->cashOutDate) : null;
-		$formated->payer_name = isset($data->payer) ? HA\Payment::getPersonName($data->payer) : null;
-		$formated->payer_infos = isset($data->payer) ? HA\Payment::formatPersonInfos($data->payer) : null;
+		$formated->payer_name = isset($data->payer) ? Payers::getPersonName($data->payer) : null;
+		$formated->payer_infos = isset($data->payer) ? Payers::formatPersonInfos($data->payer) : null;
 		$formated->form_slug = $data->order->formSlug;
 		$formated->org_slug = $data->order->organizationSlug;
 

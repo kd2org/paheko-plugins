@@ -8,7 +8,6 @@ use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\Entities\Option;
 use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Plugin\HelloAsso\Entities\Payment;
 use Garradin\Plugin\HelloAsso\API;
 use Garradin\Plugin\HelloAsso\HelloAsso as HA;
 use Garradin\Plugin\HelloAsso\ChargeableInterface;
@@ -518,8 +517,8 @@ class Items
 	{
 		$data->id = (int) $data->id;
 		$data->order_id = (int) $data->order->id;
-		$data->payer_name = isset($data->payer) ? Payment::getPersonName($data->payer) : null;
-		$data->payer_infos = isset($data->payer) ? Payment::formatPersonInfos($data->payer) : null;
+		$data->payer_name = isset($data->payer) ? Payers::getPersonName($data->payer) : null;
+		$data->payer_infos = isset($data->payer) ? Payers::formatPersonInfos($data->payer) : null;
 		$data->amount = (int) $data->amount;
 		$data->form_slug = $data->order->formSlug;
 		$data->org_slug = $data->order->organizationSlug;
@@ -536,7 +535,7 @@ class Items
 		if (!isset($data->beneficiary->email) && ($data->payer->firstName === $data->beneficiary->firstName) && ($data->payer->lastName === $data->beneficiary->lastName) && !empty($data->payer->email)) {
 			$data->beneficiary->email = $data->payer->email;
 		}
-		$data->beneficiary_label = isset($data->user) ? Payment::getPersonName($data->user) : null;
+		$data->beneficiary_label = isset($data->user) ? Payers::getPersonName($data->user) : null;
 
 		return $data;
 	}
@@ -546,7 +545,7 @@ class Items
 		$data->fields = [];
 
 		if (!empty($data->user)) {
-			$data->fields = Payment::formatPersonInfos($data->user);
+			$data->fields = Payers::formatPersonInfos($data->user);
 		}
 
 		if (!empty($data->customFields)) {

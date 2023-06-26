@@ -4,7 +4,6 @@ namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Plugin\HelloAsso\Entities\Payment;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
 use Garradin\Plugin\HelloAsso\Entities\Item;
 use Garradin\Plugin\HelloAsso\Entities\Option;
@@ -182,8 +181,8 @@ class Orders
 		$data->id = (int) $data->id;
 		$data->date = new \DateTime($data->date);
 		$data->status = Order::getStatus($data);
-		$data->payer_name = isset($data->payer) ? Payment::getPersonName($data->payer) : null;
-		$data->payer_infos = isset($data->payer) ? Payment::formatPersonInfos($data->payer) : null;
+		$data->payer_name = isset($data->payer) ? Payers::getPersonName($data->payer) : null;
+		$data->payer_infos = isset($data->payer) ? Payers::formatPersonInfos($data->payer) : null;
 		$data->amount = (int) ($data->amount->total ?? 0);
 		$data->form_slug = $data->formSlug;
 		$data->org_slug = $data->organizationSlug;

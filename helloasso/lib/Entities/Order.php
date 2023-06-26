@@ -43,7 +43,7 @@ class Order extends Entity
 
 		if (isset($order->payments)) {
 			foreach ($order->payments as $payment) {
-				if ($payment->state == Payment::STATE_OK) {
+				if ($payment->state == Payments::STATE_OK) {
 					$paid += $payment->amount;
 				}
 			}
@@ -55,7 +55,7 @@ class Order extends Entity
 	public function getRawPayerInfos(): array
 	{
 		$data = json_decode($this->raw_data);
-		return $data ? Payment::formatPersonInfos($data->payer) : [];
+		return $data ? Payers::formatPersonInfos($data->payer) : [];
 	}
 
 	public function getRawPayer(): ?\stdClass

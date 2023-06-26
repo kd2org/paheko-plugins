@@ -10,7 +10,6 @@ use Garradin\Entities\Payments\Payment;
 use KD2\DB\EntityManager;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Entities\Payment as HA_Payment;
 
 use function Garradin\garradin_contributor_license;
 
@@ -120,7 +119,7 @@ class HelloAsso
 		$this->plugin->setConfigProperty('id_credit_account', false);
 		$this->plugin->setConfigProperty('id_debit_account', false);
 		$payer_map = new \stdClass();
-		foreach (array_keys(HA_Payment::PAYER_FIELDS) as $field) {
+		foreach (array_keys(API::PAYER_FIELDS) as $field) {
 			$payer_map->$field = null;
 		}
 		$this->plugin->setConfigProperty('payer_map', $payer_map);
