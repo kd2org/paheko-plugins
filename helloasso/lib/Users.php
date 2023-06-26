@@ -129,7 +129,7 @@ class Users
 		if (array_key_exists($identifier, self::$_existingUsersCache)) {
 			return self::$_existingUsersCache[$identifier];
 		}
-		$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', self::getUserMatchField()['entity_field']), $identifier);
+		$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', DB::getInstance()->quoteIdentifier(self::getUserMatchField()['entity_field'])), $identifier);
 		self::$_existingUsersCache[$identifier] = (false === $id_user) ? null : $id_user;
 
 		return self::$_existingUsersCache[$identifier];
