@@ -75,10 +75,10 @@ class SearchResults
 		elseif ($searched_data = Modifiers::parse_date($searched_text)) {
 			$conditions = 'date = :searched_data';
 		}
-		elseif (preg_match('/(^[A-Z0-9+_.-]+@[A-Z0-9+_.-]+$)/i', $searched_text) === 1) {
-			$conditions = 'email = :searched_data';
+		elseif (preg_match('/(^[A-Z0-9+_.-]*@[A-Z0-9+_.-]+$)/i', $searched_text) === 1) {
+			$conditions = 'email LIKE :searched_data';
 			$user_conditions = 'm.' . $db->quoteIdentifier(DynamicFields::getFirstEmailField()) . ' = :searched_data';
-			$searched_data = $searched_text;
+			$searched_data = sprintf("%%%s%%", $searched_text);
 		}
 		else {
 			$searched_text = preg_replace('/[!%_]/', '!$0', trim($searched_text));
@@ -98,14 +98,14 @@ class SearchResults
 			SELECT "' . self::ORDER_TYPE . '" AS "type", m.id AS "id", null AS "label", m.date AS "date", m.person AS "person", u2.' . $user_name_column . ' as "beneficiary", m.id_user AS "id_user", u2.numero AS "user_number", json_extract(m.raw_data, \'$.payer.email\') AS "email"
 			FROM ' . Order::TABLE . ' m
 			' . $user_join . '
-			WHERE ' . $conditions . '
+			WHERE ' . str_replace('email', 'json_extract(m.raw_data, \'$.payer.email\')', $conditions) . '
 
 			UNION
 
 			SELECT "' . self::PAYMENT_TYPE . '" AS "type", m.id AS "id", m.label AS "label", m.date AS "date", m.author_name AS "person", u2.' . $user_name_column . ' as "beneficiary", m.id_author AS "id_user", u2.numero AS "user_number", json_extract(m.extra_data, \'$.payer.email\') AS "email"
 			FROM ' . Payment::TABLE . ' m
 			' . $user_join . '
-			WHERE ' . str_replace('m.id', 'm.reference', $conditions) . '
+			WHERE ' . str_replace('email', 'json_extract(m.extra_data, \'$.payer.email\')', str_replace('m.id', 'm.reference', $conditions)) . '
 
 			UNION
 
