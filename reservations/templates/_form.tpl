@@ -71,7 +71,7 @@
 					<dd><input type="text" name="nom" id="f_nom" placeholder="Prénom et nom" /></dd>
 				{/if}
 				{if !empty($cat->champ->type)}
-					{html_champ_membre config=$cat.champ name="champ"}
+					{*html_champ_membre config=$cat.champ name="champ"*}
 				{/if}
 			</dl>
 			{/if}

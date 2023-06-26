@@ -45,7 +45,7 @@
 	{/literal}
 	</script>
 
-	{include file="./_form.tpl" hide_description=true ask_name=true booking=null title="Réserver pour un adhérent"}
+	{include file="../_form.tpl" hide_description=true ask_name=true booking=null title="Réserver pour un adhérent"}
 {/if}
 
 

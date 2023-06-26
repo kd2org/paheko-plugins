@@ -2,7 +2,7 @@
 
 {include file="./_menu.tpl" current="index"}
 
-{include file="./_form.tpl" ask_name=false}
+{include file="../_form.tpl" ask_name=false}
 
 <article class="wikiContent">
 	{$config.text|raw|format_skriv}
