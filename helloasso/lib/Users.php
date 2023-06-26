@@ -31,13 +31,14 @@ class Users
 	const USER_MATCH_EMAIL = 1;
 	const USER_MATCH_TYPES = [ self::USER_MATCH_NAME => 'Nom et prénom', self::USER_MATCH_EMAIL => 'Courriel' ];
 
-	static protected ?array	$_userMatchField = null;
-	static protected array	$_existingUsersCache = [];
-	static protected string	$_nameField;
-	static protected array	$_userFieldsMap;
-	static protected array	$_customFieldsCache = [];
-	static protected array	$_dynamicFieldNameCache = [];
-	static protected array	$_formsCache = [];
+	static protected ?array		$_userMatchField = null;
+	static protected array		$_existingUsersCache = [];
+	static protected string		$_nameField;
+	static protected ?string	$_customFieldLogin = null;
+	static protected array		$_payerFieldsMap;
+	static protected array		$_customFieldsCache = [];
+	static protected array		$_dynamicFieldNameCache = [];
+	static protected array		$_formsCache = [];
 
 	static public function getMappedUser(\stdClass $payer, bool $check = true): User
 	{
@@ -96,13 +97,18 @@ class Users
 
 	static public function guessUserIdentifier(\stdClass $source): ?string
 	{
-		if (self::getUserMatchField()[1] === 'name') {
+		if (self::getUserMatchField()['type'] === self::USER_MATCH_NAME) {
 			return self::guessUserName($source);
 		}
-		if (isset($source->email))
-			return $source->email;
 
-		return $source->{self::getUserMatchField()[2]} ?? null;
+		if (isset($source->email)) {
+			return $source->email;
+		}
+
+		// 'api_field' may be null if the identifier has the same name as a custom_field
+		$field = self::getUserMatchField()['api_field'] ?? self::$_customFieldLogin;
+
+		return $source->$field ?? ($source->fields[$field] ?? null);
 	}
 
 	static public function guessUserName(\stdClass $source): string
@@ -123,7 +129,7 @@ class Users
 		if (array_key_exists($identifier, self::$_existingUsersCache)) {
 			return self::$_existingUsersCache[$identifier];
 		}
-		$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', self::getUserMatchField()[0]), $identifier);
+		$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', self::getUserMatchField()['entity_field']), $identifier);
 		self::$_existingUsersCache[$identifier] = (false === $id_user) ? null : $id_user;
 
 		return self::$_existingUsersCache[$identifier];
@@ -163,7 +169,7 @@ class Users
 
 		$source = self::createUserSource($data, $id_form, $date);
 
-		if (!$source['conflict'])
+		if (!$source['_conflict'])
 		{
 			$user = \Garradin\Users\Users::create();
 			$user->importForm($source);
@@ -185,16 +191,18 @@ class Users
 		$source = [
 			'id_parent' => null,
 			self::$_nameField => Users::guessUserName($data->beneficiary),
-			'date_inscription' => $date
+			'date_inscription' => $date,
+			'_conflict' => false
 		];
 
-		foreach (self::$_userFieldsMap as $user_field => $api_field) {
+		foreach (self::$_payerFieldsMap as $user_field => $api_field) {
 			if (isset($data->beneficiary->$api_field))
 				$source[$user_field] = $data->beneficiary->$api_field;
 		}
 		if (array_key_exists($id_form, self::$_customFieldsCache)) {
 			foreach (self::$_customFieldsCache[$id_form] as $customField) {
-				if (isset($data->fields[$customField->name])) { // The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order been processed)
+				// The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order been processed)
+				if (isset($data->fields[$customField->name])) {
 					if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
 						throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
 					}
@@ -203,26 +211,21 @@ class Users
 				}
 			}
 		}
-		$user_match_field = Users::getUserMatchField();
+		$user_match_field = self::getUserMatchField();
 
 		// The user match field may not exist (aka. not filled during the HelloAsso checkout) when the payer is also the beneficiary
-		if (isset($data->beneficiary->{$user_match_field[2]})) {
-			$source[$user_match_field[0]] = $data->beneficiary->{$user_match_field[2]};
+		if (isset($data->beneficiary->{$user_match_field['api_field']})) {
+			$source[$user_match_field['entity_field']] = $data->beneficiary->{$user_match_field['api_field']};
 		}
 
-		$source['conflict'] = false;
-		if ($user_match_field[0] !== DynamicFields::getLoginField())
+		$login_field = DynamicFields::getLoginField();
+		if (array_key_exists($login_field, $source) && $user_match_field['entity_field'] !== $login_field)
 		{
-			$db = DB::getInstance();
-			$login_field = DynamicFields::getLoginField();
-			if (array_key_exists($login_field, $source))
-			{
-				$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ? COLLATE NOCASE;', $db->quoteIdentifier($login_field)), $source[$login_field]);
-				if ($id_user) {
-					$source['conflict'] = true;
-					$source[$login_field] = sprintf(self::DUPLICATE_MEMBER_PREFIX . $source[$login_field], uniqid());
-					//unset($source[$login_field]);
-				}
+			$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ? COLLATE NOCASE;', DB::getInstance()->quoteIdentifier($login_field)), $source[$login_field]);
+			if ($id_user) {
+				$source['_conflict'] = true;
+				$source[$login_field] = sprintf(self::DUPLICATE_MEMBER_PREFIX . $source[$login_field], uniqid());
+				//unset($source[$login_field]);
 			}
 		}
 
@@ -293,20 +296,24 @@ class Users
 	{
 		$map = clone HelloAsso::getInstance()->plugin()->getConfig()->payer_map;
 		unset($map->name); // name has a specific process
-		foreach ($map as $api_field => $user_field) {
-			if (null === $user_field) {
+		foreach ($map as $api_field => $payer_field) {
+			if (null === $payer_field) {
 				unset($map->$api_field);
 			}
 		}
-		self::$_userFieldsMap = array_flip((array)$map);
+		self::$_payerFieldsMap = array_flip((array)$map);
 	}
 
 	static protected function setCustomFieldsCache(): void
 	{
+		$login_id = (int)DynamicFields::getInstance()->fieldByKey(DynamicFields::getLoginField())->id;
 		foreach (DB::getInstance()->iterate(sprintf('SELECT * FROM %s ORDER BY id_form', CustomField::TABLE)) as $row) {
 			$customField = new CustomField();
 			$customField->load((array)$row);
-			$_customFieldsCache[(int)$row->id_form][] = $customField;
+			self::$_customFieldsCache[(int)$row->id_form][] = $customField;
+			if ($customField->id_dynamic_field === $login_id) {
+				self::$_customFieldLogin = $customField->name;
+			}
 		}
 	}
 
@@ -327,10 +334,18 @@ class Users
 		$ha = HelloAsso::getInstance();
 		if (null === self::$_userMatchField) {
 			if ($ha->plugin()->getConfig()->user_match_type === self::USER_MATCH_NAME) {
-				self::$_userMatchField = [ DynamicFields::getFirstNameField(), 'name', null ];
+				self::$_userMatchField = [
+					'type' => self::USER_MATCH_NAME,
+					'entity_field' => DynamicFields::getFirstNameField(),
+					'api_field' => null
+				];
 			}
 			else {
-				self::$_userMatchField = [ DynamicFields::getFirstEmailField(), 'email', $ha->plugin()->getConfig()->user_match_field ];
+				self::$_userMatchField = [
+					'type' => self::USER_MATCH_EMAIL,
+					'entity_field' => DynamicFields::getFirstEmailField(),
+					'api_field' => $ha->plugin()->getConfig()->user_match_field ?? null
+				];
 			}
 		}
 		return self::$_userMatchField;

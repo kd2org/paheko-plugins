@@ -30,7 +30,7 @@ $form->runIf('save', function () use ($ha) {
 		}
 	}
 	$data['user_match_type'] = (int)$data['user_match_type'];
-	$data['user_match_field'] = $data['user_match_field'];
+	$data['user_match_field'] = $data['user_match_field'] === '' ? null : $data['user_match_field'];
 	$ha->saveConfig($data);
 	Utils::redirect('?ok=' . ($client_secret ? 'connection' : 'config'));
 }, $csrf_key, null);

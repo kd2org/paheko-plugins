@@ -95,7 +95,7 @@ class Orders
 			unset($columns['id_user']);
 		}
 		elseif ($associate instanceof \stdClass) { // Happens when the payer is not a member
-			if (Users::getUserMatchField()[1] === 'email') {
+			if (Users::getUserMatchField()['type'] === Users::USER_MATCH_EMAIL) {
 				$conditions = sprintf('json_extract(o.raw_data, \'$.payer.email\') = \'%s\'', $associate->email);
 			}
 			else {

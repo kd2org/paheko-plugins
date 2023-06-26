@@ -17,7 +17,7 @@
 			{$e->getMessage()|escape|nl2br}
 			{if $e instanceof Plugin\HelloAsso\NoFuturIDSyncException}
 				<br /><br />
-				Soit il n'y avait pas de champ pour saisir cette information dans le formulaire HelloAsso, soit l'utilisateur/trice n'a pas renseigné cette information, soit l'option "Champ utilisé pour savoir si un membre existe déjà" est mal réglée.
+				Soit il n'y avait pas de champ pour saisir cette information dans le formulaire HelloAsso, soit l'utilisateur/trice n'a pas renseigné cette information, soit la configuration "Correspondance des champs HelloAsso" du formulaire n'est pas correcte, soit l'option "Champ utilisé pour savoir si un membre existe déjà" est mal réglée.
 			{/if}
 		</p>
 	{/foreach}

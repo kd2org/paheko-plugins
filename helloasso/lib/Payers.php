@@ -46,9 +46,9 @@ class Payers
 				'label' => 'Nom',
 				'select' => 'u.nom'
 			],
-			'email' => [
-				'label' => 'Courriel',
-				'select' => 'u.email'
+			'payer_email' => [
+				'label' => 'Courriel', // ToDo: use DynamicFields instead of u.email
+				'select' => 'CASE WHEN u.email IS NULL THEN json_extract(o.raw_data, \'$.payer.email\') ELSE u.email END'
 			],
 			'id_order' => [],
 			'raw_data' => []
@@ -60,14 +60,14 @@ class Payers
 		$list = new DynamicList($columns, $tables);
 
 		$list->setModifier(function (&$row) {
+			$row->email = $row->payer_email;
 			if (!$row->id) {
 				$data = json_decode($row->raw_data);
 				if (!isset($data->payer)) {
 					throw new \RuntimeException(sprintf('No payer for order #%d!', $row->id_order));
 				}
 				$row->name = Users::guessUserName($data->payer);
-				$row->email = $data->payer->email;
-				if (Users::getUserMatchField()[1] === 'email') {
+				if (Users::getUserMatchField()['type'] === Users::USER_MATCH_EMAIL) {
 					$row->ref = $row->email;
 				}
 				else {
@@ -77,7 +77,7 @@ class Payers
 			}
 		});
 
-		$list->groupBy('u.email');
+		$list->groupBy('payer_email');
 
 		return $list;
 	}
