@@ -4,6 +4,7 @@ namespace Garradin\Plugin\HelloAsso;
 
 use Garradin\DynamicList;
 use Garradin\UserTemplate\Modifiers;
+use Garradin\Users\DynamicFields;
 
 use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\Entities\Order;
@@ -39,7 +40,7 @@ class SearchResults
 			],
 			'label' => [
 				'label' => 'Libellé',
-				'select' => 'm.name'
+				'select' => 'm.label'
 			],
 			'date' => [
 				'label' => 'Date',
@@ -99,7 +100,7 @@ class SearchResults
 
 			UNION
 
-			SELECT "' . self::USER_TYPE . '" AS "type", m.id AS "id", m.nom AS "label", m.date_inscription AS "date", null AS "person", null AS "id_user", u2.numero AS "user_number"
+			SELECT "' . self::USER_TYPE . '" AS "type", m.id AS "id", m.' . DynamicFields::getFirstNameField() . ' AS "label", m.date_inscription AS "date", null AS "person", null AS "id_user", u2.numero AS "user_number"
 			FROM ' . User::TABLE . ' m
 			' . $user_join . '
 		';
