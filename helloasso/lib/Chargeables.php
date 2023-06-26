@@ -41,22 +41,22 @@ class Chargeables
 		$params = $accounting ? [ Chargeable::FREE_TYPE ] : [];
 		$chargeables = Chargeables::allPlusExtraFields(
 			sprintf('
-				SELECT c.*, f.name AS _form_name, i.label AS _item_name
+				SELECT c.*, f.label AS _form_label, i.label AS _item_label
 				FROM @TABLE c
 				LEFT JOIN %s f ON (f.id = c.id_form)
 				LEFT JOIN %s i ON (i.id = c.id_item)
 				WHERE ' . ($accounting ? '(c.type != :free_type AND c.id_credit_account IS NULL) OR ' : '') . '(c.need_config = 1)
-				ORDER BY f.name
+				ORDER BY f.label
 				',
 				Form::TABLE, Item::TABLE),
-			['_form_name', '_item_name' ],
+			['_form_label', '_item_label' ],
 			...$params
 		);
 		$result = [];
 		$checkouts = [];
 		foreach ($chargeables as $chargeable) {
-			$target = ($chargeable->getForm_name() === 'Checkout') ? 'result' : 'checkouts';
-			${$target}[$chargeable->getForm_name()][] = $chargeable;
+			$target = ($chargeable->getForm_label() === 'Checkout') ? 'result' : 'checkouts';
+			${$target}[$chargeable->getForm_label()][] = $chargeable;
 		}
 		$result = array_merge($checkouts, $result); // We place checkouts at the end of the array for display purpose
 		return $result;
@@ -152,7 +152,7 @@ class Chargeables
 
 		$conditions = sprintf('c.id_form = %d', $for->id);
 		$list->setConditions($conditions);
-		$list->setTitle(sprintf('%s - Items', $for->name));
+		$list->setTitle(sprintf('%s - Items', $for->label));
 
 		$list->setModifier(function ($row) {
 			$row->type_label = ($row->id_item !== null) ? (Item::TYPES[$row->item_type] ?? 'Inconnu') : (Form::TYPES[$row->form_type] ?? 'Inconnu');

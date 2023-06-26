@@ -40,9 +40,9 @@
 		{/if}
 	</p>
 
-	{foreach from=$chargeables key='form_name' item='form'}
+	{foreach from=$chargeables key='form_label' item='form'}
 		<fieldset>
-			<legend>{if $form_name === 'Checkout'}Paiements isolés{else}{$form_name}{/if}</legend>
+			<legend>{if $form_label === 'Checkout'}Paiements isolés{else}{$form_label}{/if}</legend>
 			{foreach from=$form item='chargeable'}
 				{if $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
 					<fieldset>
@@ -51,7 +51,7 @@
 						{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::CHECKOUT_TYPE}
 							{$chargeable->label}
 						{elseif $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
-							{if $chargeable.target_type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TARGET_TYPE}Option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}{if $chargeable.target_type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TARGET_TYPE && $chargeable->id_item} de "{$chargeable->getItem_name()}"{/if}
+							{if $chargeable.target_type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TARGET_TYPE}Option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}{if $chargeable.target_type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TARGET_TYPE && $chargeable->id_item} de "{$chargeable->getItem_label()}"{/if}
 							{if $chargeable->type === Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}- Gratuit{/if}
 						{/if}
 					</legend>
@@ -92,7 +92,7 @@
 
 	{foreach from=$forms item='form'}
 		<fieldset>
-			<legend>{$form->name}</legend>
+			<legend>{$form->label}</legend>
 			<dl>
 				{foreach from=$form->customFields() item='field'}
 					{input type="select" name="custom_fields[%d][%d]"|args:$form->id:$field->id label=$field->name options=$dynamic_fields required=true default=$field->id_dynamic_field}

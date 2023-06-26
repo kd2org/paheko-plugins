@@ -28,7 +28,7 @@
 		<li{if $current == 'sync'} class="current"{/if}><a href="sync.php">Synchronisation</a></li>
 	</ul>
 
-	{if !empty($form.name)}
+	{if !empty($form.label)}
 		{if !empty($show_export)}
 		<aside>
 			{linkbutton href="%s&export=csv"|args:$self_url shape="export" label="Export CSV"}
@@ -37,7 +37,7 @@
 		{/if}
 
 	<ul class="sub">
-		<li class="title">{$form.name}</li>
+		<li class="title">{$form.label}</li>
 		<li{if $current_sub == 'orders'} class="current"{/if}>{link href="orders.php?id=%d"|args:$form.id label="Commandes"}</li>
 		<li{if $current_sub == 'payments'} class="current"{/if}>{link href="payments.php?id=%d"|args:$form.id label="Paiements"}</li>
 		<li{if $current_sub == 'chargeables'} class="current"{/if}>{link href="chargeables.php?id=%d"|args:$form.id label="Articles"}</li>

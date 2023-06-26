@@ -79,7 +79,7 @@ class Orders
 		}
 		if (!($associate instanceof Form)) {
 			$tables .= "\n" . 'INNER JOIN ' . Form::TABLE . ' f ON (f.id = o.id_form)';
-			$columns['form_name'] = [ 'label' => 'Formulaire', 'select' => 'f.name' ];
+			$columns['form_name'] = [ 'label' => 'Formulaire', 'select' => 'f.label' ];
 			if ($associate instanceof Chargeable) { // Do not want to display the form name since a Chargeable is for only one form
 				unset($columns['form_name']['label']);
 			}
@@ -87,7 +87,7 @@ class Orders
 
 		if ($associate instanceof Form) {
 			$conditions = sprintf('id_form = %d', $associate->id);
-			$title = sprintf('%s - Commandes', $associate->name);
+			$title = sprintf('%s - Commandes', $associate->label);
 		}
 		elseif ($associate instanceof User) {
 			$conditions = sprintf('id_user = %d', $associate->id);
@@ -117,7 +117,7 @@ class Orders
 
 		$list->setModifier(function (&$row) use ($associate) {
 			$row->status = Order::STATUSES[$row->status];
-			$row->label = (($associate instanceof Form) ? $associate->name : $row->form_name) . ' - ' . $row->person;
+			$row->label = (($associate instanceof Form) ? $associate->label : $row->form_name) . ' - ' . $row->person;
 			if (!(($associate instanceof User) || ($associate instanceof \stdClass)) && $row->id_user) {
 				$row->author = EM::findOneById(User::class, (int)$row->id_user);
 			}

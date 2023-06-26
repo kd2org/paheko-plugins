@@ -11,6 +11,7 @@ use Garradin\Entities\Users\Category;
 use Garradin\UserException;
 use Garradin\Plugin\HelloAsso\NotFoundException;
 use Garradin\Plugin\HelloAsso\Users;
+use Garradin\Plugin\HelloAsso\Payers;
 use Garradin\Plugin\HelloAsso\Payments;
 
 use KD2\DB\EntityManager as EM;

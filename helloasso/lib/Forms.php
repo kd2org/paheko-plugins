@@ -31,10 +31,10 @@ class Forms
 		return self::$forms_ids[$slug] ?? null;
 	}
 
-	static public function getName(int $id): ?string
+	static public function getLabel(int $id): ?string
 	{
 		if (!isset(self::$forms_names)) {
-			self::$forms_names = DB::getInstance()->getAssoc(sprintf('SELECT id, name FROM %s;', Form::TABLE));
+			self::$forms_names = DB::getInstance()->getAssoc(sprintf('SELECT id, label FROM %s;', Form::TABLE));
 		}
 
 		return self::$forms_names[$id] ?? null;
@@ -47,7 +47,7 @@ class Forms
 
 	static public function list(): array
 	{
-		$sql = sprintf('SELECT * FROM %s ORDER BY state = \'Disabled\', type, org_name COLLATE NOCASE, name COLLATE NOCASE;', Form::TABLE);
+		$sql = sprintf('SELECT * FROM %s ORDER BY state = \'Disabled\', type, org_name COLLATE NOCASE, label COLLATE NOCASE;', Form::TABLE);
 		$list = DB::getInstance()->get($sql);
 
 		foreach ($list as &$row) {
@@ -88,7 +88,7 @@ class Forms
 				$entity->set('org_name', $o->name);
 				$entity->set('org_slug', $o->organizationSlug);
 
-				$entity->set('name', strip_tags($form->privateTitle ?? $form->title));
+				$entity->set('label', strip_tags($form->privateTitle ?? $form->title));
 				$entity->set('type', $form->formType);
 				$entity->set('state', $form->state);
 				$entity->set('slug', $form->formSlug);
@@ -98,7 +98,7 @@ class Forms
 
 				if ($form->formType === 'Donation' || $form->formType === 'PaymentForm')
 				{
-					$chargeable = Chargeables::get($entity->id, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], Chargeable::ONLY_ONE_ITEM_FORM_TYPE, $entity->name, null);
+					$chargeable = Chargeables::get($entity->id, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], Chargeable::ONLY_ONE_ITEM_FORM_TYPE, $entity->label, null);
 					if (null === $chargeable) {
 						$chargeable = Chargeables::createChargeable($entity->id, $entity, Chargeable::ONLY_ONE_ITEM_FORM_TYPE);
 					}

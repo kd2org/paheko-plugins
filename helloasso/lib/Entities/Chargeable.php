@@ -65,30 +65,30 @@ class Chargeable extends Entity
 	protected ?int		$amount; // When null, handles all amounts. See Chargeables::isMatchingAnyAmount() for null scenarii.
 	protected ?int		$need_config; // Is zero until user fill the configuration form
 
-	protected ?string	$_form_name = null;
-	protected ?string	$_item_name = null;
+	protected ?string	$_form_label = null;
+	protected ?string	$_item_label = null;
 
 	protected ?Fee		$_fee = null;
 	protected ?Service	$_service = null;
 
-	public function setForm_name(string $name): void
+	public function setForm_label(string $label): void
 	{
-		$this->_form_name = $name;
+		$this->_form_label = $label;
 	}
 
-	public function getForm_name(): string
+	public function getForm_label(): string
 	{
-		return $this->_form_name;
+		return $this->_form_label;
 	}
 
-	public function setItem_name(?string $name): void
+	public function setItem_label(?string $label): void
 	{
-		$this->_item_name = $name;
+		$this->_item_label = $label;
 	}
 
-	public function getItem_name(): ?string
+	public function getItem_label(): ?string
 	{
-		return $this->_item_name;
+		return $this->_item_label;
 	}
 
 	public function getItemsIds(): array

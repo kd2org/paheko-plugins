@@ -116,18 +116,9 @@ class Items
 			LEFT JOIN ' . Service::TABLE . ' s ON (s.id = f.id_service)
 			LEFT JOIN ' . User::TABLE . ' u ON (u.id = i.id_user)';
 
-		if ($for instanceof Form) {
-			unset($columns['custom_fields']);
-		}
-
 		$list = new DynamicList($columns, $tables);
 
-		if ($for instanceof Form) {
-			$conditions = sprintf('id_form = %d', $for->id);
-			$list->setConditions($conditions);
-			$list->setTitle(sprintf('%s - Articles', $for->name));
-		}
-		elseif ($for instanceof Order) {
+		if ($for instanceof Order) {
 			$conditions = sprintf('id_order = %d', $for->id);
 			$list->setConditions($conditions);
 			$list->setTitle(sprintf('Commande - %d - Articles', $for->id));
@@ -315,7 +306,7 @@ class Items
 		}
 		$option->set('price_type', Item::API_PRICE_CATEGORIES[$data->priceCategory]);
 		$option->set('amount', $data->amount);
-		$option->set('label', $data->name ?? Forms::getName($id_form));
+		$option->set('label', $data->name ?? Forms::getLabel($id_form));
 		$option->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
 		$identifier = Users::guessUserIdentifier($full_data->beneficiary);
 		if ($identifier && ($id_user = Users::getUserId($identifier))) {
@@ -607,7 +598,7 @@ class Items
 				return self::DONATION_LABEL;
 			}
 			else {
-				return Forms::getName($id_form);
+				return Forms::getLabel($id_form);
 			}
 		}
 		else {

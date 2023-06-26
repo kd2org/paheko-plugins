@@ -25,7 +25,7 @@
 	<dt>Montant</dt>
 	<dd>{if null === $chargeable->amount}S'applique peu importe le montant.{elseif $chargeable->type === Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}Gratuit{else}{$chargeable->amount|money_currency|raw}{/if}</dd>
 	<dt>Formulaire</dt>
-	<dd>{$form->name}</dd>
+	<dd>{$form->label}</dd>
 	<dt>Statut</dt>
 	<dd>
 		{if ($plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE && (!$chargeable->id_credit_account || !$chargeable->id_debit_account)) || ($chargeable->need_config === 1)}

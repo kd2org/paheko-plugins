@@ -15,7 +15,7 @@
 		{foreach from=$list item="form"}
 		<tr{if $form.state == 'Disabled'} class="disabled"{/if}>
 			<td>{$form.org_name}</td>
-			<th><a href="orders.php?id={$form.id}">{$form.name}</a></th>
+			<th><a href="orders.php?id={$form.id}">{$form.label}</a></th>
 			<td>{$form.type_label}</td>
 			<td>{$form.state_label}</td>
 		</tr>

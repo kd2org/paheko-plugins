@@ -21,7 +21,7 @@
 	<dd>{if $author}<a href="{$admin_url}users/details.php?id={$author->id}">{$author->nom}</a>{else}{$payment->author_name}{/if}</dd>
 	{if $form}
 		<dt>Formulaire</dt>
-		<dd><a href="{$plugin_admin_url}form.php?id={$form->id}">{$form->name}</a></dd>
+		<dd><a href="{$plugin_admin_url}orders.php?id={$form->id}">{$form->label}</a></dd>
 	{/if}
 	{if $order}
 		<dt>Commande</dt>

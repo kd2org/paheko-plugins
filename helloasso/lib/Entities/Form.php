@@ -13,7 +13,7 @@ class Form extends Entity implements ChargeableInterface
 	protected int		$id;
 	protected string	$org_slug;
 	protected string	$org_name;
-	protected string	$name;
+	protected string	$label;
 	protected string	$state;
 
 	protected string	$type;
@@ -46,7 +46,7 @@ class Form extends Entity implements ChargeableInterface
 
 	public function getLabel(): string
 	{
-		return $this->name;
+		return $this->label;
 	}
 
 	public function getAmount(): ?int

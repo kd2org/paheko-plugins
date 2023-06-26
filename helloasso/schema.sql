@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_forms (
 	org_name TEXT NOT NULL,
 	org_slug TEXT NOT NULL,
 
-	name TEXT NOT NULL,
+	label TEXT NOT NULL,
 	slug TEXT NOT NULL,
 	type TEXT NOT NULL,
 	state TEXT NOT NULL,
