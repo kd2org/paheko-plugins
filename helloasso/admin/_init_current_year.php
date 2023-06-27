@@ -2,7 +2,8 @@
 
 namespace Garradin\Plugin\HelloAsso;
 
-use const Garradin\{ROOT, CURRENT_YEAR_ID};
+use const Garradin\{ROOT, ADMIN_URL, CURRENT_YEAR_ID};
+use Garradin\Utils;
 
 if (HelloAsso::getInstance()->plugin()->getConfig()->accounting) {
 	require_once ROOT . '/www/admin/acc/_inc.php';
