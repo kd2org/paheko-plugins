@@ -24,6 +24,7 @@ use Garradin\Entities\Services\Service;
 use Garradin\UserException;
 
 require __DIR__ . '/_inc.php';
+require __DIR__ . '/_init_current_year.php';
 
 if ($id = qg('id')) {
 	$chargeable = EntityManager::findOneById(Chargeable::class, (int)$id);
@@ -60,7 +61,6 @@ $tpl->assign([
 	'category' => $chargeable->id_category ? EntityManager::findOneById(Category::class, $chargeable->id_category) : null,
 	'parent_item' => $item,
 	'form' => $form,
-	'chart_id' => Plugin\HelloAsso\HelloAsso::CHART_ID, // ToDo: make it dynamic
 	'credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 	'debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
 	'category_options' => CF::setCategoryOptions(),

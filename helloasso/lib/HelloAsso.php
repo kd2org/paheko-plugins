@@ -19,7 +19,6 @@ class HelloAsso
 	const PROVIDER_NAME					= self::NAME;
 	const PROVIDER_LABEL				= 'HelloAsso';
 	const ACCOUNTING_ENABLED			= 1;
-	const CHART_ID						= 1; // ToDo: make it dynamic
 	const PAYMENT_EXPIRATION			= '2 days';
 	const CHECKOUT_LINK_EXPIRATION		= '15 minutes';
 	const CHECKOUT_CREATION_LOG_LABEL	= 'Tunnel de paiement ' . self::PROVIDER_LABEL . ' n°%d créé.';

@@ -13,6 +13,8 @@ use Garradin\Users\DynamicFields;
 
 $session->requireAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN);
 
+require __DIR__ . '/_init_current_year.php';
+
 $csrf_key = sprintf('config_plugin_%s', $plugin->id);
 
 $ha = HelloAsso::getInstance();
@@ -78,7 +80,6 @@ $tpl->assign([
 	'secret'     => '',
 	'csrf_key'   => $csrf_key,
 	'restricted' => $ha->isTrial(),
-	'chart_id' => Plugin\HelloAsso\HelloAsso::CHART_ID, // ToDo: make it dynamic
 	'default_credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 	'default_debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
 	'category_options' => $category_options,

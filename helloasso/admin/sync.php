@@ -3,6 +3,7 @@
 namespace Garradin;
 
 require __DIR__ . '/_inc.php';
+require __DIR__ . '/_init_current_year.php';
 
 $session->requireAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE);
 

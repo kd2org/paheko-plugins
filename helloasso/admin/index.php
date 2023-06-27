@@ -13,6 +13,7 @@ use Garradin\Entities\Users\User;
 use KD2\DB\EntityManager as EM;
 
 require __DIR__ . '/_inc.php';
+require __DIR__ . '/_init_current_year.php';
 
 if ($plugin->needUpgrade()) {
 	$plugin->upgrade();
@@ -31,9 +32,10 @@ $form->runIf('generate_checkout', function () use ($ha, $checkout, $tpl) {
 	$tpl->assign('checkout', $checkout);
 });
 
-$tpl->assign('list', Forms::list());
-$tpl->assign('restricted', $ha::isTrial());
-$tpl->assign('orgOptions', [ $ha->plugin()->getConfig()->default_organization => $ha->plugin()->getConfig()->default_organization ]);
-$tpl->assign('chart_id', Plugin\HelloAsso\HelloAsso::CHART_ID); // ToDo: make it dynamic
+$tpl->assign([
+	'list' => Forms::list(),
+	'restricted' => $ha::isTrial(),
+	'orgOptions' => [ $ha->plugin()->getConfig()->default_organization => $ha->plugin()->getConfig()->default_organization ]
+]);
 
 $tpl->display(PLUGIN_ROOT . '/templates/index.tpl');
