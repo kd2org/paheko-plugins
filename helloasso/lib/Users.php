@@ -203,7 +203,7 @@ class Users
 		if (array_key_exists($id_form, self::$_customFieldsCache)) {
 			foreach (self::$_customFieldsCache[$id_form] as $customField) {
 				// The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order been processed)
-				if (isset($data->fields[$customField->name])) {
+				if ($customField->id_dynamic_field && isset($data->fields[$customField->name])) {
 					if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
 						throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
 					}
