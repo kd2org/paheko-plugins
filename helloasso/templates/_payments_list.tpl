@@ -34,3 +34,5 @@
 
 	</tbody>
 </table>
+
+{$list->getHTMLPagination()|raw}

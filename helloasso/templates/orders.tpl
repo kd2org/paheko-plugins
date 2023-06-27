@@ -36,9 +36,7 @@
 	</tbody>
 </table>
 
-{* Not yet supported
-{pagination url=$list->paginationURL() page=$list.page bypage=$list.per_page total=$list->count()}
-*}
+{$list->getHTMLPagination()|raw}
 
 {if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_ADMIN) && $form->customFields()}
 	{if $form->need_config}

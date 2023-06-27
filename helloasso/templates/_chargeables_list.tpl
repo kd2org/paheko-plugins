@@ -43,6 +43,8 @@
 	</tbody>
 </table>
 
+{$list->getHTMLPagination()|raw}
+
 <p class="help block">Les articles (tarifs et options) configurés dans l'administration de HelloAsso ne peuvent apparaître ici qu'uniquement <em>après</em> avoir été commandés au moins une fois.</p>
 
 {if $chargeable_need_config}

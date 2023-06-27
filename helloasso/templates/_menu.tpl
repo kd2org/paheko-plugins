@@ -4,7 +4,7 @@
 	<aside>
 		<form method="GET" action="search.php" class="" id="plugin_search">
 			<p>
-				{input type="search" name="q" placeholder="N°, date, intitulé ou tiers" title="Rechercher" default=$_GET.q}
+				{input type="search" name="q" placeholder="N°, date, intitulé, tiers ou courriel" title="Rechercher" default=$_GET.q}
 				{button type="submit" label="" title="Lancer la recherche" shape="search" class="main_action"}
 				|
 			</p>
