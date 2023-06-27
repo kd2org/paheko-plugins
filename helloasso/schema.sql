@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_orders (
 	id_user INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
 	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
 	date TEXT NOT NULL,
-	person TEXT NOT NULL,
+	person TEXT NULL,
 	amount INTEGER NOT NULL,
 	status TEXT NOT NULL,
 	raw_data TEXT NOT NULL
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_items (
 	type TEXT NOT NULL,
 	state TEXT NOT NULL,
 	price_type UNSIGNED INT NOT NULL,
-	person TEXT NOT NULL,
+	person TEXT NULL,
 	label TEXT NOT NULL,
 	amount INTEGER NOT NULL,
 	has_options INTEGER NOT NULL,

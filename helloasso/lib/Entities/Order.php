@@ -25,7 +25,7 @@ class Order extends Entity
 	protected ?int		$id_user; // The user linked to the order. Is the payer only if the payer is the same person as the beneficiary.
 	protected ?int		$id_transaction;
 	protected \DateTime	$date;
-	protected string	$person;
+	protected ?string	$person;
 	protected int		$amount;
 	protected int		$status;
 	protected string	$raw_data;
