@@ -30,6 +30,7 @@ class Users
 	const USER_MATCH_NAME = 0;
 	const USER_MATCH_EMAIL = 1;
 	const USER_MATCH_TYPES = [ self::USER_MATCH_NAME => 'Nom et prénom', self::USER_MATCH_EMAIL => 'Courriel' ];
+	const DUPLICATE_MEMBER_PREFIX = 'Doublon-%s-';
 
 	static protected ?array		$_userMatchField = null;
 	static protected array		$_existingUsersCache = [];

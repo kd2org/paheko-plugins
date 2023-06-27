@@ -31,7 +31,6 @@ class Items
 	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HA::PROVIDER_LABEL . '.';
 	const DONATION_LABEL = 'Don';
 	const CHECKOUT_LABEL = 'Commande #%d (%s)';
-	const DUPLICATE_MEMBER_PREFIX = 'Doublon-%s-';
 
 	static protected array	$_userIdsByLoginCache = []; // Used when userMatchField is different from the Paheko login field
 	static protected array	$_exceptions = [];
@@ -185,12 +184,9 @@ class Items
 			Users::syncRegistration($data, (int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType));
 		}
 		catch (SyncException $e) { self::catchSyncException($e); }
-		
-		try {
-			$optionEntities = self::syncOptions($data, $item, $accounting);
-		}
-		catch (SyncException $e) { self::catchSyncException($e); }
-		
+
+		$optionEntities = self::syncOptions($data, $item, $accounting);
+
 		try {
 			self::handleAccounting($item, $data, $optionEntities, $accounting);
 		}
@@ -239,7 +235,10 @@ class Items
 
 		$optionEntities = [];
 		foreach ($data->options as $option) {
-			$optionEntities[] = self::syncOption($option, $data, $item->id_form, $item->id, $accounting);
+			try {
+				$optionEntities[] = self::syncOption($option, $data, $item->id_form, $item->id, $accounting);
+			}
+			catch (SyncException $e) { self::catchSyncException($e); }
 		}
 		return $optionEntities;
 	}
