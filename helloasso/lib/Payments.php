@@ -198,7 +198,7 @@ class Payments extends Paheko_Payments
 		}
 
 		if (!$payment->exists()) {
-			$author = Users::findUserMatchingPayer($data->payer);
+			$author = isset($data->payer) ? Users::findUserMatchingPayer($data->payer) : null;
 			$author_id = $author ? (int)$author->id : null;
 			$author_name = $data->payer_name;
 			$label = ($data->order ? ($data->order->formName === 'Checkout' ? 'Paiement isolé' : $data->order->formName) . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;

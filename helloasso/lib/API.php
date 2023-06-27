@@ -277,7 +277,6 @@ class API
 			$this->assert(isset($r->date));
 			$this->assert(strtotime($r->date));
 			$this->assert(isset($r->order->id));
-			$this->assert(isset($r->payer));
 			$this->assert(isset($r->state));
 			$this->assert(isset($r->id));
 			$this->assert(isset($r->paymentReceiptUrl));
@@ -309,7 +308,6 @@ class API
 		if (count($result->data)) {
 			$r = $result->data[0];
 			$this->assert(isset($r->order->id));
-			$this->assert(isset($r->payer));
 			$this->assert(isset($r->state));
 			$this->assert(isset($r->type));
 			$this->assert(isset($r->id));
