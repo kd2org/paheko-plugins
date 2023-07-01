@@ -39,5 +39,3 @@ $db->exec(<<<EOF
 	CREATE UNIQUE INDEX IF NOT EXISTS prp_reservation_nom ON plugin_reservations_personnes (creneau, date, nom);
 EOF
 );
-
-//$plugin->registerSignal('boucle.reservations', ['Garradin\Plugin\Reservations\Reservations', 'boucle']);
