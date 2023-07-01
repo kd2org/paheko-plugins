@@ -26,7 +26,7 @@ class Reservations
 		return DB::getInstance()->insert('plugin_reservations_categories', ['nom' => $nom]);
 	}
 
-	public function updateCategory(int $id, string $nom, ?string $introduction, ?string $description, ?array $champ)
+	public function updateCategory(int $id, string $nom, ?string $description, ?array $champ)
 	{
 		$db = DB::getInstance();
 
@@ -42,7 +42,7 @@ class Reservations
 			$champ = json_encode($champ);
 		}
 
-		return $db->update('plugin_reservations_categories', compact('nom', 'introduction', 'description', 'champ'), 'id = :id', compact('id'));
+		return $db->update('plugin_reservations_categories', compact('nom', 'description', 'champ'), 'id = :id', compact('id'));
 	}
 
 	public function getCategory(int $id) {

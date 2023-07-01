@@ -25,7 +25,6 @@
 			{foreach from=$categories item="cat"}
 			<article>
 				<h2><a href="?cat={$cat.id}">{$cat.nom}</a></h2>
-				{$cat.introduction|raw|format_skriv}
 			</article>
 			{/foreach}
 		</section>
@@ -36,7 +35,7 @@
 
 	{if empty($hide_description)}
 		<article>
-			{$cat.description|raw|format_skriv}
+			{$cat.description|raw|markdown}
 		</article>
 	{/if}
 
@@ -59,7 +58,7 @@
 						{/if}
 					</dd>
 					<dd class="spots available_{$slot.available}">
-						<em>{$slot.available} places disponibles</em>
+						<em>{{%n place disponible}{%n places disponibles} n=$slot.available}</em>
 					</dd>
 				{/foreach}
 			</dl>

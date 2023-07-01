@@ -2,21 +2,24 @@
 
 namespace Garradin;
 
+use Garradin\Users\Session;
+
 use Garradin\Plugin\Reservations\Reservations;
 
-if ($plugin->needUpgrade()) {
-	$plugin->upgrade();
-}
+$plugin->upgradeIfRequired();
 
+$session = Session::getInstance();
 $session->requireAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN);
+
+$csrf_key = 'config_bookings';
 
 $r = new Reservations;
 
-if (f('add') && $form->check('config_plugin_' . $plugin->id())) {
+$form->runIf('add', function () use ($r) {
 	$r->addCategory(f('nom'));
-	utils::redirect(utils::plugin_url(['file' => 'config.php']));
-}
+}, $csrf_key, utils::plugin_url(['file' => 'config.php']));
 
 $tpl->assign('ok', qg('saved') !== null);
 $tpl->assign('categories', $r->listCategories());
+$tpl->assign(compact('csrf_key'));
 $tpl->display(PLUGIN_ROOT . '/templates/admin/config.tpl');

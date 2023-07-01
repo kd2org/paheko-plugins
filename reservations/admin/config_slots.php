@@ -2,8 +2,10 @@
 
 namespace Garradin;
 
+use Garradin\Users\Session;
 use Garradin\Plugin\Reservations\Reservations;
 
+$session = Session::getInstance();
 $session->requireAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN);
 
 $r = new Reservations;
@@ -18,51 +20,45 @@ if (!$cat) {
 	throw new UserException('Catégorie inconnue');
 }
 
-$tpl->assign('ok', qg('saved') !== null);
+$tpl->assign('ok', qg('saved') !== null && !$form->hasErrors());
 
-if (f('save'))
-{
-	$form->check('config_plugin_' . $plugin->id(), [
-		'slot'   => 'array',
-	]);
+$csrf_key = 'config_bookings_'. $cat->id;
 
-	if (!$form->hasErrors())
-	{
-		$i = 0;
-		$ids = [];
-		$slots = f('slot') ?: [];
+$form->runIf('save', function () use ($r, $cat, $form) {
+	$i = 0;
+	$ids = [];
+	$slots = f('slot') ?: [];
 
-		foreach ($slots as $id => $props) {
-			$i++;
-			$props = (object)$props;
-			$props->repetition = !empty($props->repetition);
+	foreach ($slots as $id => $props) {
+		$i++;
+		$props = (object)$props;
+		$props->repetition = !empty($props->repetition);
 
-			if (!isset($props->repetition, $props->jour, $props->heure, $props->maximum)) {
-				$form->addError('Erreur à la ligne ' . $i);
-				continue;
-			}
-
-			try {
-				if ('_' === substr($id, 0, 1)) {
-					$ids[] = $r->createSlot($cat->id, $props->jour, $props->heure, $props->repetition, (int)$props->maximum);
-				}
-				else {
-					$r->updateSlot((int)$id, $props->jour, $props->heure, $props->repetition, (int)$props->maximum);
-					$ids[] = (int)$id;
-				}
-			}
-			catch (UserException $e) {
-				$form->addError(sprintf('Ligne %d: %s', $i, $e->getMessage()));
-			}
+		if (!isset($props->repetition, $props->jour, $props->heure, $props->maximum)) {
+			$form->addError('Erreur à la ligne ' . $i);
+			continue;
 		}
 
-		$r->deleteMissingSlots($cat->id, $ids);
-
-		if (!$form->hasErrors()) {
-			utils::redirect(utils::plugin_url(['file' => 'config_slots.php', 'query' => sprintf('id=%d&saved', $cat->id)]));
+		try {
+			if ('_' === substr($id, 0, 1)) {
+				$ids[] = $r->createSlot($cat->id, $props->jour, $props->heure, $props->repetition, (int)$props->maximum);
+			}
+			else {
+				$r->updateSlot((int)$id, $props->jour, $props->heure, $props->repetition, (int)$props->maximum);
+				$ids[] = (int)$id;
+			}
+		}
+		catch (UserException $e) {
+			$form->addError(sprintf('Ligne %d: %s', $i, $e->getMessage()));
 		}
 	}
-}
+
+	$r->deleteMissingSlots($cat->id, $ids);
+
+	if (!$form->hasErrors()) {
+		utils::redirect(utils::plugin_url(['file' => 'config_slots.php', 'query' => sprintf('id=%d&saved', $cat->id)]));
+	}
+}, $csrf_key);
 
 $slots = $r->listSlots($cat->id);
 
@@ -71,7 +67,6 @@ if (!count($slots)) {
 	$slots[] = (object)['id' => '_1', 'jour' => '', 'heure' => '', 'maximum' => '', 'repetition' => 0];
 }
 
-$tpl->assign('slots', $slots);
-$tpl->assign('cat', $cat);
+$tpl->assign(compact('slots', 'cat', 'csrf_key'));
 
 $tpl->display(PLUGIN_ROOT . '/templates/admin/config_slots.tpl');

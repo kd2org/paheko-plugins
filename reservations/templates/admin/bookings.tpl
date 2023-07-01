@@ -7,7 +7,7 @@
 		{foreach from=$categories item="cat"}
 		<article>
 			<h2><a href="?cat={$cat.id}">{$cat.nom}</a></h2>
-			{$cat.introduction|raw|format_skriv}
+			{$cat.description|raw|markdown}
 		</article>
 		{/foreach}
 	</section>
@@ -27,7 +27,7 @@
 			{/if}
 			<dd class="spots">
 				<span class="actions">
-					<a href="?cat={$booking.categorie}&amp;delete={$booking.id}" title="Supprimer" class="icn" data-action="delete">✘</a>
+					{linkbutton shape="delete" title="Supprimer" href="?cat=%d&delete=%d"|args:$booking.categorie:$booking.id label=""}
 				</span>
 				<strong>{$booking.nom}</strong>
 				{if $booking.champ}

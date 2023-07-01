@@ -65,3 +65,21 @@ if (version_compare($old_version, '0.5.1', '<')) {
 	$db->exec('DROP INDEX IF EXISTS prc_jour_heure;
 		CREATE UNIQUE INDEX IF NOT EXISTS prc_jour_heure ON plugin_reservations_creneaux (categorie, jour, heure);');
 }
+
+if (version_compare($old_version, '0.7.0', '<')) {
+	$db->beginSchemaUpdate();
+	$db->exec('
+		DROP TABLE IF EXISTS plugin_reservations_categories_old;
+		ALTER TABLE plugin_reservations_categories RENAME TO plugin_reservations_categories_old;
+		CREATE TABLE IF NOT EXISTS plugin_reservations_categories
+		(
+			id INTEGER NOT NULL PRIMARY KEY,
+			nom TEXT NOT NULL,
+			description TEXT NULL,
+			champ TEXT NULL
+		);
+		INSERT INTO plugin_reservations_categories SELECT id, nom, description, champ FROM plugin_reservations_categories_old;
+		DROP TABLE plugin_reservations_categories_old;
+	');
+	$db->commitSchemaUpdate();
+}

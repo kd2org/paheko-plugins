@@ -2,13 +2,14 @@
 
 namespace Garradin;
 
+$db = DB::getInstance();
+
 // Création table
 $db->exec(<<<EOF
 	CREATE TABLE IF NOT EXISTS plugin_reservations_categories
 	(
 		id INTEGER NOT NULL PRIMARY KEY,
 		nom TEXT NOT NULL,
-		introduction TEXT NULL,
 		description TEXT NULL,
 		champ TEXT NULL
 	);

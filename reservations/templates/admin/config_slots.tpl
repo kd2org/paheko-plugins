@@ -4,7 +4,7 @@
 
 {form_errors}
 
-{if $ok && !$form->hasErrors()}
+{if $ok}
 	<p class="confirm block">
 		La configuration a bien été enregistrée.
 	</p>
@@ -45,7 +45,7 @@
 	</fieldset>
 
 	<p class="submit">
-		{csrf_field key="config_plugin_%s"|args:$plugin.name}
+		{csrf_field key=$csrf_key}
 		{button type="submit" name="save" label="Enregistrer" shape="right" class="main"}
 	</p>
 
@@ -59,7 +59,7 @@ function removeRow(e) {
 	var row = e.parentNode.parentNode;
 	var table = row.parentNode.parentNode;
 
-	if (table.rows.length == 1)
+	if (table.rows.length <= 2)
 	{
 		return false;
 	}

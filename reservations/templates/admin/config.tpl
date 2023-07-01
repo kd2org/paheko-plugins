@@ -1,6 +1,8 @@
 {include file="_head.tpl" title="Configuration — %s"|args:$plugin.label}
 
-{include file="./_menu.tpl" current="config"}
+{if !$dialog}
+	{include file="./_menu.tpl" current="config"}
+{/if}
 
 {form_errors}
 
@@ -10,6 +12,7 @@
 	</p>
 {/if}
 
+{if count($categories)}
 <table class="list">
 	<thead>
 		<tr>
@@ -29,36 +32,33 @@
 		{/foreach}
 	</tbody>
 </table>
+{else}
+<p class="alert block">Il n'y a aucun créneau configuré.</p>
+{/if}
 
 <form method="post" action="{$self_url}">
 
 	<fieldset>
 		<legend>Ajouter un type de créneau</legend>
-		<p class="help">
-			Si vous ne définissez qu'un seul type de créneaux, la personne faisant une réservation ne verra que le texte de présentation et les créneaux associés.
-		</p>
-		<p class="help">
-			Si vous définissez plusieurs types de créneaux, elle devra d'abord choisir un type de créneau, et se verra présenter la liste des types de créneaux avec leurs noms et textes d'introduction.
-		</p>
 		<dl>
-			{input type="text" name="nom" required=true label="Nom"}
+			{input type="text" name="nom" required=true label="Nom du créneau" help="Exemple : atelier vélo du mercredi."}
 		</dl>
 		<p class="submit">
-			{csrf_field key="config_plugin_%s"|args:$plugin.name}
-			<input type="submit" name="add" value="Ajouter" />
+			{csrf_field key=$csrf_key}
+			{button type="submit" name="add" label="Ajouter" shape="right" class="main"}
 		</p>
 	</fieldset>
 
 </form>
 
-
-
-<div class="help">
-	<h3>Aide</h3>
-	<p class="help">Les membres connectés peuvent réserver un créneau via l'onglet « Réservations » du menu de gauche.</p>
-	<p class="help">Les non-membres peuvent réserver un créneau via l'adresse suivante :<br />
-		{link href=$plugin_url label=$plugin_url target="_blank"}</p>
-	<p class="help">Les administrateurs peuvent visionner les réservations et gérer les inscrit⋅e⋅s dans l'onglet « Réservations ».</p>
+<div class="help block">
+	<h4>Accès à la réservation</h4>
+	<p>Les membres connectés pourront réserver un créneau via le menu « Réservations » à gauche.</p>
+	<p>Les non-membres pourront réserver un créneau via l'adresse suivante :<br />
+		{input copy=true name="url" type="url" readonly=true default=$plugin_url size=$plugin_url|strlen}
+		{linkbutton href=$plugin_url label="Ouvrir" target="_blank" shape="eye"}
+	</p>
+	<p>Les gestionnaires pourront visionner les réservations et gérer les inscrit⋅e⋅s dans le menu « Réservations ».</p>
 </div>
 
 {include file="_foot.tpl"}
