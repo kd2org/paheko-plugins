@@ -25,15 +25,11 @@
 
 			<td class="actions">
 				{if $need_configuration}
-					{assign var='button_label' value='Configurer'}
-					{assign var='button_shape' value='settings'}
 					{assign var='chargeable_need_config' value=true}
-				{else}
-					{assign var='button_label' value='Modifier'}
-					{assign var='button_shape' value='edit'}
 				{/if}
+				{linkbutton href="chargeable.php?id=%s"|args:$row.id shape='help' label='Détails'}
 				{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}
-					{linkbutton href="chargeable.php?id=%s"|args:$row.id shape=$button_shape label=$button_label}
+					{linkbutton href="chargeable.php?id=%s&config"|args:$row.id shape='settings' label='Configurer'}
 				{/if}
 			</td>
 		</tr>

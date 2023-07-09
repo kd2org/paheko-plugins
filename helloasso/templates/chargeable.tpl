@@ -1,9 +1,9 @@
-{include file="_head.tpl" title="Article HelloAsso n°%s"|args:$chargeable.id}
+{include file="_head.tpl" title="Article HelloAsso n°%s : \"%s\""|args:$chargeable.id:$chargeable.label}
 
 {include file="./_menu.tpl" current="home"}
 
 {if array_key_exists('ok', $_GET)}
-	<p class="confirm block">Article mis à jour avec succès.</p>
+	<p class="confirm block">Configuration de l'article mise à jour avec succès.</p>
 {/if}
 
 <h2 class="ruler">Informations sur l'article</h2>
@@ -30,55 +30,39 @@
 	<dd>
 		{if ($plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE && (!$chargeable->id_credit_account || !$chargeable->id_debit_account)) || ($chargeable->need_config === 1)}
 			<em>En attente de configuration {if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}de votre part{else}par un·e administrateur/trice.{/if}</em>
-			{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}<br />Veuillez configurer les options ci-dessous.{/if}
+			{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}<br />{linkbutton href="chargeable.php?id=%s&config"|args:$chargeable.id shape='settings' label='Configurer'}{/if}
 		{else}
 			En fonctionnement.
 		{/if}
 	</dd>
-	{if $chargeable->id_category}
-		<dt>Inscription Automatique</dt>
-		<dd>
+	<dt>Synchro : Inscription Automatique</dt>
+	<dd>
+		{if $chargeable->id_category}
 			{$category->name}
 			{if $chargeable->service()}
 				- {$chargeable->service()->label} ({$chargeable->fee()->label})
 			{/if}
-		</dd>
+		{else}
+			Aucune
+		{/if}
+	</dd>
+	{if $plugin->config->accounting}
+		<dt>Synchro : Type de recettes</dt>
+		<dd>{if $credit_account}{$credit_account}{/if}</dd>
+		<dt>Synchro : Compte d'encaissement</dt>
+		<dd>{if $debit_account}{$debit_account}{/if}</dd>
 	{/if}
 </dl>
+{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE)}
+	<p>
+		{linkbutton href="chargeable.php?id=%s&config"|args:$chargeable.id shape='settings' label="Configurer la synchronisation de l'article"}
+	</p>
+{/if}
+</section>
 
 <h2 class="ruler">Commandes comprenant cet article</h2>
 
 {include file='./_order_list.tpl' list=$orders}
-
-{if $session->canAccess($session::SECTION_ACCOUNTING, $session::ACCESS_ADMIN)}
-	<h2 class="ruler">Configuration</h2>
-
-	<form method="post" action="{$self_url}">
-		<fieldset>
-			<legend>Inscription</legend>
-			<dl>
-				{input type="select" name="id_category" label="Inscrire comme membre dans la catégorie" default=null source=$chargeable options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}
-				<span class="service_fee_registration">
-					{input type="list" target="_fee_selector.php" name="id_fee" label="Inscrire à l'activité" required=false default=$selected_fee can_delete=true help="Les comptes ci-dessous prévalent sur ceux du tarif de l'activité sélectionnée."}
-				</span>
-			</dl>
-		</fieldset>
-		{if $plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}
-			<fieldset>
-				<legend>Comptabilité</legend>
-				<dl>
-					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="credit" label="Type de recette" required=true default=$credit_account}
-					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="debit" label="Compte d'encaissement" required=true default=$debit_account}
-				</dl>
-				<p class="help block">Cette modification impacte uniquement les <em>futures</em> synchronisations. Elle n'est pas rétro-active.</p>
-			</fieldset>
-		{/if}
-		<p class="submit">
-			{csrf_field key=$csrf_key}
-			{button type="submit" class="main" name="save" label="Enregistrer" shape="right"}
-		</p>
-	</form>
-{/if}
 
 {if $TECH_DETAILS}
 	<dl style="background-color: black; color: limegreen; padding-top: 0.8em;" class="describe">
@@ -88,20 +72,5 @@
 		<dd><pre>{if $chargeable->id_item}{$parent_item->raw_data|json_revamp}{else}NULL{/if}</pre></dd>
 	</dl>
 {/if}
-
-<script type="text/javascript">
-{literal}
-(function () {
-	g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
-
-	$('#f_id_category').onchange = () => {
-		g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
-		if ($('#f_id_category').value === '0' && $('#f_id_fee_container').getElementsByTagName('span').length) {
-			$('#f_id_fee_container').getElementsByTagName('span')[0].remove();
-		}
-	};
-})();
-{/literal}
-</script>
 
 {include file="_foot.tpl"}
