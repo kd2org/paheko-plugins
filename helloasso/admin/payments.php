@@ -13,7 +13,7 @@ if (!$f) {
 	throw new UserException('Formulaire inconnu');
 }
 
-$list = Payments::list($f);
+$list = Payments::list(null, $f);
 $list->loadFromQueryString();
 
 $tpl->assign('form', $f);

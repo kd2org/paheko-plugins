@@ -32,7 +32,6 @@ class Items
 	const DONATION_LABEL = 'Don';
 	const CHECKOUT_LABEL = 'Commande #%d (%s)';
 
-	static protected array	$_userIdsByLoginCache = []; // Used when userMatchField is different from the Paheko login field
 	static protected array	$_exceptions = [];
 
 	static public function get(int $id): ?Item
@@ -185,10 +184,10 @@ class Items
 		}
 		catch (SyncException $e) { self::catchSyncException($e); }
 
-		$optionEntities = self::syncOptions($data, $item, $accounting);
+		$option_entities = self::syncOptions($data, $item, $accounting);
 
 		try {
-			self::handleAccounting($item, $data, $optionEntities, $accounting);
+			self::handleAccounting($item, $data, $option_entities, $accounting);
 		}
 		catch (SyncException $e) { self::catchSyncException($e); }
 
@@ -233,14 +232,14 @@ class Items
 			return [];
 		}
 
-		$optionEntities = [];
+		$option_entities = [];
 		foreach ($data->options as $option) {
 			try {
-				$optionEntities[] = self::syncOption($option, $data, $item->id_form, $item->id, $accounting);
+				$option_entities[] = self::syncOption($option, $data, $item->id_form, $item->id, $accounting);
 			}
 			catch (SyncException $e) { self::catchSyncException($e); }
 		}
-		return $optionEntities;
+		return $option_entities;
 	}
 
 	static protected function syncOption(\stdClass $data, \stdClass $full_data, int $id_form, int $id_item, bool $accounting): Option
@@ -267,7 +266,7 @@ class Items
 		return $option;
 	}
 
-	static protected function handleAccounting(Item $item, \stdClass $data, array $optionEntities, int $accounting): void
+	static protected function handleAccounting(Item $item, \stdClass $data, array $option_entities, int $accounting): void
 	{
 		// Creating a transaction only if payment is unique and already done (not pending) and accounts sets
 		if ($accounting && !$item->id_transaction && (count($data->payments) === 1 && $data->payments[0]->state === Payments::AUTHORIZED_STATUS))
@@ -292,7 +291,7 @@ class Items
 				}
 			}
 			if (isset($data->options)) {
-				foreach ($optionEntities as $option) {
+				foreach ($option_entities as $option) {
 					if ($option->amount && $option->price_type !== Item::FREE_PRICE_TYPE) {
 						self::accountChargeable((int)$item->id_form, $option, Chargeable::SIMPLE_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 					}

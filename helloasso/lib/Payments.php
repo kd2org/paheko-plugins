@@ -66,7 +66,7 @@ class Payments extends Paheko_Payments
 		return EM::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE provider = :provider AND json_extract(extra_data, \'$.id_order\') = :id_order', HelloAsso::PROVIDER_NAME, $id_order);
 	}
 
-	static public function list($for): DynamicList
+	static public function list(?string $provider = HA::PROVIDER_NAME, $for = null): DynamicList
 	{
 		$columns = [
 			'id' => [],
@@ -121,7 +121,7 @@ class Payments extends Paheko_Payments
 			$list->setTitle(sprintf('Commande - %d - Paiements', $for->id));
 		}
 		else {
-			throw new \RuntimeException('Invalid target');
+			throw new \InvalidArgumentException('Invalid target');
 		}
 
 		$list->setModifier(function ($row) {

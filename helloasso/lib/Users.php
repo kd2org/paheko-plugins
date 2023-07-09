@@ -32,14 +32,14 @@ class Users
 	const USER_MATCH_TYPES = [ self::USER_MATCH_NAME => 'Nom et prénom', self::USER_MATCH_EMAIL => 'Courriel' ];
 	const DUPLICATE_MEMBER_PREFIX = 'Doublon-%s-';
 
-	static protected ?array		$_userMatchField = null;
-	static protected array		$_existingUsersCache = [];
-	static protected string		$_nameField;
-	static protected ?string	$_customFieldLogin = null;
-	static protected array		$_payerFieldsMap;
-	static protected array		$_customFieldsCache = [];
-	static protected array		$_dynamicFieldNameCache = [];
-	static protected array		$_formsCache = [];
+	static protected ?array		$_user_match_field = null;
+	static protected array		$_existing_users_cache = [];
+	static protected string		$_name_field;
+	static protected ?string	$_custom_field_login = null;
+	static protected array		$_payer_fields_map;
+	static protected array		$_custom_fields_cache = [];
+	static protected array		$_dynamic_field_name_cache = [];
+	static protected array		$_forms_cache = [];
 
 	static public function getMappedUser(\stdClass $payer, bool $check = true): User
 	{
@@ -107,7 +107,7 @@ class Users
 		}
 
 		// 'api_field' may be null if the identifier has the same name as a custom_field
-		$field = self::getUserMatchField()['api_field'] ?? self::$_customFieldLogin;
+		$field = self::getUserMatchField()['api_field'] ?? self::$_custom_field_login;
 
 		return $source->$field ?? ($source->fields[$field] ?? null);
 	}
@@ -127,13 +127,13 @@ class Users
 
 	static public function getUserId(string $identifier): ?int
 	{
-		if (array_key_exists($identifier, self::$_existingUsersCache)) {
-			return self::$_existingUsersCache[$identifier];
+		if (array_key_exists($identifier, self::$_existing_users_cache)) {
+			return self::$_existing_users_cache[$identifier];
 		}
 		$id_user = EM::getInstance(User::class)->col(sprintf('SELECT id FROM @TABLE WHERE %s = ?;', DB::getInstance()->quoteIdentifier(self::getUserMatchField()['entity_field'])), $identifier);
-		self::$_existingUsersCache[$identifier] = (false === $id_user) ? null : $id_user;
+		self::$_existing_users_cache[$identifier] = (false === $id_user) ? null : $id_user;
 
-		return self::$_existingUsersCache[$identifier];
+		return self::$_existing_users_cache[$identifier];
 	}
 
 	/**
@@ -191,24 +191,24 @@ class Users
 	{
 		$source = [
 			'id_parent' => null,
-			self::$_nameField => Users::guessUserName($data->beneficiary),
+			self::$_name_field => Users::guessUserName($data->beneficiary),
 			'date_inscription' => $date,
 			'_conflict' => false
 		];
 
-		foreach (self::$_payerFieldsMap as $user_field => $api_field) {
+		foreach (self::$_payer_fields_map as $user_field => $api_field) {
 			if (isset($data->beneficiary->$api_field))
 				$source[$user_field] = $data->beneficiary->$api_field;
 		}
-		if (array_key_exists($id_form, self::$_customFieldsCache)) {
-			foreach (self::$_customFieldsCache[$id_form] as $customField) {
+		if (array_key_exists($id_form, self::$_custom_fields_cache)) {
+			foreach (self::$_custom_fields_cache[$id_form] as $custom_field) {
 				// The custom field may not exist for this particular item (e.g., the custom field has been added a long time after the order been processed)
-				if ($customField->id_dynamic_field && isset($data->fields[$customField->name])) {
-					if (!array_key_exists((int)$customField->id_dynamic_field, self::$_dynamicFieldNameCache)) {
-						throw new SyncException(sprintf('Inexisting DynamicField #%s.', $customField->id_dynamic_field));
+				if ($custom_field->id_dynamic_field && isset($data->fields[$custom_field->name])) {
+					if (!array_key_exists((int)$custom_field->id_dynamic_field, self::$_dynamic_field_name_cache)) {
+						throw new SyncException(sprintf('Inexisting DynamicField #%s.', $custom_field->id_dynamic_field));
 					}
-					$name = self::$_dynamicFieldNameCache[$customField->id_dynamic_field];
-					$source[$name] = $data->fields[$customField->name];
+					$name = self::$_dynamic_field_name_cache[$custom_field->id_dynamic_field];
+					$source[$name] = $data->fields[$custom_field->name];
 				}
 			}
 		}
@@ -253,10 +253,10 @@ class Users
 
 	static protected function addNewCustomFields(int $id_form, \stdClass $data): void
 	{
-		if (!array_key_exists($id_form, self::$_formsCache)) {
+		if (!array_key_exists($id_form, self::$_forms_cache)) {
 			throw new SyncException(sprintf('Tried to add custom fields to an inexisting (never synchronized?) form #%d.', $id_form));
 		}
-		$form = self::$_formsCache[$id_form];
+		$form = self::$_forms_cache[$id_form];
 		$existings = CustomFields::getNamesForForm((int)$form->id);
 		foreach ($data->fields as $name => $value) {
 			if (!in_array($name, $existings)) {
@@ -286,11 +286,11 @@ class Users
 
 	static public function initSync(): void
 	{
-		self::$_nameField = DynamicFields::getFirstNameField();
+		self::$_name_field = DynamicFields::getFirstNameField();
 		self::setUserFieldsMap();
 		self::setCustomFieldsCache();
 		self::setFormsCache();
-		self::$_dynamicFieldNameCache = DB::getInstance()->getAssoc(sprintf('SELECT id, name FROM %s', DynamicField::TABLE));
+		self::$_dynamic_field_name_cache = DB::getInstance()->getAssoc(sprintf('SELECT id, name FROM %s', DynamicField::TABLE));
 	}
 
 	static protected function setUserFieldsMap(): void
@@ -302,18 +302,18 @@ class Users
 				unset($map->$api_field);
 			}
 		}
-		self::$_payerFieldsMap = array_flip((array)$map);
+		self::$_payer_fields_map = array_flip((array)$map);
 	}
 
 	static protected function setCustomFieldsCache(): void
 	{
 		$login_id = (int)DynamicFields::getInstance()->fieldByKey(DynamicFields::getLoginField())->id;
 		foreach (DB::getInstance()->iterate(sprintf('SELECT * FROM %s ORDER BY id_form', CustomField::TABLE)) as $row) {
-			$customField = new CustomField();
-			$customField->load((array)$row);
-			self::$_customFieldsCache[(int)$row->id_form][] = $customField;
-			if ($customField->id_dynamic_field === $login_id) {
-				self::$_customFieldLogin = $customField->name;
+			$custom_field = new CustomField();
+			$custom_field->load((array)$row);
+			self::$_custom_fields_cache[(int)$row->id_form][] = $custom_field;
+			if ($custom_field->id_dynamic_field === $login_id) {
+				self::$_custom_field_login = $custom_field->name;
 			}
 		}
 	}
@@ -321,34 +321,34 @@ class Users
 	static protected function setFormsCache(): void
 	{
 		foreach (EM::getInstance(Form::class)->all('SELECT id, * FROM @TABLE;') as $form) {
-			self::$_formsCache[(int)$form->id] = $form;
+			self::$_forms_cache[(int)$form->id] = $form;
 		}
 	}
 
 	static public function addUserToCache(string $identifier, int $id_user): void
 	{
-		self::$_existingUsersCache[$identifier] = $id_user;
+		self::$_existing_users_cache[$identifier] = $id_user;
 	}
 
 	static public function getUserMatchField(): array
 	{
 		$ha = HelloAsso::getInstance();
-		if (null === self::$_userMatchField) {
+		if (null === self::$_user_match_field) {
 			if ($ha->plugin()->getConfig()->user_match_type === self::USER_MATCH_NAME) {
-				self::$_userMatchField = [
+				self::$_user_match_field = [
 					'type' => self::USER_MATCH_NAME,
 					'entity_field' => DynamicFields::getFirstNameField(),
 					'api_field' => null
 				];
 			}
 			else {
-				self::$_userMatchField = [
+				self::$_user_match_field = [
 					'type' => self::USER_MATCH_EMAIL,
 					'entity_field' => DynamicFields::getFirstEmailField(),
 					'api_field' => $ha->plugin()->getConfig()->user_match_field ?? null
 				];
 			}
 		}
-		return self::$_userMatchField;
+		return self::$_user_match_field;
 	}
 }

@@ -29,7 +29,7 @@ $form->runIf('create_payer', function () use ($order) {
 
 $form = EM::findOneById(Form::class, (int)$order->id_form);
 $user = $order->id_user ? EM::findOneById(User::class, (int)$order->id_user) : null;
-$payments = Payments::list($order);
+$payments = Payments::list(null, $order);
 $items = Items::list($order);
 $options = Options::list($order);
 $payer_infos = $order->getRawPayerInfos();
