@@ -36,7 +36,7 @@
 		{if !$plugin->config->accounting}
 			Aucune
 			{if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
-				<span class="help">(vous pouvez activer la génération d'écritures depuis <a href="{$plugin_admin_url}config_client.php">la configuration de l'extension</a>)</span>
+				<span class="help">(vous pouvez activer la génération d'écritures depuis <a href="{$plugin_admin_url}config.php">la configuration de l'extension</a>)</span>
 			{/if}
 		{else}
 			{foreach from=$transactions item='transaction'}
