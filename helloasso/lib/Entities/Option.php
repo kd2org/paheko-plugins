@@ -12,8 +12,10 @@ class Option extends Entity implements ChargeableInterface
 
 	protected int			$id;
 	protected int			$id_item;
+	protected ?int			$id_order;
 	protected ?int			$id_user;
 	protected ?int			$id_transaction;
+	protected ?int			$id_chargeable;
 	protected int			$price_type;
 	protected string		$label;
 	protected int			$amount;

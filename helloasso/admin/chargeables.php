@@ -18,7 +18,8 @@ $list->loadFromQueryString();
 
 $tpl->assign([
 	'form' => $f,
-	'list' => $list
+	'list' => $list,
+	'count_opti' => Chargeables::listCountOpti($f)
 ]);
 
 $tpl->display(PLUGIN_ROOT . '/templates/chargeables.tpl');

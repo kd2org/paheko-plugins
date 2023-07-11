@@ -23,6 +23,7 @@ if (!$payer) {
 
 $tpl->assign([
 	'payer' => ($payer instanceof User) ? $payer : Users::getMappedUser($payer, false),
-	'orders' => Orders::list($payer)
+	'orders' => Orders::list($payer),
+	'orders_count_list' => Orders::listCountOpti($payer)
 ]);
 $tpl->display(\Garradin\PLUGIN_ROOT . '/templates/payer.tpl');

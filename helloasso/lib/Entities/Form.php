@@ -11,6 +11,7 @@ class Form extends Entity implements ChargeableInterface
 	const TABLE = 'plugin_helloasso_forms';
 
 	protected int		$id;
+	protected ?int		$id_chargeable;
 	protected string	$org_slug;
 	protected string	$org_name;
 	protected string	$label;

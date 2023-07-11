@@ -93,28 +93,12 @@ class Chargeable extends Entity
 
 	public function getItemsIds(): array
 	{
-		$conditions = 'id_form = :id_form AND label = :label';
-		$params = [ (int)$this->id_form, $this->label ];
-
-		if (!$this->isMatchingAnyAmount()) {
-			$conditions .= ' AND amount = :amount';
-			$params[] = (int)$this->amount;
-		}
-
-		return DB::getInstance()->getAssoc(sprintf('SELECT id, id FROM %s WHERE ' . $conditions, Item::TABLE), ...$params);
+		return DB::getInstance()->getAssoc(sprintf('SELECT id, id FROM %s WHERE id_chargeable = :id_chargeable', Item::TABLE), (int)$this->id);
 	}
 
 	public function getOptionsIds(): array
 	{
-		$conditions = 'o.label = :label';
-		$params = [ (int)$this->id_form, $this->label ];
-
-		if (!$this->isMatchingAnyAmount()) {
-			$conditions .= ' AND o.amount = :amount';
-			$params[] = (int)$this->amount;
-		}
-
-		return DB::getInstance()->getAssoc(sprintf('SELECT o.id, o.id FROM %s o INNER JOIN %s i ON (i.id = o.id_item AND i.id_form = :id_form) WHERE ' . $conditions, Option::TABLE, Item::TABLE), ...$params);
+		return DB::getInstance()->getAssoc(sprintf('SELECT id, id FROM %s WHERE id_chargeable = :id_chargeable', Option::TABLE), (int)$this->id);
 	}
 
 	public function isMatchingAnyAmount(): bool

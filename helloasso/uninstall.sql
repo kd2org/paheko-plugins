@@ -1,3 +1,14 @@
+DROP INDEX IF EXISTS plugin_helloasso_payment_provider_status;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form_date;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form_reference;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form_amount;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form_author_name;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form_status;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form_label;
+DROP INDEX IF EXISTS plugin_helloasso_payment_form_order;
+DROP INDEX IF EXISTS plugin_helloasso_payment_order_date;
+DROP INDEX IF EXISTS plugin_helloasso_search_user_date;
 DROP TRIGGER IF EXISTS plugin_helloasso_targets_fee_update;
 DROP TRIGGER IF EXISTS plugin_helloasso_targets_fee_delete;
 DROP TRIGGER IF EXISTS plugin_helloasso_targets_fee_account_delete;

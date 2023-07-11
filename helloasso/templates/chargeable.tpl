@@ -62,7 +62,7 @@
 
 <h2 class="ruler">Commandes comprenant cet article</h2>
 
-{include file='./_order_list.tpl' list=$orders}
+{include file='./_order_list.tpl' list=$orders count_opti=$orders_count_list}
 
 {if $TECH_DETAILS}
 	<dl style="background-color: black; color: limegreen; padding-top: 0.8em;" class="describe">

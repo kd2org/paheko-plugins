@@ -15,6 +15,6 @@
 
 <h2 class="ruler">Commandes</h2>
 
-{include file='./_order_list.tpl' list=$orders}
+{include file='./_order_list.tpl' list=$orders count_opti=$orders_count_list}
 
 {include file="_foot.tpl"}

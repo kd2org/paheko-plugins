@@ -98,7 +98,8 @@ class Chargeables
 			],
 			'item_type' => [
 				'label' => 'Type',
-				'select' => 'i.type'
+				'select' => 'i.type',
+				'order' => 'c.id_item' // Displayed type is Form name if id_item is null
 			],
 			'label' => [
 				'label' => 'Libellé',
@@ -242,6 +243,9 @@ class Chargeables
 		$chargeable->set('need_config', 1);
 		$chargeable->save();
 
+		$entity->set('id_chargeable', (int)$chargeable->id);
+		$entity->save();
+
 		return $chargeable;
 	}
 
@@ -257,5 +261,15 @@ class Chargeables
 				throw new \RuntimeException(sprintf('Cannot update %s plugin Items\' accounting accounts.', HelloAsso::PROVIDER_LABEL));
 			}
 		}
+	}
+
+	static public function listCountOpti(Form $for): DynamicList
+	{
+		$list = new DynamicList([], Chargeable::TABLE);
+
+		$conditions = sprintf('id_form = %d', $for->id);
+		$list->setConditions($conditions);
+
+		return $list;
 	}
 }

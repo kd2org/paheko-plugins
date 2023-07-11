@@ -23,4 +23,4 @@
 	</tbody>
 </table>
 
-{$list->getHTMLPagination()|raw}
+{$count_opti->getHTMLPagination()|raw}

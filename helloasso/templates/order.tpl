@@ -25,11 +25,11 @@
 
 <h2 class="ruler">Éléments de la commande</h2>
 
-{include file="%s/templates/_items_list.tpl"|args:$plugin_root list=$items details=false}
+{include file="%s/templates/_items_list.tpl"|args:$plugin_root list=$items count_opti=$items_count_list details=false}
 
 <h2 class="ruler">Options de la commande</h2>
 
-{include file="%s/templates/_options_list.tpl"|args:$plugin_root list=$options details=false}
+{include file="%s/templates/_options_list.tpl"|args:$plugin_root list=$options count_opti=$options_count_list details=false}
 
 <h2 class="ruler">Paiements</h2>
 

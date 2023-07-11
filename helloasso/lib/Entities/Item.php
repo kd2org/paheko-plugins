@@ -15,6 +15,7 @@ class Item extends Entity implements ChargeableInterface
 	protected int			$id_form;
 	protected ?int			$id_user;
 	protected ?int			$id_transaction;
+	protected ?int			$id_chargeable;
 	protected string		$type;
 	protected string		$state;
 	protected int			$price_type;

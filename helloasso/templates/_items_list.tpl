@@ -34,12 +34,12 @@
 			</td>
 		</tr>
 
-
-
 	{/foreach}
 
 	</tbody>
 </table>
+
+{$count_opti->getHTMLPagination()|raw}
 
 <p class="help block">
 	* Est différent de la "personne" si il y a un doute que le/la payeur/euse soit la même personne (ex: courriel différent).

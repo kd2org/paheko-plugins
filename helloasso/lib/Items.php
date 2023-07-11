@@ -93,13 +93,7 @@ class Items
 		];
 
 		$tables = Item::TABLE . ' i
-			INNER JOIN ' . Chargeable::TABLE . ' c ON (
-				c.id_form = i.id_form AND c.label = i.label AND (
-					(c.type = ' . Chargeable::DONATION_ITEM_TYPE . ' AND c.amount IS NULL)
-					OR (i.price_type = ' . Item::PAY_WHAT_YOU_WANT_PRICE_TYPE . ' AND c.amount IS NULL)
-					OR (c.type != ' . Chargeable::DONATION_ITEM_TYPE . ' AND c.amount = i.amount)
-				)
-			)
+			LEFT JOIN ' . Chargeable::TABLE . ' c ON (c.id = i.id_chargeable)
 			LEFT JOIN ' . Fee::TABLE . ' f ON (f.id = c.id_fee)
 			LEFT JOIN ' . Service::TABLE . ' s ON (s.id = f.id_service)
 			LEFT JOIN ' . User::TABLE . ' u ON (u.id = i.id_user)';
@@ -250,6 +244,7 @@ class Items
 		
 		if (!$option->exists()) {
 			$option->set('id_item', (int)$full_data->id);
+			$option->set('id_order', (int)$full_data->order->id);
 		}
 		$option->set('price_type', Item::API_PRICE_CATEGORIES[$data->priceCategory]);
 		$option->set('amount', $data->amount);
@@ -433,5 +428,15 @@ class Items
 	{
 		$sql = sprintf('DELETE FROM %s;', Item::TABLE);
 		DB::getInstance()->exec($sql);
+	}
+
+	static public function listCountOpti(Order $order): DynamicList
+	{
+		$list = new DynamicList([], Item::TABLE);
+
+		$conditions = sprintf('id_order = %d', $order->id);
+		$list->setConditions($conditions);
+
+		return $list;
 	}
 }

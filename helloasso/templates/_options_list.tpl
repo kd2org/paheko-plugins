@@ -31,3 +31,5 @@
 
 	</tbody>
 </table>
+
+{$count_opti->getHTMLPagination()|raw}

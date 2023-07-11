@@ -46,9 +46,12 @@ class Payers
 				'label' => 'Nom',
 				'select' => 'u.nom'
 			],
-			'payer_email' => [
+			'user_email' => [
 				'label' => 'Courriel', // ToDo: use DynamicFields instead of u.email
-				'select' => 'CASE WHEN u.email IS NULL THEN json_extract(o.raw_data, \'$.payer.email\') ELSE u.email END'
+				'select' => 'u.email'
+			],
+			'payer_email' => [
+				'select' => 'json_extract(o.raw_data, \'$.payer.email\')'
 			],
 			'id_order' => [],
 			'raw_data' => []
@@ -60,7 +63,7 @@ class Payers
 		$list = new DynamicList($columns, $tables);
 
 		$list->setModifier(function (&$row) {
-			$row->email = $row->payer_email;
+			$row->email = $row->user_email ?? $row->payer_email;
 			if (!$row->id) {
 				$data = json_decode($row->raw_data);
 				if (!isset($data->payer)) {
@@ -78,6 +81,7 @@ class Payers
 		});
 
 		$list->groupBy('payer_email');
+		$list->orderBy('payer_email', true);
 
 		return $list;
 	}

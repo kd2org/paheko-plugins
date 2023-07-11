@@ -84,6 +84,7 @@ else
 		'parent_item' => $item,
 		'dynamic_fields' => CF::setDynamicFieldOptions(),
 		'orders' => Orders::list($chargeable),
+		'orders_count_list' => Orders::listCountOpti($chargeable),
 		'current_sub' => 'chargeables'
 	]);
 

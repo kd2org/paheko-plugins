@@ -31,13 +31,15 @@ $form = EM::findOneById(Form::class, (int)$order->id_form);
 $user = $order->id_user ? EM::findOneById(User::class, (int)$order->id_user) : null;
 $payments = Payments::list(null, $order);
 $items = Items::list($order);
+$items_count_list = Items::listCountOpti($order);
 $options = Options::list($order);
+$options_count_list = Options::listCountOpti($order);
 $payer_infos = $order->getRawPayerInfos();
 $guessed_user = Users::findUserMatchingPayer($order->getRawPayer());
 
 $user_match_field_label = (int)$plugin->getConfig()->user_match_type;
 
 $tpl->assign('current_sub', 'orders');
-$tpl->assign(compact('order', 'form', 'user', 'payments', 'items', 'options', 'payer_infos', 'guessed_user', 'user_match_field_label', 'csrf_key'));
+$tpl->assign(compact('order', 'form', 'user', 'payments', 'items', 'items_count_list', 'options', 'options_count_list', 'payer_infos', 'guessed_user', 'user_match_field_label', 'csrf_key'));
 
 $tpl->display(PLUGIN_ROOT . '/templates/order.tpl');

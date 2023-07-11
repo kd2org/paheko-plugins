@@ -59,20 +59,18 @@ class Options
 		];
 
 		$tables = Option::TABLE . ' o
-			INNER JOIN ' . Item::TABLE . ' i ON (i.id = o.id_item)
-			INNER JOIN ' . Order::TABLE . ' ord ON (ord.id = i.id_order AND ord.id = ' . (int)$order->id . ')
-			INNER JOIN ' . Chargeable::TABLE . ' c ON (
-				c.id_form = i.id_form AND c.label = o.label AND (
-					(o.price_type = ' . Item::PAY_WHAT_YOU_WANT_PRICE_TYPE . ' AND c.amount IS NULL)
-					OR (c.amount = o.amount)
-				)
-			)
+			INNER JOIN ' . Order::TABLE . ' ord ON (ord.id = o.id_order)
+			INNER JOIN ' . Chargeable::TABLE . ' c ON (c.id = o.id_chargeable)
 			LEFT JOIN ' . Fee::TABLE . ' f ON (f.id = c.id_fee)
 			LEFT JOIN ' . Service::TABLE . ' s ON (s.id = f.id_service)
-			LEFT JOIN  ' . User::TABLE . ' u ON (u.id = o.id_user)';
+			LEFT JOIN ' . User::TABLE . ' u ON (u.id = o.id_user)
+		';
 
-		$list = new DynamicList($columns, $tables);
+		$conditions = 'o.id_order = :id_order';
+
+		$list = new DynamicList($columns, $tables, $conditions);
 		$list->setTitle(sprintf('Commande - %d - Articles', $order->id));
+		$list->setParameter('id_order', (int)$order->id);
 
 		$list->setModifier(function ($row) {
 			if (isset($row->custom_fields)) {
@@ -91,6 +89,14 @@ class Options
 		});
 
 		$list->orderBy('id', true);
+		return $list;
+	}
+
+	static public function listCountOpti(Order $order): DynamicList
+	{
+		$list = new DynamicList([], Option::TABLE, 'id_order = :id_order');
+		$list->setParameter('id_order', (int)$order->id);
+
 		return $list;
 	}
 }

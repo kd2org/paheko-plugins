@@ -49,7 +49,7 @@ class Payments extends Paheko_Payments
 
 	static public function get(int $id): ?Payment
 	{
-		return EM::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE provider = :provider AND json_extract(extra_data, \'$.id\') = :id', HelloAsso::PROVIDER_NAME, $id);
+		return EM::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE provider = :provider AND reference = :id', HelloAsso::PROVIDER_NAME, $id);
 	}
 
 	static public function getId(int $reference): ?int

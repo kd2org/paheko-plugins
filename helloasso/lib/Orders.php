@@ -27,17 +27,19 @@ class Orders
 	static public function list($associate): DynamicList
 	{
 		$columns = [
-			'id' => [
+			'o.id' => [ // Cannot use "id" because it is ambiguous since we use several tables
 				'label' => 'Référence',
 				'select' => 'o.id'
 			],
 			'date' => [
 				'label' => 'Date',
+				'select' => 'o.date'
 			],
 			'form_name' => [],
 			'label' => [
 				'label' => 'Libellé',
-				'select' => '\'dummy\''
+				'select' => '\'dummy\'',
+				'order' => 'o.date' // To avoid an unindexed ORDER BY (label is dynamically-generated), fallback to date ORDER BY
 			],
 			'amount' => [
 				'label' => 'Montant',
@@ -63,19 +65,20 @@ class Orders
 
 		if ($associate instanceof Chargeable) {
 			if ($associate->target_type === Chargeable::OPTION_TARGET_TYPE) {
-				$table = Option::TABLE;
+				$target_table = Option::TABLE;
+				$target_index = 'plugin_helloasso_item_options_order';
 				$ids = $associate->getOptionsIds();
-				$target = 'i';
 			}
 			else {
-				$table = Item::TABLE;
+				$target_table = Item::TABLE;
+				$target_index = 'plugin_helloasso_items_order';
 				$ids = $associate->getItemsIds();
-				$target = 'target';
 			}
-			$tables = $table . ' target
-				' . (($associate->target_type === Chargeable::OPTION_TARGET_TYPE) ? 'INNER JOIN ' . Item::TABLE . ' i ON (i.id = target.id_item)' : '') .'
-				INNER JOIN ' . Order::TABLE . ' o ON (o.id = ' . $target . '.id_order)';
-			$conditions = 'target.id IN (' . implode(', ', $ids) . ')';
+			$tables .= '
+				INDEXED BY plugin_helloasso_orders_id_date
+				LEFT JOIN ' . $target_table . ' target INDEXED BY ' . $target_index . ' ON (target.id_order = o.id)';
+			$conditions = 'target.id IN (:ids)';
+			$title = sprintf('%s - Commandes', $associate->label);
 		}
 		if (!($associate instanceof Form)) {
 			$tables .= "\n" . 'INNER JOIN ' . Form::TABLE . ' f ON (f.id = o.id_form)';
@@ -104,18 +107,21 @@ class Orders
 			$title = sprintf('%s - Commandes', Users::guessUserName($associate));
 			unset($columns['id_user']);
 		}
-		if ($associate instanceof Chargeable) {
-			$title = sprintf('%s - Commandes', $associate->label);
-		}
 
 		$list = new DynamicList($columns, $tables, $conditions);
 		$list->setTitle($title);
 		
 		if ($associate instanceof Chargeable) {
-			$list->groupBy($target . '.id_order');
+			$list->setParameter('ids', implode(', ', array_map(function ($item) { return (int)$item; }, $ids)));
+			$list->groupBy('o.id, o.date');
+			$list->orderBy(['o.id', 'date'], [true, true]);
+		}
+		else {
+			$list->orderBy('date', true);
 		}
 
 		$list->setModifier(function (&$row) use ($associate) {
+			$row->id = $row->{'o.id'}; // See column comment below
 			$row->status = Order::STATUSES[$row->status];
 			$row->label = (($associate instanceof Form) ? $associate->label : $row->form_name) . ' - ' . $row->person;
 			if (!(($associate instanceof User) || ($associate instanceof \stdClass)) && $row->id_user) {
@@ -127,7 +133,6 @@ class Orders
 			$row->amount = $row->amount ? Utils::money_format($row->amount, '.', '', false) : null;
 		});
 
-		$list->orderBy('date', true);
 		return $list;
 	}
 
@@ -194,5 +199,41 @@ class Orders
 	{
 		$sql = sprintf('DELETE FROM %s;', Order::TABLE);
 		DB::getInstance()->exec($sql);
+	}
+
+	static public function listCountOpti($associate): DynamicList
+	{
+		$table = Order::TABLE;
+
+		if ($associate instanceof User) {
+			$conditions = sprintf('id_user = %d', (int)$associate->id);
+		}
+		elseif ($associate instanceof Chargeable) {
+
+			if ($associate->target_type === Chargeable::OPTION_TARGET_TYPE) {
+				$table = Option::TABLE;
+				$ids = $associate->getOptionsIds();
+			}
+			else {
+				$table = Item::TABLE;
+				$ids = $associate->getItemsIds();
+			}
+			$conditions = 'id IN (' . implode(', ', array_map(function ($item) { return (int)$item; }, $ids)) . ')';
+		}
+		elseif ($associate instanceof \stdClass) { // Happens when the payer is not a member
+
+			if (Users::getUserMatchField()['type'] === Users::USER_MATCH_EMAIL) {
+				$conditions = sprintf('json_extract(raw_data, \'$.payer.email\') = \'%s\'', $associate->email);
+			}
+			else {
+				$conditions = sprintf('json_extract(raw_data, \'$.payer.firstName\') = \'%s\' AND json_extract(raw_data, \'$.payer.lastName\') = \'%s\'', $associate->firstName, $associate->lastName);
+			}
+		}
+
+		$list = new DynamicList([], $table, $conditions);
+		if ($associate instanceof Chargeable) {
+			$list->setCount('COUNT(DISTINCT id_order)');
+		}
+		return $list;
 	}
 }
