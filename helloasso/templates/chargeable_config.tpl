@@ -19,8 +19,8 @@
 			<fieldset>
 				<legend>Comptabilité</legend>
 				<dl>
-					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="credit" label="Type de recette" required=true default=$credit_account}
-					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="debit" label="Compte d'encaissement" required=true default=$debit_account}
+					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:$ca_type:$chart_id name="credit" label="Type de recette" required=true default=$credit_account can_delete=true}
+					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:$da_type:$chart_id name="debit" label="Compte d'encaissement" required=true default=$debit_account can_delete=true}
 				</dl>
 				<p class="help block">Cette modification impacte uniquement les <em>futures</em> synchronisations. Elle n'est pas rétro-active.</p>
 			</fieldset>

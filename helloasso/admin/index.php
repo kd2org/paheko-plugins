@@ -9,6 +9,7 @@ use Garradin\Plugin\HelloAsso\API;
 use Garradin\Entities\Payments\Payment;
 use Garradin\Payments\Payments;
 use Garradin\Entities\Users\User;
+use Garradin\Form as PA_Form;
 
 use KD2\DB\EntityManager as EM;
 
@@ -26,8 +27,8 @@ if (!$ha->getLastSync()) {
 $checkout = null;
 $form->runIf('generate_checkout', function () use ($ha, $checkout, $tpl) {
 	// ToDo: add a nice check
-	$user = EM::findOneById(User::class, (int)(array_keys($_POST['user'])[0]));
-	$checkout = $ha->createCheckout($_POST['org_slug'], $_POST['label'], (int)($_POST['amount'] * 100), $user, [ array_keys($_POST['credit'])[0], array_keys($_POST['debit'])[0] ]);
+	$user = EM::findOneById(User::class, (int)PA_Form::getSelectorValue($_POST['user'])));
+	$checkout = $ha->createCheckout($_POST['org_slug'], $_POST['label'], (int)($_POST['amount'] * 100), $user, [ PA_Form::getSelectorValue($_POST['credit']), PA_Form::getSelectorValue($_POST['debit']) ]);
 
 	$tpl->assign('checkout', $checkout);
 });

@@ -10,7 +10,7 @@ $query = trim((string) (qg('q') ?? f('q')));
 
 $list = null;
 
-// Recherche simple
+// Simple search
 if ($query !== '') {
 	$list = Search::quick(SE::TARGET_FEE, $query);
 }

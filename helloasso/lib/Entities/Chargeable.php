@@ -9,7 +9,10 @@ use Garradin\Entities\Services\Fee;
 use Garradin\Entities\Services\Service;
 use Garradin\Entities\Services\Service_User;
 use Garradin\Entities\Users\DynamicField;
+use Garradin\Entities\Users\Category;
+use Garradin\Entities\Accounting\Account;
 use Garradin\Users\Users;
+use Garradin\Users\Session;
 
 use Garradin\Plugin\HelloAsso\HelloAsso as HA;
 
@@ -154,12 +157,12 @@ class Chargeable extends Entity
 	public function selfCheck(): void
 	{
 		parent::selfCheck();
-		if (!array_key_exists($this->type, Chargeable::TYPES)) {
-			throw new \RuntimeException(sprintf('Invalid Chargeable type: %s (Chargeable ID: #%d). Allowed types are: %s.', $this->type, $this->id ?? null, implode(', ', array_keys(Chargeable::TYPES))));
-		}
-		if (!in_array($this->need_config, [0, 1])) {
-			throw new \RuntimeException(sprintf('Invalid Chargeable need_config option: %s (Chargeable ID: #%d). Allowed values are: %s.', $this->need_config, $this->id ?? null, implode(', ', [0, 1])));
-		}
-		
+		$db = DB::getInstance();
+
+		$this->assert(array_key_exists($this->type, Chargeable::TYPES), sprintf('Invalid Chargeable type: %s (Chargeable ID: #%d). Allowed types are: %s.', $this->type, $this->id ?? null, implode(', ', array_keys(Chargeable::TYPES))));
+		$this->assert(in_array($this->need_config, [0, 1]), sprintf('Invalid Chargeable need_config option: %s (Chargeable ID: #%d). Allowed values are: %s.', $this->need_config, $this->id ?? null, implode(', ', [0, 1])));
+		$this->assert(!$this->id_credit_account || $db->test(Account::TABLE, 'id = ? AND type = ?', (int)$this->id_credit_account, Account::TYPE_REVENUE), sprintf('Invalid credit account. Account type must be "%d".', Account::TYPE_REVENUE));
+		$this->assert(!$this->id_debit_account || $db->test(Account::TABLE, 'id = ? AND type IN (?, ?, ?, ?)', (int)$this->id_debit_account, Account::TYPE_NONE, Account::TYPE_BANK, Account::TYPE_CASH, Account::TYPE_OUTSTANDING), sprintf('Invalid debit account. Allowed account types are: %s.', implode(', ', [Account::TYPE_NONE, Account::TYPE_BANK, Account::TYPE_CASH, Account::TYPE_OUTSTANDING])));
+		$this->assert(!$this->id_category || $db->test(Category::TABLE, 'id = ? AND perm_config != ?', (int)$this->id_category, Session::ACCESS_ADMIN), 'Subscription as adminstrator is forbidden!');
 	}
 }

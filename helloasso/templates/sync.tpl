@@ -57,8 +57,8 @@
 					</legend>
 					<dl>
 						{if $plugin->config->accounting && $chargeable->type !== Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}
-							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account}
-							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account}
+							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:$ca_type:$chart_id name="chargeable_credit[%d]"|args:$chargeable.id label="Type de recette" required=1 default=$default_credit_account can_delete=true}
+							{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:$da_type:$chart_id name="chargeable_debit[%d]"|args:$chargeable.id label="Compte d'encaissement" required=1 default=$default_debit_account can_delete=true}
 						{/if}
 
 						{input type="select" name="id_category[%d]"|args:$chargeable.id label="Inscrire comme membre dans la catégorie" data-chargeable-id=$chargeable.id default=$chargeable.id_category options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko si cet article est commandé."}

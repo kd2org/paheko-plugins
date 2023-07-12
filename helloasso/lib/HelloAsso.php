@@ -18,7 +18,9 @@ class HelloAsso
 	const NAME							= 'helloasso';
 	const PROVIDER_NAME					= self::NAME;
 	const PROVIDER_LABEL				= 'HelloAsso';
+	const ACCOUNTING_DISABLED			= 0;
 	const ACCOUNTING_ENABLED			= 1;
+	const ACCOUNTING_OPTIONS			= [ self::ACCOUNTING_DISABLED => 'Désactivée', self::ACCOUNTING_ENABLED => 'Activée' ];
 	const PAYMENT_EXPIRATION			= '2 days';
 	const CHECKOUT_LINK_EXPIRATION		= '15 minutes';
 	const CHECKOUT_CREATION_LOG_LABEL	= 'Tunnel de paiement ' . self::PROVIDER_LABEL . ' n°%d créé.';
@@ -128,10 +130,8 @@ class HelloAsso
 	public function saveConfig(array $data): bool
 	{
 		$this->plugin->setConfigProperty('accounting', $data['accounting']);
-		if (array_key_exists('default_credit', $data))
-			$this->plugin->setConfigProperty('id_credit_account', array_keys($data['default_credit'])[0]);
-		if (array_key_exists('default_debit', $data))
-			$this->plugin->setConfigProperty('id_debit_account', array_keys($data['default_debit'])[0]);
+		$this->plugin->setConfigProperty('id_credit_account', $data['default_credit']);
+		$this->plugin->setConfigProperty('id_debit_account', $data['default_debit']);
 		$this->plugin->setConfigProperty('payer_map', $data['payer_map']);
 		$this->plugin->setConfigProperty('user_match_type', $data['user_match_type']);
 		$this->plugin->setConfigProperty('user_match_field', $data['user_match_field']);

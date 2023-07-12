@@ -74,7 +74,7 @@ class Orders
 				$target_index = 'plugin_helloasso_items_order';
 				$ids = $associate->getItemsIds();
 			}
-			$tables .= '
+			$tables .= ' -- Force the use of index otherwise the GROUP BY and ORDER BY clauses create temporary sorting tables
 				INDEXED BY plugin_helloasso_orders_id_date
 				LEFT JOIN ' . $target_table . ' target INDEXED BY ' . $target_index . ' ON (target.id_order = o.id)';
 			$conditions = 'target.id IN (:ids)';

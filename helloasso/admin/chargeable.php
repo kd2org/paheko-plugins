@@ -47,10 +47,18 @@ if (null !== qg('config'))
 	$csrf_key = 'accounts_setting';
 
 	$form->runIf('save', function () use ($chargeable) {
-		// ToDo: add a nice check
 		if (array_key_exists('credit', $_POST)) {
-			$chargeable->set('id_credit_account', (int)PA_Form::getSelectorValue($_POST['credit']));
-			$chargeable->set('id_debit_account', (int)PA_Form::getSelectorValue($_POST['debit']));
+			$id_credit_account = (int)PA_Form::getSelectorValue($_POST['credit']);
+			$id_debit_account = (int)PA_Form::getSelectorValue($_POST['debit']);
+
+			if (!DB::getInstance()->test(Account::TABLE, 'id = ? AND type = ?', $id_credit_account, Account::TYPE_REVENUE)) {
+				throw new UserException('Le compte sélectionné pour le type de recette doit être un compte de revenue.');
+			}
+			if (!DB::getInstance()->test(Account::TABLE, 'id = ? AND type IN (?, ?, ?, ?)', $id_debit_account, Account::TYPE_NONE, Account::TYPE_BANK, Account::TYPE_CASH, Account::TYPE_OUTSTANDING)) {
+				throw new UserException('Le compte d\'encaissement sélectionné doit être de type encaissement.');
+			}
+			$chargeable->set('id_credit_account', $id_credit_account);
+			$chargeable->set('id_debit_account', $id_debit_account);
 		}
 
 		CF::updateChargeable($chargeable, (int)$_POST['id_category'], isset($_POST['id_fee']) ? (int)PA_Form::getSelectorValue($_POST['id_fee']) : 0);
@@ -65,9 +73,10 @@ if (null !== qg('config'))
 	$tpl->assign([
 		'category_options' => CF::setCategoryOptions(),
 		'selected_fee' => $fee ? [ (int)$fee->id => ($service->label . ' - ' . $fee->label) ] : null,
+		'ca_type' => Account::TYPE_REVENUE,
+		'da_type' => Account::TYPE_BANK . ':' . Account::TYPE_CASH . ':' . Account::TYPE_OUTSTANDING . '',
 		'credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 		'debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
-		'chart_id' => '????? DEBUG ??????',
 		'csrf_key' => $csrf_key,
 	]);
 

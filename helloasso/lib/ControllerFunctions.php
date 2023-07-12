@@ -3,7 +3,9 @@
 namespace Garradin\Plugin\HelloAsso;
 
 use KD2\DB\EntityManager as EM;
+use Garradin\DB;
 
+use Garradin\Users\Session;
 use Garradin\Users\DynamicFields;
 use Garradin\Entities\Users\DynamicField;
 use Garradin\Entities\Users\Category;
@@ -37,7 +39,7 @@ class ControllerFunctions
 			}
 
 			if ($value !== 'null') {
-				if (!EM::findOneById(DynamicField::class, (int)$value)) {
+				if (!DB::getInstance()->test(DynamicField::TABLE, 'id = ?', (int)$value)) {
 					throw new \RuntimeException(sprintf('Inexisting DynamicField #%s.', $value));
 				}
 				$customField->set('id_dynamic_field', (int)$value);
@@ -61,8 +63,7 @@ class ControllerFunctions
 
 	static public function setCategoryOptions(): array
 	{
-		// ToDo: remove admin categories
-		$categories = EM::getInstance(Category::class)->all('SELECT * FROM @TABLE');
+		$categories = EM::getInstance(Category::class)->all('SELECT * FROM @TABLE WHERE perm_config != ?', Session::ACCESS_ADMIN);
 		$category_options = [ 0 => 'Ne pas inscrire la personne' ];
 		foreach ($categories as $category) {
 			$category_options[(int)$category->id] = $category->name;
