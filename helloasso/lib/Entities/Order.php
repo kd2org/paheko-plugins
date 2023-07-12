@@ -73,7 +73,7 @@ class Order extends Entity
 	public function registerRawPayer(): void
 	{
 		$id_category = (int)Config::getInstance()->default_category;
-		if (!$category = EM::findOneById(Category::class, $id_category)) {
+		if (!DB::getInstance()->test(Category::TABLE, 'id = ?', $id_category)) {
 			throw new \RuntimeException(sprintf('Inexisting default category #%d while trying to register order raw payer.', $id_category));
 		}
 		$raw_payer = $this->getRawPayer();
@@ -141,8 +141,6 @@ class Order extends Entity
 	public function selfCheck(): void
 	{
 		parent::selfCheck();
-		if (!array_key_exists($this->status, self::STATUSES)) {
-			throw new \UnexpectedValueException(sprintf('Wrong order (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->status, implode(', ', array_keys(self::PRICE_TYPES))));
-		}
+		$this->assert(array_key_exists($this->status, self::STATUSES), sprintf('Wrong order (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->status, implode(', ', array_keys(self::PRICE_TYPES))));
 	}
 }

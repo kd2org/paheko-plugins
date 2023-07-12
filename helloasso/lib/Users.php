@@ -49,10 +49,10 @@ class Users
 		$map = clone $ha->plugin()->getConfig()->payer_map;
 
 		$id_category = (int)Config::getInstance()->default_category;
-		if (!$id_category OR !($category = EM::findOneById(Category::class, (int)$id_category))) {
+		if (!$id_category || !DB::getInstance()->test(Category::TABLE, 'id = ?', (int)$id_category)) {
 			throw new NotFoundException(sprintf('Cannot map user: Not found category "%s".', $id_category));
 		}
-		$user->set('id_category', (int)$category->id);
+		$user->set('id_category', $id_category);
 		$user->set('nom', self::guessUserName($payer));
 		unset($map->name);
 

@@ -27,7 +27,7 @@ if (!$ha->getLastSync()) {
 $checkout = null;
 $form->runIf('generate_checkout', function () use ($ha, $checkout, $tpl) {
 	// ToDo: add a nice check
-	$user = EM::findOneById(User::class, (int)PA_Form::getSelectorValue($_POST['user'])));
+	$user = EM::findOneById(User::class, (int)PA_Form::getSelectorValue($_POST['user']));
 	$checkout = $ha->createCheckout($_POST['org_slug'], $_POST['label'], (int)($_POST['amount'] * 100), $user, [ PA_Form::getSelectorValue($_POST['credit']), PA_Form::getSelectorValue($_POST['debit']) ]);
 
 	$tpl->assign('checkout', $checkout);
