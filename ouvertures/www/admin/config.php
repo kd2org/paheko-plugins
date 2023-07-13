@@ -110,7 +110,7 @@ $tpl->register_function('html_opening_hour_select', function ($params) {
 	$out .= sprintf('<input type="number" name="slots[%s_minutes][]" min="0"
 		max="59" step="1" required="required" value="%02d" size="2" class="time" pattern="^\d{1,2}$" />',
 		$params['name'],
-		$hours[1]
+		$hours[1] ?? 0
 	);
 
 	return $out;
