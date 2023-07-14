@@ -38,8 +38,16 @@ class Chargeables
 
 	static public function getFromEntity(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
+		if ($entity->id_chargeable) {
+			return EM::findOneById(Chargeable::class, (int)$entity->id_chargeable);
+		}
+
 		$amount = (self::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount());
+
 		if ($chargeable = self::get($id_form, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], $type, $entity->getLabel(), $amount)) {
+			$entity->set('id_chargeable', (int)$chargeable->id);
+			$entity->save();
+
 			return $chargeable;
 		}
 		return self::createChargeable($id_form, $entity, $type);

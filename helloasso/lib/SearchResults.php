@@ -47,7 +47,7 @@ class SearchResults
 				'label' => 'Date',
 				'select' => 'null'
 			],
-			'person' => [
+			'payer_name' => [
 				'label' => 'Payeur/euse',
 				'select' => 'null'
 			],
@@ -55,7 +55,7 @@ class SearchResults
 				'label' => 'Bénéficiaire',
 				'select' => 'null'
 			],
-			'id_user' => [
+			'id_payer' => [
 				'select' => 'null'
 			],
 			'user_number' => [
@@ -86,7 +86,7 @@ class SearchResults
 			$searched_data = sprintf("%%%s%%", $searched_text);
 		}
 
-		$user_join = 'LEFT JOIN ' . User::TABLE . ' u2 ON (u2.id = id_user)';
+		$user_join = 'LEFT JOIN ' . User::TABLE . ' u2 ON (u2.id = id_payer)';
 		$user_name_column = $db->quoteIdentifier(DynamicFields::getFirstNameField());
 
 		$tables = Form::TABLE . ' m
@@ -95,28 +95,28 @@ class SearchResults
 
 			UNION
 
-			SELECT "' . self::ORDER_TYPE . '" AS "type", m.id AS "id", null AS "label", m.date AS "date", m.person AS "person", u2.' . $user_name_column . ' as "beneficiary", m.id_user AS "id_user", u2.numero AS "user_number", json_extract(m.raw_data, \'$.payer.email\') AS "email"
+			SELECT "' . self::ORDER_TYPE . '" AS "type", m.id AS "id", null AS "label", m.date AS "date", m.payer_name AS "payer_name", u2.' . $user_name_column . ' as "beneficiary", m.id_payer AS "id_payer", u2.numero AS "user_number", json_extract(m.raw_data, \'$.payer.email\') AS "email"
 			FROM ' . Order::TABLE . ' m
 			' . $user_join . '
 			WHERE ' . str_replace('email', 'json_extract(m.raw_data, \'$.payer.email\')', $conditions) . '
 
 			UNION
 
-			SELECT "' . self::PAYMENT_TYPE . '" AS "type", m.id AS "id", m.label AS "label", m.date AS "date", m.author_name AS "person", u2.' . $user_name_column . ' as "beneficiary", m.id_author AS "id_user", u2.numero AS "user_number", json_extract(m.extra_data, \'$.payer.email\') AS "email"
+			SELECT "' . self::PAYMENT_TYPE . '" AS "type", m.id AS "id", m.label AS "label", m.date AS "date", m.payer_name AS "payer_name", u2.' . $user_name_column . ' as "beneficiary", m.id_payer AS "id_payer", u2.numero AS "user_number", json_extract(m.extra_data, \'$.payer.email\') AS "email"
 			FROM ' . Payment::TABLE . ' m
 			' . $user_join . '
 			WHERE ' . str_replace('email', 'json_extract(m.extra_data, \'$.payer.email\')', str_replace('m.id', 'm.reference', $conditions)) . '
 
 			UNION
 
-			SELECT "' . self::CHARGEABLE_TYPE . '" AS "type", m.id AS "id", m.label AS "label", null AS "date", null AS "person", null as "beneficiary", null AS "id_user", u2.numero AS "user_number", null AS "email"
+			SELECT "' . self::CHARGEABLE_TYPE . '" AS "type", m.id AS "id", m.label AS "label", null AS "date", null AS "payer_name", null as "beneficiary", null AS "id_payer", u2.numero AS "user_number", null AS "email"
 			FROM ' . Chargeable::TABLE . ' m
 			' . $user_join . '
 			WHERE ' . $conditions . ' AND m.type != ' . (int)Chargeable::CHECKOUT_TYPE . '
 
 			UNION
 
-			SELECT "' . self::USER_TYPE . '" AS "type", m.id AS "id", m.' . $user_name_column . ' AS "label", m.date_inscription AS "date", null AS "person", null as "beneficiary", null AS "id_user", u2.numero AS "user_number", m.' . $db->quoteIdentifier(DynamicFields::getFirstEmailField()) . ' AS "email"
+			SELECT "' . self::USER_TYPE . '" AS "type", m.id AS "id", m.' . $user_name_column . ' AS "label", m.date_inscription AS "date", null AS "payer_name", null as "beneficiary", null AS "id_payer", u2.numero AS "user_number", m.' . $db->quoteIdentifier(DynamicFields::getFirstEmailField()) . ' AS "email"
 			FROM ' . User::TABLE . ' m
 			' . $user_join . '
 		';

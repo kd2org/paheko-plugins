@@ -13,14 +13,14 @@ class Item extends Entity implements ChargeableInterface
 	protected int			$id;
 	protected int			$id_order;
 	protected int			$id_form;
-	protected ?int			$id_user;
+	protected ?int			$id_user = null; // ID of the $person if registered
 	protected ?int			$id_transaction;
 	protected ?int			$id_chargeable;
 	protected string		$type;
 	protected string		$state;
 	protected int			$price_type;
 	protected string		$label;
-	protected string		$person;
+	protected string		$person; // May be origin (e.g., donator) or destination (e.g., beneficiary) of the item
 	protected int			$amount;
 	protected int			$has_options;
 	protected ?\stdClass	$custom_fields; // Is a mix between real HelloAsso custom fields and plugin generated infos during sync
@@ -92,6 +92,11 @@ class Item extends Entity implements ChargeableInterface
 	public function setUserId(?int $id): void
 	{
 		$this->set('id_user', $id);
+	}
+
+	public function getUserId(): ?int
+	{
+		return $this->id_user;
 	}
 
 	public function selfCheck(): void

@@ -74,6 +74,7 @@ class Form extends Entity implements ChargeableInterface
 	}
 
 	public function setUserId(?int $id): void {}
+	public function getUserId(): ?int { return null; }
 
 	public function createCustomField(string $name, ?int $id_dynamic_field = null): CustomField
 	{

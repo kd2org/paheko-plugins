@@ -9,6 +9,7 @@ use Garradin\Plugin\HelloAsso\API;
 
 use Garradin\Payments\Payments as Paheko_Payments;
 use Garradin\Entities\Payments\Payment;
+use Garradin\Payments\Users as PaymentsUsers;
 use Garradin\Entities\Accounting\Transaction;
 use Garradin\Entities\Users\User;
 
@@ -24,8 +25,11 @@ class Payments extends Paheko_Payments
 	const STATUSES = [
 		self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS
 	]; // ToDo: complete the list from the const STATES bellow
-	const UPDATE_MESSAGE = 'Mise à jour du paiement (nouveau statut : %s)';
-	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HelloAsso::PROVIDER_LABEL . '.';
+	const UPDATE_LOG_LABEL = 'Mise à jour du paiement (nouveau statut : %s).';
+	const TRANSACTION_NOTE = null;
+	const USER_NOTE = '%s';
+	const BENEFICIARY_NOTE = 'Bénéficiaire (%s)';
+	const BENEFICIARY_LOG_LABEL = 'Ajout du bénéficiaire n°%d.';
 
 	const STATES = [
 		'Pending'               => 'À venir',
@@ -75,7 +79,7 @@ class Payments extends Paheko_Payments
 			],
 			'transactions' => [
 				'label' => 'Écritures',
-				'select' => sprintf('(SELECT GROUP_CONCAT(id, \';\') FROM %s t WHERE t.reference = %s.id)', Transaction::TABLE, Payment::TABLE)
+				'select' => sprintf('(SELECT GROUP_CONCAT(id, \';\') FROM %s t WHERE t.id_payment = %s.id)', Transaction::TABLE, Payment::TABLE)
 			],
 			'label' => [
 				'label' => 'Libellé'
@@ -86,10 +90,10 @@ class Payments extends Paheko_Payments
 			'amount' => [
 				'label' => 'Montant',
 			],
-			'id_author' => [
-				'label' => 'Personne'
+			'id_payer' => [
+				'label' => 'Payeur'
 			],
-			'author_name' => [],
+			'payer_name' => [],
 			'state' => [
 				'label' => 'Statut',
 				'select' => 'json_extract(extra_data, \'$.state\')'
@@ -126,8 +130,8 @@ class Payments extends Paheko_Payments
 
 		$list->setModifier(function ($row) {
 			$row->state = self::STATES[$row->state] ?? 'Inconnu';
-			if ($row->id_author) {
-				$row->author = EM::findOneById(User::class, (int)$row->id_author);
+			if ($row->id_payer) {
+				$row->payer = EM::findOneById(User::class, (int)$row->id_payer);
 			}
 			if (isset($row->transactions)) {
 				$row->transactions = explode(';', $row->transactions);
@@ -198,17 +202,17 @@ class Payments extends Paheko_Payments
 		}
 
 		if (!$payment->exists()) {
-			$author = isset($data->payer) ? Users::findUserMatchingPayer($data->payer) : null;
-			$author_id = $author ? (int)$author->id : null;
-			$author_name = $data->payer_name;
+			$payer = isset($data->payer) ? Users::findUserMatchingPayer($data->payer) : null;
+			$payer_id = $payer ? (int)$payer->id : null;
+			$payer_name = $data->payer_name;
 			$label = ($data->order ? ($data->order->formName === 'Checkout' ? 'Paiement isolé' : $data->order->formName) . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
-			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, $author_id, $author_name, $data->id, $label, $data->amount, $data, self::TRANSACTION_NOTE);
+			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, (int)HelloAsso::getInstance()->getConfig()->provider_user_id, $payer_id, $payer_name, $data->id, $label, $data->amount, null, null, $data, self::TRANSACTION_NOTE);
 			self::setPaymentExtraDataAndSave($payment, $data);
 		}
 		elseif ($payment->status !== self::STATUSES[$data->state])
 		{
 			$payment->set('status', self::STATUSES[$data->state]);
-			$payment->set('history', (new \DateTime($data->meta->updatedAt))->format('Y-m-d H:i:s') . ' - '. sprintf(self::UPDATE_MESSAGE, Payment::STATUSES[$payment->status]) . "\n" . $payment->history);
+			$payment->addLog(sprintf(self::UPDATE_LOG_LABEL, Payment::STATUSES[$payment->status]), (new \DateTime($data->meta->updatedAt))->format('Y-m-d H:i:s'));
 			self::setPaymentExtraDataAndSave($payment, $data);
 		}
 	}
@@ -238,7 +242,19 @@ class Payments extends Paheko_Payments
 
 		return $formated;
 	}
-	
+
+	static public function handleBeneficiary(int $id_user, \stdClass $data, string $label)
+	{
+		if (isset($data->user)) { // Means the beneficiary is not the payer
+			$payment = Payments::getByReference(HelloAsso::PROVIDER_NAME, $data->payment_ref);
+			if (!array_key_exists($id_user, PaymentsUsers::getIds($payment->id))) {
+				PaymentsUsers::add($payment->id, [ $id_user ], [ sprintf(self::BENEFICIARY_NOTE, $label) ]);
+				$payment->addLog(sprintf(self::BENEFICIARY_LOG_LABEL, $id_user));
+				$payment->save();
+			}
+		}
+	}
+
 	static public function reset(): void
 	{
 		$sql = sprintf('DELETE FROM %s WHERE provider = \'%s\';', Payment::TABLE, HelloAsso::PROVIDER_NAME);

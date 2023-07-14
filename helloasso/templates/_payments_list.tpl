@@ -14,10 +14,10 @@
 			<td>{$row.date|date}</td>
 			<td class="money">{$row.amount|money_currency|raw}</td>
 			<td>
-				{if $row.id_author && $row.author}
-					<a href="{$admin_url}users/details.php?id={$row.author.id|intval}">{$row.author.nom}</a>
+				{if $row.id_payer && $row.payer}
+					<a href="{$admin_url}users/details.php?id={$row.payer.id|intval}">{$row.payer.nom}</a>
 				{else}
-					{$row.author_name}
+					{$row.payer_name}
 				{/if}
 			</td>
 			<td>{$row.state}</td>

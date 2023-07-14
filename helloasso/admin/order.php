@@ -28,7 +28,7 @@ $form->runIf('create_payer', function () use ($order) {
 }, $csrf_key, '?id=' .(int)$order->id. '&ok=1');
 
 $form = EM::findOneById(Form::class, (int)$order->id_form);
-$user = $order->id_user ? EM::findOneById(User::class, (int)$order->id_user) : null;
+$payer = $order->id_payer ? EM::findOneById(User::class, (int)$order->id_payer) : null;
 $payments = Payments::list(null, $order);
 $items = Items::list($order);
 $items_count_list = Items::listCountOpti($order);
@@ -40,6 +40,6 @@ $guessed_user = Users::findUserMatchingPayer($order->getRawPayer());
 $user_match_field_label = (int)$plugin->getConfig()->user_match_type;
 
 $tpl->assign('current_sub', 'orders');
-$tpl->assign(compact('order', 'form', 'user', 'payments', 'items', 'items_count_list', 'options', 'options_count_list', 'payer_infos', 'guessed_user', 'user_match_field_label', 'csrf_key'));
+$tpl->assign(compact('order', 'form', 'payer', 'payments', 'items', 'items_count_list', 'options', 'options_count_list', 'payer_infos', 'guessed_user', 'user_match_field_label', 'csrf_key'));
 
 $tpl->display(PLUGIN_ROOT . '/templates/order.tpl');

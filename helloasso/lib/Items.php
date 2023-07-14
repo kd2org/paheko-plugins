@@ -15,6 +15,7 @@ use Garradin\DynamicList;
 use Garradin\Utils;
 use Garradin\ValidationException;
 use Garradin\Entities\Accounting\Transaction;
+use Garradin\Entities\Payments\Payment;
 use Garradin\Accounting\Years;
 use Garradin\Entities\Users\User;
 use Garradin\Plugin\HelloAsso\Payments;
@@ -28,9 +29,11 @@ use KD2\DB\EntityManager as EM;
 class Items
 {
 	const TRANSACTION_PREFIX = 'Item';
-	const TRANSACTION_NOTE = 'Générée automatiquement par l\'extension ' . HA::PROVIDER_LABEL . '.';
+	const TRANSACTION_NOTE = null;
 	const DONATION_LABEL = 'Don';
 	const CHECKOUT_LABEL = 'Commande #%d (%s)';
+	const TRANSACTION_LOG_LABEL = 'Écriture comptable n°%d créée.';
+	const MEMBER_LOG_LABEL = 'Membre n°%d associé·e.';
 
 	static protected array	$_exceptions = [];
 
@@ -191,11 +194,11 @@ class Items
 	static protected function setItem(Item $item, \stdClass $data): void
 	{
 		// ToDo: add some cache for those checks
-		if (!EM::getInstance(Order::class)->col(sprintf('SELECT id FROM @TABLE WHERE id = :id_order;'), $data->order_id)) {
+		if (!DB::getInstance()->test(Order::TABLE, 'id = ?', $data->order_id)) {
 			throw new SyncException(sprintf('Tried to synchronized the item (ID: %d) of an inexisting (never synchronized?) order #%d.', $data->id, $data->order_id));
 		}
 		$id_form = Forms::getId($data->org_slug, $data->form_slug);
-		if (!EM::getInstance(Form::class)->col(sprintf('SELECT id FROM @TABLE WHERE id = :id_order;'), $id_form)) {
+		if (!DB::getInstance()->test(Form::TABLE, 'id = ?', $id_form)) {
 			throw new SyncException(sprintf('Tried to synchronized the item (ID: %d) of an inexisting (never synchronized?) order #%d.', $data->id, $id_form));
 		}
 
@@ -217,6 +220,7 @@ class Items
 		$identifier = Users::guessUserIdentifier($data->beneficiary);
 		if ($identifier && ($id_user = Users::getUserId($identifier))) {
 			$item->set('id_user', $id_user);
+			Payments::handleBeneficiary($id_user, $data, $item->label);
 		}
 	}
 
@@ -241,7 +245,8 @@ class Items
 		$option = EM::findOne(Option::class, 'SELECT * FROM @TABLE WHERE id_item = :id_item AND label = :name AND amount = :amount', $id_item, $data->name, $data->amount) ?? new Option;
 		$option->set('raw_data', json_encode($data));
 		$data = self::transformOption($data);
-		
+		$data->payment_ref = $full_data->payments[0]->id;
+
 		if (!$option->exists()) {
 			$option->set('id_item', (int)$full_data->id);
 			$option->set('id_order', (int)$full_data->order->id);
@@ -253,6 +258,7 @@ class Items
 		$identifier = Users::guessUserIdentifier($full_data->beneficiary);
 		if ($identifier && ($id_user = Users::getUserId($identifier))) {
 			$option->set('id_user', $id_user);
+			Payments::handleBeneficiary($id_user, $full_data, $option->label);
 		}
 		$option->save();
 
@@ -267,39 +273,36 @@ class Items
 		if ($accounting && !$item->id_transaction && (count($data->payments) === 1 && $data->payments[0]->state === Payments::AUTHORIZED_STATUS))
 		{
 			if ($item->amount && $item->price_type !== Item::FREE_PRICE_TYPE) {
+				if (!$payment = Payments::get((int)$data->payments[0]->id)) {
+					throw new \RuntimeException(sprintf('Payment #%d matching item #%d not found.', $data->payments[0]->id, $item->id));
+				}
 				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
-					self::accountChargeable((int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType), (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+					self::accountChargeable((int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType), $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 				}
 				else // Checkout case
 				{
-					if (!$payment = Payments::get((int)$data->payments[0]->id)) {
-						throw new \RuntimeException(sprintf('Payment #%d matching checkout item #%d not found.', $data->payments[0]->id, $item->id));
-					}
 					if (isset($payment->id_credit_account) && $payment->id_credit_account && $payment->id_debit_account) {// This feature will be available once the ChekoutIntent callback is fixed
-						$transaction = self::createTransaction($item, [$payment->id_credit_account, $payment->id_debit_account], (int)$data->payments[0]->id, $payment->date);
-						$payment->set('id_transaction', $transaction->id);
+						$transaction = self::createTransaction($item, [$payment->id_credit_account, $payment->id_debit_account], $payment, (int)$data->payments[0]->id, $payment->date);
 					}
-					elseif (self::accountChargeable((int)$item->id_form, $item, Chargeable::CHECKOUT_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date))) {
-						$payment->set('id_transaction', $item->id_transaction);
-					}
+					self::accountChargeable((int)$item->id_form, $item, Chargeable::CHECKOUT_TYPE, $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 					$payment->save();
 				}
 			}
 			if (isset($data->options)) {
 				foreach ($option_entities as $option) {
 					if ($option->amount && $option->price_type !== Item::FREE_PRICE_TYPE) {
-						self::accountChargeable((int)$item->id_form, $option, Chargeable::SIMPLE_TYPE, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
+						self::accountChargeable((int)$item->id_form, $option, Chargeable::SIMPLE_TYPE, $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 					}
 				}
 			}
 		}
 	}
 
-	static protected function accountChargeable(int $id_form, ChargeableInterface $entity, int $type, int $payment_ref, \DateTime $date): bool
+	static protected function accountChargeable(int $id_form, ChargeableInterface $entity, int $type, Payment $payment, int $payment_ref, \DateTime $date): bool
 	{
 		$chargeable = Chargeables::getFromEntity($id_form, $entity, $type);
 		if ($entity->getAmount() && $chargeable->id_credit_account && $chargeable->id_debit_account) {
-			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment_ref, $date);
+			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment, $payment_ref, $date);
 			$entity->id_transaction = (int)$transaction->id;
 			$entity->save();
 			return true;
@@ -313,6 +316,7 @@ class Items
 		$data->order_id = (int) $data->order->id;
 		$data->payer_name = isset($data->payer) ? Payers::getPersonName($data->payer) : null;
 		$data->payer_infos = isset($data->payer) ? Payers::formatPersonInfos($data->payer) : null;
+		$data->payment_ref = $data->payments[0]->id;
 		$data->amount = (int) $data->amount;
 		$data->form_slug = $data->order->formSlug;
 		$data->org_slug = $data->order->organizationSlug;
@@ -351,7 +355,7 @@ class Items
 		return $data;
 	}
 
-	static protected function createTransaction(ChargeableInterface $entity, array $accounts, int $payment_ref, \DateTime $date): Transaction
+	static protected function createTransaction(ChargeableInterface $entity, array $accounts, Payment $payment, int $payment_ref, \DateTime $date): Transaction
 	{
 		if (!$id_year = Years::getOpenYearIdMatchingDate($date)) {
 			throw new \RuntimeException(sprintf('No opened accounting year matching the item date "%s"!', $date->format('Y-m-d')));
@@ -369,13 +373,14 @@ class Items
 			'payment_reference' => $payment_ref,
 			'date' => \KD2\DB\Date::createFromInterface($date),
 			'id_year' => (int)$id_year,
+			'id_payment' => (int)$payment->id,
+			'id_creator' => (int)HA::getInstance()->getConfig()->provider_user_id,
 			'amount' => $entity->getAmount() / 100,
 			'simple' => [
 				Transaction::TYPE_REVENUE => [
 					'credit' => [ (int)$accounts[0] => null ],
 					'debit' => [ (int)$accounts[1] => null ]
 			]]
-			// , 'id_user'/'id_creator' => ...
 		];
 
 		$transaction->importForm($source);
@@ -383,6 +388,16 @@ class Items
 		if (!$transaction->save()) {
 			throw new \RuntimeException(sprintf('Cannot record item/option transaction. Item/option ID: %d.', $entity->id));
 		}
+		$payment->addLog(sprintf(self::TRANSACTION_LOG_LABEL, $transaction->id));
+
+		if ($id_user = $entity->getUserId()) {
+			$transaction->linkToUser((int)$id_user);
+			$payment->bindToUsers([ $id_user ], [ sprintf(Payments::USER_NOTE, $entity->label) ]);
+			$payment->addLog(sprintf(self::MEMBER_LOG_LABEL, $id_user));
+		}
+
+		$payment->save();
+
 		return $transaction;
 	}
 

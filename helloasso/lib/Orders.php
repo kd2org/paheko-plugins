@@ -45,12 +45,12 @@ class Orders
 				'label' => 'Montant',
 				'select' => 'o.amount'
 			],
-			'id_user' => [
-				'label' => 'Personne',
-				'select' => 'o.id_user'
+			'id_payer' => [
+				'label' => 'Payeur',
+				'select' => 'o.id_payer'
 			],
-			'person' => [
-				'select' => 'o.person'
+			'payer_name' => [
+				'select' => 'o.payer_name'
 			],
 			'status' => [
 				'label' => 'Statut',
@@ -77,7 +77,7 @@ class Orders
 			$tables .= ' -- Force the use of index otherwise the GROUP BY and ORDER BY clauses create temporary sorting tables
 				INDEXED BY plugin_helloasso_orders_id_date
 				LEFT JOIN ' . $target_table . ' target INDEXED BY ' . $target_index . ' ON (target.id_order = o.id)';
-			$conditions = 'target.id IN (:ids)';
+			$conditions = 'target.id IN (' . implode(', ', array_map(function ($item) { return (int)$item; }, $ids)) . ')'; // Cannot use setParameter() as it surround its with quotes breaking the IN syntax
 			$title = sprintf('%s - Commandes', $associate->label);
 		}
 		if (!($associate instanceof Form)) {
@@ -112,7 +112,6 @@ class Orders
 		$list->setTitle($title);
 		
 		if ($associate instanceof Chargeable) {
-			$list->setParameter('ids', implode(', ', array_map(function ($item) { return (int)$item; }, $ids)));
 			$list->groupBy('o.id, o.date');
 			$list->orderBy(['o.id', 'date'], [true, true]);
 		}
@@ -123,9 +122,9 @@ class Orders
 		$list->setModifier(function (&$row) use ($associate) {
 			$row->id = $row->{'o.id'}; // See column comment below
 			$row->status = Order::STATUSES[$row->status];
-			$row->label = (($associate instanceof Form) ? $associate->label : $row->form_name) . ' - ' . $row->person;
-			if (!(($associate instanceof User) || ($associate instanceof \stdClass)) && $row->id_user) {
-				$row->author = EM::findOneById(User::class, (int)$row->id_user);
+			$row->label = (($associate instanceof Form) ? $associate->label : $row->form_name) . ' - ' . $row->payer_name;
+			if (!(($associate instanceof User) || ($associate instanceof \stdClass)) && $row->id_payer) {
+				$row->payer = EM::findOneById(User::class, (int)$row->id_payer);
 			}
 		});
 
@@ -172,11 +171,11 @@ class Orders
 			$entity->set('id_form', Forms::getId($data->org_slug, $data->form_slug));
 		}
 
-		$entity->set('id_user', isset($data->payer) ? Users::getUserId(Users::guessUserIdentifier($data->payer)): null); // The user may subscribe by himself/herself a long time after his/her order
+		$entity->set('id_payer', isset($data->payer) ? Users::getUserId(Users::guessUserIdentifier($data->payer)): null); // The user may subscribe by himself/herself a long time after his/her order
+		$entity->set('payer_name', $data->payer_name);
 		$entity->set('amount', $data->amount);
 		$entity->set('status', $data->status);
 		$entity->set('date', $data->date);
-		$entity->set('person', $data->payer_name);
 
 		$entity->save();
 	}
@@ -206,7 +205,7 @@ class Orders
 		$table = Order::TABLE;
 
 		if ($associate instanceof User) {
-			$conditions = sprintf('id_user = %d', (int)$associate->id);
+			$conditions = sprintf('id_payer = %d', (int)$associate->id);
 		}
 		elseif ($associate instanceof Chargeable) {
 

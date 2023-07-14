@@ -58,9 +58,9 @@ class Chargeable extends Entity
 	protected int		$id;
 	protected int		$id_form;
 	protected ?int		$id_item; // Is the first item to generate the Chargeable, or null when handling ONLY_ONE_ITEM_FORM_TYPE forms/payments
-	protected ?int		$id_credit_account;
-	protected ?int		$id_debit_account;
-	protected ?int		$id_category;
+	protected ?int		$id_credit_account = null;
+	protected ?int		$id_debit_account = null;
+	protected ?int		$id_category = null;
 	protected ?int		$id_fee;
 	protected ?int		$target_type;
 	protected int		$type;

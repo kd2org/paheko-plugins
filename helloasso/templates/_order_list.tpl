@@ -12,7 +12,7 @@
 			<td>{$row.label}</td>
 			<td class="money">{$row.amount|money_currency|raw}</td>
 			{if isset($chargeable)}
-				<td>{$row.person}</td>
+				<td>{$row.payer_name}</td>
 			{/if}
 			<td>{$row.status}</td>
 			<td class="num"><a href="{$plugin_admin_url}payment.php?ref={$row.id_payment|intval}">{$row.id_payment}</a></td>

@@ -12,7 +12,7 @@
 
 <dl class="describe">
 	<dt>Personne</dt>
-	<dd class="num">{if $order.id_user}{$user->nom} <a href="{$admin_url}users/details.php?id={$user->id|intval}">{$user->numero}</a>{else}{$order.person}{/if}</dd>
+	<dd class="num">{if $order.id_payer}{$payer->nom} <a href="{$admin_url}users/details.php?id={$payer->id|intval}">{$payer->numero}</a>{else}{$order.payer_name}{/if}</dd>
 	<dt>Référence</dt>
 	<dd>{$order.id}</dd>
 	<dt>Montant total</dt>
@@ -48,16 +48,16 @@
 		{/if}
 	</dd>
 	{/foreach}
-	{if $user && $user->nom === \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
+	{if $payer && $payer->nom === \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
 		<dt>Membre correspondant·e</dt>
-		<dd class="num">{$user->nom} <a href="{$admin_url}users/details.php?id={$user->id|intval}">{$user->numero}</a></dd>
+		<dd class="num">{$payer->nom} <a href="{$admin_url}users/details.php?id={$payer->id|intval}">{$payer->numero}</a></dd>
 	{elseif $guessed_user}
 		<dt>Membre correspondant·e</dt>
 		<dd class="num">{$guessed_user->nom} <a href="{$admin_url}users/details.php?id={$guessed_user->id|intval}">{$guessed_user->numero}</a></dd>
 	{/if}
 </dl>
 
-{if !$user || $user->nom !== \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
+{if !$payer || $payer->nom !== \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
 	<form method="post" action="{$self_url}">
 		{csrf_field key=$csrf_key}
 		{if $guessed_user}

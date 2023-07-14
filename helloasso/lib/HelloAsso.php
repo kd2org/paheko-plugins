@@ -114,9 +114,10 @@ class HelloAsso
 		Items::reset();
 	}
 
-	public function initConfig(): bool {
+	public function initConfig(int $provider_user_id): bool {
 		$this->plugin->setConfigProperty('accounting', self::ACCOUNTING_ENABLED);
 		$this->plugin->setConfigProperty('client_id', self::DEFAULT_CLIENT_ID);
+		$this->plugin->setConfigProperty('provider_user_id', $provider_user_id);
 		$this->plugin->setConfigProperty('id_credit_account', false);
 		$this->plugin->setConfigProperty('id_debit_account', false);
 		$payer_map = new \stdClass();

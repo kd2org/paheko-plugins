@@ -58,7 +58,7 @@ class Payers
 		];
 
 		$tables = Order::TABLE . ' o
-			LEFT JOIN ' . User::TABLE . ' u ON (u.id = o.id_user)';
+			LEFT JOIN ' . User::TABLE . ' u ON (u.id = o.id_payer)';
 
 		$list = new DynamicList($columns, $tables);
 

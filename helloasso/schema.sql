@@ -1,44 +1,3 @@
------------------------------------
----- Indexes for Paheko core tables
-
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_provider_status ON payments (provider, status);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form ON payments (json_extract(extra_data, '$.id_form'));
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_date ON payments (json_extract(extra_data, '$.id_form'), 'date');
-
--- Listing payments (one index by view (e.g. ordered by status))
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_reference ON payments (json_extract(extra_data, '$.id_form'), 'reference');
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_amount ON payments (json_extract(extra_data, '$.id_form'), 'amount');
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_author_name ON payments (json_extract(extra_data, '$.id_form'), 'author_name');
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_status ON payments (json_extract(extra_data, '$.id_form'), 'status');
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_label ON payments (json_extract(extra_data, '$.id_form'), 'label');
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_order ON payments (json_extract(extra_data, '$.id_form'), json_extract(extra_data, '$.id_order'));
--- Listing payments on the order page
-CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_order_date ON payments (json_extract(extra_data, '$.id_order'), 'date');
--- Search index
-CREATE INDEX IF NOT EXISTS plugin_helloasso_search_user_date ON users (date_inscription);
-
------------------------------------
----- Plugin indexes
-
--- Listing orders (one index by view (e.g. ordered by status))
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_date ON plugin_helloasso_orders (id_form, date); -- Default
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_amount ON plugin_helloasso_orders (id_form, amount);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_person ON plugin_helloasso_orders (id_form, person);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_status ON plugin_helloasso_orders (id_form, status);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_payment ON plugin_helloasso_orders (id_form, json_extract(raw_data, '$.payments[0].id'));
--- Listing orders for a specific payer
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_user_date ON plugin_helloasso_orders (id_user, date); -- Default
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_payer_email ON plugin_helloasso_orders (json_extract(raw_data, '$.payer.email'));
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_payer_name ON plugin_helloasso_orders (json_extract(raw_data, '$.payer.firstName'), json_extract(raw_data, '$.payer.lastName'));
--- Forcing Group by and Order by to use index when listing chargeables' orders list
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_id_date ON plugin_helloasso_orders (id, date);
-
--- Listings chargeables
-CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_form_label ON plugin_helloasso_chargeables(id_form, label);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_form_amount ON plugin_helloasso_chargeables(id_form, amount);
-
-CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_need_config ON plugin_helloasso_chargeables(type, id_credit_account, need_config) WHERE (type != 4 AND id_credit_account IS NULL) OR (need_config = 1);
-
 -- Cache list of forms
 CREATE TABLE IF NOT EXISTS plugin_helloasso_forms (
 	id INTEGER PRIMARY KEY,
@@ -55,7 +14,6 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_forms (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_forms_key ON plugin_helloasso_forms(org_slug, slug);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_forms_chargeable ON plugin_helloasso_chargeables(id);
 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_form_custom_fields (
 	id INTEGER PRIMARY KEY NOT NULL,
@@ -69,17 +27,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS plugin_helloasso_form_custom_fields_unique ON 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_orders (
 	id INTEGER PRIMARY KEY NOT NULL,
 	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
-	id_user INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+	id_payer INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
 	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
 	date TEXT NOT NULL,
-	person TEXT NULL,
+	payer_name TEXT NULL,
 	amount INTEGER NOT NULL,
 	status TEXT NOT NULL,
 	raw_data TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form ON plugin_helloasso_orders(id_form);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_user ON plugin_helloasso_orders(id_user);
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_user ON plugin_helloasso_orders(id_payer);
 CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_transaction ON plugin_helloasso_orders(id_transaction);
 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_items (
@@ -200,3 +158,43 @@ END;
 CREATE TRIGGER IF NOT EXISTS plugin_helloasso_targets_year_delete BEFORE DELETE ON acc_years BEGIN
     DELETE FROM plugin_helloasso_targets_accounts WHERE id_target IN (SELECT id FROM plugin_helloasso_targets WHERE id_year = OLD.id);
 END;
+
+-----------------------------------
+---- Indexes for Paheko core tables
+
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form ON payments (json_extract(extra_data, '$.id_form'));
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_date ON payments (json_extract(extra_data, '$.id_form'), 'date');
+
+-- Listing payments (one index by view (e.g. ordered by status))
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_reference ON payments (json_extract(extra_data, '$.id_form'), 'reference');
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_amount ON payments (json_extract(extra_data, '$.id_form'), 'amount');
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_payer_name ON payments (json_extract(extra_data, '$.id_form'), 'payer_name');
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_status ON payments (json_extract(extra_data, '$.id_form'), 'status');
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_label ON payments (json_extract(extra_data, '$.id_form'), 'label');
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_order ON payments (json_extract(extra_data, '$.id_form'), json_extract(extra_data, '$.id_order'));
+-- Listing payments on the order page
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_order_date ON payments (json_extract(extra_data, '$.id_order'), 'date');
+-- Search index
+CREATE INDEX IF NOT EXISTS plugin_helloasso_search_user_date ON users (date_inscription);
+
+-----------------------------------
+---- Plugin indexes
+
+-- Listing orders (one index by view (e.g. ordered by status))
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_date ON plugin_helloasso_orders (id_form, date); -- Default
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_amount ON plugin_helloasso_orders (id_form, amount);
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_payer ON plugin_helloasso_orders (id_form, payer_name);
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_status ON plugin_helloasso_orders (id_form, status);
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form_payment ON plugin_helloasso_orders (id_form, json_extract(raw_data, '$.payments[0].id'));
+-- Listing orders for a specific payer
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_user_date ON plugin_helloasso_orders (id_payer, date); -- Default
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_payer_email ON plugin_helloasso_orders (json_extract(raw_data, '$.payer.email'));
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_payer_name ON plugin_helloasso_orders (json_extract(raw_data, '$.payer.firstName'), json_extract(raw_data, '$.payer.lastName'));
+-- Forcing Group by and Order by to use index when listing chargeables' orders list
+CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_id_date ON plugin_helloasso_orders (id, date);
+
+-- Listings chargeables
+CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_form_label ON plugin_helloasso_chargeables(id_form, label);
+CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_form_amount ON plugin_helloasso_chargeables(id_form, amount);
+
+CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_need_config ON plugin_helloasso_chargeables(type, id_credit_account, need_config) WHERE (type != 4 AND id_credit_account IS NULL) OR (need_config = 1);

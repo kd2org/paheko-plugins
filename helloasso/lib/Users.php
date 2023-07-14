@@ -53,7 +53,7 @@ class Users
 			throw new NotFoundException(sprintf('Cannot map user: Not found category "%s".', $id_category));
 		}
 		$user->set('id_category', $id_category);
-		$user->set('nom', self::guessUserName($payer));
+		$user->set('nom', self::guessUserName($payer)); // ToDo: use DynamicField instead
 		unset($map->name);
 
 		foreach ($map as $api_field => $user_field) {
@@ -241,13 +241,13 @@ class Users
 		if (!$order = EM::findOneById(Order::class, (int)$data->order_id)) {
 			throw new \RuntimeException(sprintf('Order #%d not found while trying to associate its user #%d from entity #%d.', $data->order_id, $id_user, $entity->id));
 		}
-		$order->set('id_user', (int)$id_user);
+		$order->set('id_payer', (int)$id_user);
 		$order->save();
 
 		if (!$payment = Payments::getByOrderId((int)$order->id)) {
 			throw new \RuntimeException(sprintf('No payment found for order #%d while trying to associate its payer User.', $order->id));
 		}
-		$payment->set('id_author', (int)$id_user);
+		$payment->set('id_payer', (int)$id_user);
 		$payment->save();
 	}
 

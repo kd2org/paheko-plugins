@@ -4,6 +4,7 @@ namespace Garradin;
 
 use KD2\DB\EntityManager;
 use Garradin\Payments\Payments;
+use Garradin\Payments\Users as PaymentsUsers;
 use Garradin\Plugin\HelloAsso\HelloAsso;
 use Garradin\Entities\Payments\Payment;
 use Garradin\Entities\Accounting\Transaction;
@@ -23,12 +24,14 @@ elseif ($ref = qg('ref')) {
 if (!$payment) {
 	throw new UserException('Paiement inconnu');
 }
-$author = EntityManager::findOneById(User::class, (int)$payment->id_author);
+$payer = EntityManager::findOneById(User::class, (int)$payment->id_payer);
+$users = PaymentsUsers::getForPaymentId((int)$payment->id);
+$users_notes = PaymentsUsers::getNotesForPaymentId((int)$payment->id);
 $form = $payment->id_form ? Forms::get($payment->id_form) : null;
 $order = Orders::get($payment->id_order);
-$transactions = EntityManager::getInstance(Transaction::class)->all('SELECT * FROM @TABLE WHERE reference = :reference', $payment->id);
+$transactions = $payment->getTransactions();
 
-$tpl->assign(compact('payment', 'author', 'form', 'order', 'transactions'));
+$tpl->assign(compact('payment', 'payer', 'users', 'users_notes', 'form', 'order', 'transactions'));
 $tpl->assign('current_sub', 'payments');
 
 $tpl->assign('TECH_DETAILS', SHOW_ERRORS && ENABLE_TECH_DETAILS);

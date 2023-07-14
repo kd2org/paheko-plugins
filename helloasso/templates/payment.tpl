@@ -17,8 +17,16 @@
 	<dd>{$payment->method}</dd>
 	<dt>Type</dt>
 	<dd>{$payment->type}</dd>
-	<dt>Auteur/trice</dt>
-	<dd>{if $author}<a href="{$admin_url}users/details.php?id={$author->id}">{$author->nom}</a>{else}{$payment->author_name}{/if}</dd>
+	<dt>Payeur/euse</dt>
+	<dd>{if $payer}{link href="!users/details.php?id=%d"|args:$payer->id label=$payer->nom}{else}{$payment->payer_name}{/if}</dd>
+	<dt>Bénéficiaires</dt>
+	<dd class="num">
+		<ul class="flat">
+		{foreach from=$users item='user'}
+			<li>{$user->nom} {link href="!users/details.php?id=%d"|args:$user->id label=$user->numero}{if isset($users_notes[$user->id])} ({$users_notes[$user->id]}){/if}</li>
+		{/foreach}
+		</ul>
+	</dd>
 	{if $form}
 		<dt>Formulaire</dt>
 		<dd><a href="{$plugin_admin_url}orders.php?id={$form->id}">{$form->label}</a></dd>
@@ -27,12 +35,8 @@
 		<dt>Commande</dt>
 		<dd><a href="{$plugin_admin_url}order.php?id={$order->id}">{$order->person} - {$order->date|date}</a></dd>
 	{/if}
-	{if $payment->id_transaction}
-		<dt>Écriture comptable</dt>
-		<dd><mark><a href="{$admin_url}acc/transactions/details.php?id={$payment->id_transaction}">{$payment->id_transaction}</a></mark></dd>
-	{else}
-		<dt>Écritures comptables</dt>
-		<dd>
+	<dt>Écritures comptables</dt>
+	<dd>
 		{if !$plugin->config->accounting}
 			Aucune
 			{if $session->canAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN)}
@@ -43,8 +47,7 @@
 				<mark><a href="{$admin_url}acc/transactions/details.php?id={$transaction->id}">{$transaction->id}</a></mark>
 			{/foreach}
 		{/if}
-		</dd>
-	{/if}
+	</dd>
 	<dt>Historique</dt>
 	<dd>{$payment->history|escape|nl2br}</dd>
 </dl>

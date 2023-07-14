@@ -22,10 +22,10 @@ class Order extends Entity
 
 	protected int		$id;
 	protected int		$id_form;
-	protected ?int		$id_user; // The user linked to the order. Is the payer only if the payer is the same person as the beneficiary.
+	protected ?int		$id_payer;
 	protected ?int		$id_transaction;
 	protected \DateTime	$date;
-	protected ?string	$person;
+	protected ?string	$payer_name;
 	protected int		$amount;
 	protected int		$status;
 	protected string	$raw_data;
@@ -36,6 +36,7 @@ class Order extends Entity
 		self::STATUS_PAID => 'Payée',
 		self::STATUS_WAITING => 'En attente'
 	];
+	const RAW_PAYER_REGISTRATION_MESSAGE = 'Payeur/euse inscrit·e comme membre n°%d (%s).';
 
 	static public function getStatus(\stdClass $order)
 	{
@@ -87,16 +88,17 @@ class Order extends Entity
 			$user->set('id_category', (int)$id_category);
 			$user->save();
 		}
-		$this->set('id_user', (int)$user->id);
+		$this->set('id_payer', (int)$user->id);
 		$this->save();
 		if (!$payment = Payments::getByOrderId((int)$this->id)) {
 			throw new \RuntimeException(sprintf('No payment found for order #%d while trying to create its payer User.', $this->id));
 		}
-		$payment->set('id_author', (int)$user->id);
+		$payment->set('id_payer', (int)$user->id);
+		$payment->addLog(sprintf(self::RAW_PAYER_REGISTRATION_MESSAGE, $user->id, $user->nom));
 		$payment->save();
 	}
 
-	public function createTransaction(Target $target): Transaction
+	/*public function createTransaction(Target $target): Transaction
 	{
 		if (!$target->id_year) {
 			throw new \RuntimeException('Cannot create transaction: no year has been specified');
@@ -114,7 +116,7 @@ class Order extends Entity
 
 		$transaction = new Transaction;
 		$transaction->type = Transaction::TYPE_ADVANCED;
-		$transaction->id_creator = null;
+		$transaction->id_creator = HelloAsso::getInstance()->getConfig()->provider_user_id;
 		$transaction->id_year = $target->id_year;
 
 		$transaction->date = $this->date;
@@ -136,11 +138,11 @@ class Order extends Entity
 		$transaction->save();
 		$this->set('id_transaction', $transaction->id());
 		$this->save();
-	}
+	}*/
 
 	public function selfCheck(): void
 	{
 		parent::selfCheck();
-		$this->assert(array_key_exists($this->status, self::STATUSES), sprintf('Wrong order (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->status, implode(', ', array_keys(self::PRICE_TYPES))));
+		$this->assert(array_key_exists($this->status, self::STATUSES), sprintf('Wrong order (ID: #%d) status: %s. Possible values are: %s.', $this->id ?? null, $this->status, implode(', ', array_keys(self::STATUSES))));
 	}
 }
