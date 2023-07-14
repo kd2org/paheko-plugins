@@ -28,7 +28,8 @@ use KD2\DB\EntityManager as EM;
 
 class Items
 {
-	const TRANSACTION_PREFIX = 'Item';
+	const TRANSACTION_LABEL = 'Article %s: %s';
+	const CHECKOUT_TRANSACTION_LABEL = '%s: %s';
 	const TRANSACTION_NOTE = null;
 	const DONATION_LABEL = 'Don';
 	const CHECKOUT_LABEL = 'Commande #%d (%s)';
@@ -276,13 +277,14 @@ class Items
 				if (!$payment = Payments::get((int)$data->payments[0]->id)) {
 					throw new \RuntimeException(sprintf('Payment #%d matching item #%d not found.', $data->payments[0]->id, $item->id));
 				}
+
 				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
 					self::accountChargeable((int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType), $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 				}
 				else // Checkout case
 				{
 					if (isset($payment->id_credit_account) && $payment->id_credit_account && $payment->id_debit_account) {// This feature will be available once the ChekoutIntent callback is fixed
-						$transaction = self::createTransaction($item, [$payment->id_credit_account, $payment->id_debit_account], $payment, (int)$data->payments[0]->id, $payment->date);
+						$transaction = self::createTransaction($item, [$payment->id_credit_account, $payment->id_debit_account], $payment, (int)$data->payments[0]->id, $payment->date, self::CHECKOUT_TRANSACTION_LABEL);
 					}
 					self::accountChargeable((int)$item->id_form, $item, Chargeable::CHECKOUT_TYPE, $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 					$payment->save();
@@ -302,7 +304,7 @@ class Items
 	{
 		$chargeable = Chargeables::getFromEntity($id_form, $entity, $type);
 		if ($entity->getAmount() && $chargeable->id_credit_account && $chargeable->id_debit_account) {
-			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment, $payment_ref, $date);
+			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment, $payment_ref, $date, self::TRANSACTION_LABEL);
 			$entity->id_transaction = (int)$transaction->id;
 			$entity->save();
 			return true;
@@ -355,7 +357,7 @@ class Items
 		return $data;
 	}
 
-	static protected function createTransaction(ChargeableInterface $entity, array $accounts, Payment $payment, int $payment_ref, \DateTime $date): Transaction
+	static protected function createTransaction(ChargeableInterface $entity, array $accounts, Payment $payment, int $payment_ref, \DateTime $date, string $label): Transaction
 	{
 		if (!$id_year = Years::getOpenYearIdMatchingDate($date)) {
 			throw new \RuntimeException(sprintf('No opened accounting year matching the item date "%s"!', $date->format('Y-m-d')));
@@ -368,7 +370,7 @@ class Items
 
 		$source = [
 			'status' => Transaction::STATUS_PAID,
-			'label' => self::TRANSACTION_PREFIX . ' - ' . $entity->getLabel(),
+			'label' => sprintf($label, HA::PROVIDER_LABEL, $entity->getLabel()),
 			'notes' => self::TRANSACTION_NOTE,
 			'payment_reference' => $payment_ref,
 			'date' => \KD2\DB\Date::createFromInterface($date),

@@ -30,6 +30,9 @@ class Payments extends Paheko_Payments
 	const USER_NOTE = '%s';
 	const BENEFICIARY_NOTE = 'Bénéficiaire (%s)';
 	const BENEFICIARY_LOG_LABEL = 'Ajout du bénéficiaire n°%d.';
+	const LABEL_UPDATED_LOG_LABEL = 'Intitulé mis à jour.';
+	const CHECKOUT_PREFIX_LABEL = 'Paiement isolé';
+	const WITH_BENEFICIARY_LABEL = '%s%s - Payé par %s';
 
 	const STATES = [
 		'Pending'               => 'À venir',
@@ -205,7 +208,7 @@ class Payments extends Paheko_Payments
 			$payer = isset($data->payer) ? Users::findUserMatchingPayer($data->payer) : null;
 			$payer_id = $payer ? (int)$payer->id : null;
 			$payer_name = $data->payer_name;
-			$label = ($data->order ? ($data->order->formName === 'Checkout' ? 'Paiement isolé' : $data->order->formName) . ' - ' : '') . $data->payer_name . ' - ' . HelloAsso::PROVIDER_NAME . ' #' . $data->id;
+			$label = ($data->order ? ($data->order->formName === 'Checkout' ? self::CHECKOUT_PREFIX_LABEL : $data->order->formName) . ' - ' : '') . $data->payer_name;
 			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, (int)HelloAsso::getInstance()->getConfig()->provider_user_id, $payer_id, $payer_name, $data->id, $label, $data->amount, null, null, $data, self::TRANSACTION_NOTE);
 			self::setPaymentExtraDataAndSave($payment, $data);
 		}
@@ -247,9 +250,17 @@ class Payments extends Paheko_Payments
 	{
 		if (isset($data->user)) { // Means the beneficiary is not the payer
 			$payment = Payments::getByReference(HelloAsso::PROVIDER_NAME, $data->payment_ref);
+
 			if (!array_key_exists($id_user, PaymentsUsers::getIds($payment->id))) {
 				PaymentsUsers::add($payment->id, [ $id_user ], [ sprintf(self::BENEFICIARY_NOTE, $label) ]);
 				$payment->addLog(sprintf(self::BENEFICIARY_LOG_LABEL, $id_user));
+
+				$beneficiary = Payers::getPersonName($data->user);
+				if ($beneficiary !== $data->payer_name) {
+					$payment->set('label', sprintf(self::WITH_BENEFICIARY_LABEL, ($data->order ? $data->order->formName . ' - ' : ''), $beneficiary, $data->payer_name));
+					$payment->addLog(self::LABEL_UPDATED_LOG_LABEL);
+				}
+
 				$payment->save();
 			}
 		}

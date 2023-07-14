@@ -33,7 +33,7 @@
 	{/if}
 	{if $order}
 		<dt>Commande</dt>
-		<dd><a href="{$plugin_admin_url}order.php?id={$order->id}">{$order->person} - {$order->date|date}</a></dd>
+		<dd><a href="{$plugin_admin_url}order.php?id={$order->id}">{if $payer}{$payer->nom}{else}{$payment->payer_name}{/if} - {$order->date|date}</a></dd>
 	{/if}
 	<dt>Écritures comptables</dt>
 	<dd>

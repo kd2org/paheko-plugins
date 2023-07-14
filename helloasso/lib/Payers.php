@@ -86,7 +86,7 @@ class Payers
 		return $list;
 	}
 
-	static public function getPersonName(\stdClass $person)
+	static public function getPersonName(\stdClass $person): string
 	{
 		$names = [!empty($person->company) ? $person->company . ' — ' : null, $person->firstName ?? null, $person->lastName ?? null];
 		$names = array_filter($names);

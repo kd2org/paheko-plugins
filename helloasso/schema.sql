@@ -1,7 +1,7 @@
 -- Cache list of forms
 CREATE TABLE IF NOT EXISTS plugin_helloasso_forms (
 	id INTEGER PRIMARY KEY,
-	id_chargeable INTEGER NULL REFERENCES plugin_helloasso_chargeables(id),
+	id_chargeable INTEGER NULL REFERENCES plugin_helloasso_chargeables(id) ON DELETE SET NULL,
 
 	org_name TEXT NOT NULL,
 	org_slug TEXT NOT NULL,
