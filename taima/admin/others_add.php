@@ -36,7 +36,7 @@ if (qg('from')) {
 elseif (qg('id')) {
 	$entry = Tracking::get((int)qg('id'));
 	$entry_duration = Tracking::formatMinutes($entry->duration);
-	$selected_user = [$user->id => $user->identite];
+	$selected_user = $user ? [$user->id => $user->identite] : null;
 }
 else {
 	$entry = new Entry;
