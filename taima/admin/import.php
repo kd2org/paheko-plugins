@@ -29,6 +29,7 @@ $json = $session->get('taima_import_json');
 if (isset($_GET['cancel'])) {
 	$json = null;
 	$session->set('taima_import_json', $json);
+	$session->save();
 }
 
 $form->runIf('load', function () use (&$session) {
@@ -54,6 +55,7 @@ $form->runIf('load', function () use (&$session) {
 	}
 
 	$session->set('taima_import_json', $json);
+	$session->save();
 }, $csrf_key, $url);
 
 $links = f('links');
@@ -123,6 +125,7 @@ $form->runIf('save', function () use ($session) {
 	}
 
 	$session->set('taima_import_json', null);
+	$session->save();
 }, $csrf_key, $url . '?ok');
 
 $tpl->assign(compact('csrf_key', 'add', 'tasks', 'links'));

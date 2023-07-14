@@ -202,7 +202,7 @@ class Tab extends Entity
 		$remainder = $this->getRemainder();
 
 		if ($remainder != 0) {
-			throw new UserException(sprintf("Impossible de clôturer la note: reste %s € à régler.", format_amount($remainder)));
+			throw new UserException(sprintf("Impossible de clôturer la note: reste %s € à régler.", $remainder / 100));
 		}
 
 		return DB::getInstance()->preparedQuery(POS::sql('UPDATE @PREFIX_tabs SET closed = datetime(\'now\',\'localtime\') WHERE id = ?;'), [$this->id]);
