@@ -93,9 +93,9 @@ class Orders
 			$title = sprintf('%s - Commandes', $associate->label);
 		}
 		elseif ($associate instanceof User) {
-			$conditions = sprintf('id_user = %d', $associate->id);
+			$conditions = sprintf('id_payer = %d', $associate->id);
 			$title = sprintf('%s - Commandes', $associate->nom);
-			unset($columns['id_user']);
+			unset($columns['id_payer']);
 		}
 		elseif ($associate instanceof \stdClass) { // Happens when the payer is not a member
 			if (Users::getUserMatchField()['type'] === Users::USER_MATCH_EMAIL) {
@@ -105,7 +105,7 @@ class Orders
 				$conditions = sprintf('json_extract(o.raw_data, \'$.payer.firstName\') = \'%s\' AND json_extract(o.raw_data, \'$.payer.lastName\') = \'%s\'', $associate->firstName, $associate->lastName);
 			}
 			$title = sprintf('%s - Commandes', Users::guessUserName($associate));
-			unset($columns['id_user']);
+			unset($columns['id_payer']);
 		}
 
 		$list = new DynamicList($columns, $tables, $conditions);
