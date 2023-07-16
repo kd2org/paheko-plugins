@@ -148,12 +148,12 @@ class HelloAsso
 		return $this->config;
 	}
 
-	public function createCheckout(string $organization, string $label, int $amount, User $user, ?array $accounts = null): \stdClass
+	public function createCheckout(string $organization, string $label, int $amount, int $author_id, User $payer, ?array $accounts = null): \stdClass
 	{
-		$label .= ' - ' . $user->nom . ' - ' . self::PROVIDER_LABEL;
+		$label .= ' - ' . $payer->nom . ' - ' . self::PROVIDER_LABEL;
 
 		// Resume user failed attemp
-		if ($payment = EntityManager::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE id_author = :id_user AND label = :label AND status = :status AND method = :method AND type = :type AND date >= datetime(\'now\', :expiration)', (int)$user->id, $label, Payment::AWAITING_STATUS, Payment::BANK_CARD_METHOD, Payment::UNIQUE_TYPE, '-' . self::PAYMENT_EXPIRATION)) {
+		if ($payment = EntityManager::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE id_author = :id_user AND label = :label AND status = :status AND method = :method AND type = :type AND date >= datetime(\'now\', :expiration)', (int)$payer->id, $label, Payment::AWAITING_STATUS, Payment::BANK_CARD_METHOD, Payment::UNIQUE_TYPE, '-' . self::PAYMENT_EXPIRATION)) {
 			// Resume current checkout
 			if (isset($payment->extra_data->checkout) && !(new \DateTime($payment->extra_data->checkout->date) < new \DateTime('now -' . self::CHECKOUT_LINK_EXPIRATION))) {
 				return $payment->extra_data->checkout;
@@ -161,7 +161,7 @@ class HelloAsso
 			$payment->addLog(self::PAYMENT_RESUMING_LOG_LABEL);
 		}
 		else {
-			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, Payment::AWAITING_STATUS, self::PROVIDER_NAME, null, $user->id, $user->nom, null, $label, $amount, null, null);
+			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, Payment::AWAITING_STATUS, self::PROVIDER_NAME, $accounts, $author_id, $payer->id, $payer->nom, null, $label, $amount, null, null, null, null);
 		}
 		$csrf = 'COMING_SOON_CSRF';
 		$metadata = [

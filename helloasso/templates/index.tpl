@@ -53,7 +53,7 @@
 				</dl>
 			</fieldset>
 
-			{**** ToDo: add csrf token ****}
+			{csrf_field key=$csrf_key}
 			{button type="submit" name="generate_checkout" label="Créer" class="main"}
 		</form>
 	{/if}
