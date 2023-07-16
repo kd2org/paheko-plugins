@@ -4,6 +4,7 @@ namespace Garradin\Plugin\HelloAsso;
 
 use KD2\DB\EntityManager as EM;
 use Garradin\DB;
+use Garradin\Config;
 
 use Garradin\Users\Session;
 use Garradin\Users\DynamicFields;
@@ -63,7 +64,7 @@ class ControllerFunctions
 
 	static public function setCategoryOptions(): array
 	{
-		$categories = EM::getInstance(Category::class)->all('SELECT * FROM @TABLE WHERE perm_config != ?', Session::ACCESS_ADMIN);
+		$categories = EM::getInstance(Category::class)->all('SELECT * FROM @TABLE WHERE perm_config != :admin AND id != :providers_category', (int)Session::ACCESS_ADMIN, (int)Config::getInstance()->providers_category);
 		$category_options = [ 0 => 'Ne pas inscrire la personne' ];
 		foreach ($categories as $category) {
 			$category_options[(int)$category->id] = $category->name;
