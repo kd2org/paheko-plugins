@@ -5,7 +5,7 @@
 {if isset($_GET['ok'])}
 <p class="confirm block">
 	{if $_GET.ok === 'connection'}
-		Connexion à l'API HelloAsso effectuée !
+		Connexion à l'API HelloAsso effectuée !<br />Vous pouvez {link href="sync.php" label="lancer la synchronisation"}.
 	{elseif $_GET.ok === 'config'}
 		Configuration mise à jour avec succès.
 	{/if}

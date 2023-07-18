@@ -2,13 +2,34 @@
 
 {include file="%s/templates/_menu.tpl"|args:$plugin_root current="sync"}
 
+{if $sync->getDate() && !$sync->isCompleted()}
+	<p class="alert block">
+		La quantité de vos données sur HelloAsso est trop importante pour être synchronisée en une seule fois.<br />
+		Merci de cliquer sur "Continuer la synchronisation" pour synchroniser le lot suivant.
+	</p>
+	<h2>État d'avancement</h2>
+	<ul>
+		{assign var=in_progress' value=true}
+		{foreach from=$steps key='step' item='label'}
+			<li>
+				{if $sync->getStep() === $step}
+					{assign var=in_progress' value=false}
+					{$label} : en cours (page {$sync->getPage()})
+				{else}
+					{$label} : {if $in_progress}fait{else}à venir{/if}
+				{/if}
+			</li>
+		{/foreach}
+	</ul>
+{/if}
+
 {if $_GET.ok}
 	{if $_GET.ok == 1 && ((!$plugin->config->accounting || ($plugin->config->accounting && !$chargeables)) && !$forms)}
 		<p class="confirm block">Synchronisation effectuée avec succès.</p>
 	{/if}
 {/if}
 
-{if isset($exceptions)}
+{if isset($exceptions) && $exceptions}
 	<p class="alert block">
 		Les erreurs suivantes sont survenues durant la synchronisation.<br />Les autres entrées ont été synchronisées normalement.
 	</p>
@@ -110,17 +131,19 @@
 {/if}
 
 
-{if !$_GET.ok}
-	{if $last_sync}
-		<p class="help">
-			La dernière synchronisation date du {$last_sync|date}.
-		</p>
-	{else}
-		<p class="alert block">Cliquer sur le bouton ci-dessous pour récupérer les données depuis HelloAsso.</p>
-	{/if}
+{if $sync->getDate()}
+	<p class="help">
+		{if !$sync->isCompleted()}
+			La synchronisation est en pause au stade "{$current_step_label}".
+		{else}
+			La dernière synchronisation date du {$sync->getDate()|date}.
+		{/if}
+	</p>
+{else}
+	<p class="alert block">Cliquer sur le bouton ci-dessous pour récupérer les données depuis HelloAsso.</p>
 {/if}
 
-{if !$last_sync && $last_sync > (new \DateTime('1 hour ago'))}
+{if !$sync && $sync > (new \DateTime('1 hour ago'))}
 	<p class="alert block">Il n'est pas possible d'effectuer plus d'une synchronisation manuelle par heure.</p>
 {else}
 	<form method="post" action="{$self_url_no_qs}">
@@ -130,7 +153,8 @@
 				ou bien
 				{button type="submit" name="sync" value=1 label="Synchroniser uniquement les anciennes données"}
 			{else}
-				{button type="submit" name="sync" value=1 label="Synchroniser les données" shape="right" class="main"}
+				{if $sync->getDate() && !$sync->isCompleted()}{assign var='label' value='Continuer la synchronisation'}{else}{assign var='label' value='Synchroniser les données'}{/if}
+				{button type="submit" name="sync" value=1 label=$label shape="right" class="main"}
 			{/if}
 		</p>
 	</form>

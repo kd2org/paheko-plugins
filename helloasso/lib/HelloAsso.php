@@ -29,11 +29,15 @@ class HelloAsso
 	const REDIRECTION_FILE				= 'payer.php';
 	const DEFAULT_CLIENT_ID				= '';
 	const PER_PAGE						= 100;
+	const TIME_SAFE_MARGIN				= 4;
 
 	protected				$plugin;
 	protected ?\stdClass	$config;
 
 	static protected		$_instance;
+	protected				$_max_execution_time;
+	protected				$_sync_start_time;
+	protected ?Sync			$_sync = null;
 
 	static public function getInstance()
 	{
@@ -56,32 +60,62 @@ class HelloAsso
 		return $this->plugin;
 	}
 
-	public function getLastSync(): ?\DateTime
-	{
-		$date = $this->plugin->getConfig('last_sync') ?? null;
-
-		if ($date) {
-			$date = new \DateTime($date);
-		}
-
-		return $date;
-	}
-
 	public function sync(): bool
 	{
+		$this->getSync();
+		if ($this->_sync->isCompleted()) {
+			$this->_sync->reset();
+		}
+
+		$this->_max_execution_time = ini_get('max_execution_time');
+		$this->_sync_start_time = getrusage()['ru_utime.tv_sec'];
+
 		Forms::sync();
 		if ($organizations = array_keys(Forms::listOrganizations())) {
 			$this->plugin->setConfigProperty('default_organization', $organizations[0]);
 		}
 
+		$page = 0;
 		foreach ($organizations as $org_slug) {
-			Orders::sync($org_slug);
-			Payments::sync($org_slug, $this->config->accounting);
-			Items::sync($org_slug);
+			if ($this->_sync->getStep() === Sync::ORDERS_STEP) {
+				$page = Orders::sync($org_slug, $this->_sync->getPage() ?? 1);
+				$this->saveSyncProgression($page);
+			}
+			if ($this->_sync->getStep() === Sync::PAYMENTS_STEP) {
+				$page = Payments::sync($org_slug, $this->_sync->getPage() ?? 1, $this->config->accounting);
+				$this->saveSyncProgression($page);
+			}
+			if ($this->_sync->getStep() === Sync::ITEMS_STEP) {
+				$page = Items::sync($org_slug, $this->_sync->getPage() ?? 1, $this->config->accounting);
+				$this->saveSyncProgression($page);
+			}
 		}
 
-		$this->plugin->setConfigProperty('last_sync', (new \DateTime)->format(\DATE_ISO8601));
-		return $this->plugin->save();
+		return !$page;
+	}
+
+	public function getSync(): Sync
+	{
+		if (null === $this->_sync) {
+			$this->_sync = $this->plugin->getConfig()->sync ? Sync::loadFromStdClass($this->plugin->getConfig()->sync) : new Sync();
+		}
+		return $this->_sync;
+	}
+
+	public function saveSyncProgression(int $page): void
+	{
+		if (0 === $page) {
+			$this->_sync->goNextStep();
+		}
+		$this->_sync->setPage($page === 0 ? null : $page);
+		$this->_sync->setDate(new \DateTime);
+		$this->plugin->setConfigProperty('sync', $this->_sync);
+		$this->plugin->save();
+	}
+
+	public function stillGotTime(): bool
+	{
+		return (\getrusage()['ru_utime.tv_sec'] - $this->_sync_start_time + self::TIME_SAFE_MARGIN < $this->_max_execution_time);
 	}
 
 	public function getClientId(): ?string
@@ -120,6 +154,7 @@ class HelloAsso
 		$this->plugin->setConfigProperty('provider_user_id', $provider_user_id);
 		$this->plugin->setConfigProperty('id_credit_account', false);
 		$this->plugin->setConfigProperty('id_debit_account', false);
+		$this->plugin->setConfigProperty('sync', false);
 		$payer_map = new \stdClass();
 		foreach (array_keys(API::PAYER_FIELDS) as $field) {
 			$payer_map->$field = null;

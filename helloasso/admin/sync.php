@@ -13,6 +13,7 @@ use Garradin\Entities\Users\Category;
 use Garradin\Form as PA_Form;
 
 use Garradin\Plugin\HelloAsso\HelloAsso;
+use Garradin\Plugin\HelloAsso\Sync;
 use Garradin\Plugin\HelloAsso\Forms;
 use Garradin\Plugin\HelloAsso\Items;
 use Garradin\Plugin\HelloAsso\Entities\Chargeable;
@@ -22,10 +23,13 @@ use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
 
 $synchronize = function () use ($ha, $tpl)
 {
-	$ha->sync();
-	if (!$exceptions = Items::getExceptions()) {
+	$completed = $ha->sync();
+
+	$exceptions = Items::getExceptions();
+	if ($completed && !$exceptions) {
 		Utils::redirect(PLUGIN_ADMIN_URL . 'sync.php?ok=1');
 	}
+
 	$tpl->assign('exceptions', $exceptions);
 };
 
@@ -46,17 +50,23 @@ $form->runIf('chargeable_config_submit', function() use ($ha, $tpl, $synchronize
 $default_ca = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_credit_account);
 $default_da = EM::findOneById(Account::class, (int)$plugin->getConfig()->id_debit_account);
 
+$sync = $ha->getSync();
+$steps = Sync::STEPS;
+unset($steps[Sync::COMPLETED_STEP]);
+
 $tpl->assign([
-	'last_sync' => $ha->getLastSync(),
+	'sync' => $sync,
+	'current_step_label' => Sync::STEPS[$sync->getStep()],
+	'steps' => $steps,
 	'csrf_key' => $csrf_key,
-	'chargeables' => Chargeables::allForDisplay((bool)$plugin->getConfig()->accounting),
+	'chargeables' => $sync->isCompleted() ? Chargeables::allForDisplay((bool)$plugin->getConfig()->accounting) : null,
 	'chargeableTypes' => Chargeable::TYPES,
 	'ca_type' => Account::TYPE_REVENUE,
 	'da_type' => Account::TYPE_BANK . ':' . Account::TYPE_CASH . ':' . Account::TYPE_OUTSTANDING . '',
 	'default_credit_account' => (null !== $default_ca) ? [ $default_ca->id => $default_ca->code . ' — ' . $default_ca->label ] : null,
 	'default_debit_account' => (null !== $default_da) ? [ $default_da->id => $default_da->code . ' — ' . $default_da->label ] : null,
 	'category_options' => CF::setCategoryOptions(),
-	'forms' => Forms::getNeedingConfig(),
+	'forms' => $sync->isCompleted() ? Forms::getNeedingConfig() : null,
 	'dynamic_fields' => CF::setDynamicFieldOptions()
 ]);
 

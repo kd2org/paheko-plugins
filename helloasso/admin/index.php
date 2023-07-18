@@ -20,7 +20,7 @@ if ($plugin->needUpgrade()) {
 	$plugin->upgrade();
 }
 
-if (!$ha->getLastSync()) {
+if (!$ha->getSync()->getDate()) {
 	Utils::redirect(PLUGIN_ADMIN_URL . 'sync.php');
 }
 

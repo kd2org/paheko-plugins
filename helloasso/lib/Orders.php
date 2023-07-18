@@ -135,15 +135,20 @@ class Orders
 		return $list;
 	}
 
-	static public function sync(string $org_slug): void
+	static public function sync(string $org_slug, $resumingPage = 1): int
 	{
 		$params = [
 			'pageSize'  => HA::getPageSize(),
 		];
 
-		$page_count = 1;
+		$page_count = $resumingPage;
+		$ha = HA::getInstance();
 
-		for ($i = 1; $i <= $page_count; $i++) {
+		for ($i = $resumingPage; $i <= $page_count; $i++) {
+			if (!$ha->stillGotTime()) {
+				$ha->saveSyncProgression($i);
+				return $i;
+			}
 			$params['pageIndex'] = $i;
 			$result = API::getInstance()->listOrganizationOrders($org_slug, $params);
 			$page_count = $result->pagination->totalPages;
@@ -156,6 +161,7 @@ class Orders
 				break;
 			}
 		}
+		return 0;
 	}
 
 	static protected function syncOrder(\stdClass $data): void

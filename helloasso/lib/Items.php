@@ -136,16 +136,21 @@ class Items
 		return $list;
 	}
 
-	static public function sync(string $org_slug, bool $accounting = true): void
+	static public function sync(string $org_slug, $resumingPage = 1, bool $accounting = true): int
 	{
 		self::initSync();
 		$params = [
-			'pageSize'  => HA::getPageSize(),
+			'pageSize'  => (int)(HA::getPageSize() / 2), // Items processing take at least twice longer
 		];
 
-		$page_count = 1;
+		$page_count = $resumingPage;
+		$ha = HA::getInstance();
 
-		for ($i = 1; $i <= $page_count; $i++) {
+		for ($i = $resumingPage; $i <= $page_count; $i++) {
+			if (!$ha->stillGotTime()) {
+				$ha->saveSyncProgression($i);
+				return $i;
+			}
 			$params['pageIndex'] = $i;
 			$result = API::getInstance()->listOrganizationItems($org_slug, $params);
 			$page_count = $result->pagination->totalPages;
@@ -164,6 +169,7 @@ class Items
 				break;
 			}
 		}
+		return 0;
 	}
 
 	static protected function syncItem(\stdClass $data, bool $accounting): Item

@@ -160,7 +160,7 @@ class Payments extends Paheko_Payments
 		return $date;
 	}
 
-	static public function sync(string $org_slug, bool $accounting = true): void
+	static public function sync(string $org_slug, $resumingPage = 1, bool $accounting = true): int
 	{
 		$last_payment = self::getLastPaymentDate();
 
@@ -170,14 +170,19 @@ class Payments extends Paheko_Payments
 			'states'    => self::STATE_OK,
 		];
 
-		$page_count = 1;
+		$page_count = $resumingPage;
+		$ha = HelloAsso::getInstance();
 
 		if ($last_payment) {
 			$last_payment->modify('-7 days');
 			//$params['from'] = $last_payment->format('Y-m-d');
 		}
 
-		for ($i = 1; $i <= $page_count; $i++) {
+		for ($i = $resumingPage; $i <= $page_count; $i++) {
+			if (!$ha->stillGotTime()) {
+				$ha->saveSyncProgression($i);
+				return $i;
+			}
 			$params['pageIndex'] = $i;
 			$result = API::getInstance()->listOrganizationPayments($org_slug, $params);
 			$page_count = $result->pagination->totalPages;
@@ -191,6 +196,7 @@ class Payments extends Paheko_Payments
 				break;
 			}
 		}
+		return 0;
 	}
 
 	static protected function syncPayment(\stdClass $raw_data, bool $accounting): void
