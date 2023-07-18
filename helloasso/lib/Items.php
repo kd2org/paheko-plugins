@@ -413,7 +413,7 @@ class Items
 		if ($data->order->formType === 'Checkout') {
 			$payment = Payments::getByOrderId((int)$data->order->id);
 			if (null === $payment) {
-				throw new \RuntimeException(sprintf('No payment matching retreived checkout item #%d (order #%d).', $data->id, $data->order->id));
+				throw new \RuntimeException(sprintf('No payment matching retrieved checkout item #%d (order #%d).', $data->id, $data->order->id));
 			}
 			return sprintf(self::CHECKOUT_LABEL, $payment->id, $payment->label);
 		}

@@ -73,13 +73,19 @@
 	<fieldset>
 		<legend>Correspondance des payeur/euse.s</legend>
 		<p class="help block">
-			HelloAsso fournit les informations suivantes sur le/la payeur/euse. Choisissez comment vous souhaitez les lier à Paheko.
+			HelloAsso fournit les informations suivantes sur la personne ayant effectué le paiement. Choisissez comment vous souhaitez les lier à Paheko.
 		</p>
 		<dl>
-			{input type="select" name="payer_map[email]" label="Courriel" options=$email_fields required=true default=$plugin.config.payer_map.email}
+			{assign var='default' value=$plugin.config.payer_map.email}
+			{if $default === null}{assign var='default' value=$guesses.email}{/if}
+			{input type="select" name="payer_map[email]" label="Courriel" options=$email_fields required=true default=$default}
+
 			{foreach from=$payer_fields key='field' item='label'}
-				{assign var='source' value=$plugin.config.payer_map}
-				{input type="select" name="payer_map[%s]"|args:$field label=$label options=$dynamic_fields required=true default=$source->$field}
+				{assign var='default' value=$plugin.config.payer_map->$field}
+				{if $default === null && array_key_exists($field, $guesses)}
+					{assign var='default' value=$guesses[$field]}
+				{/if}
+				{input type="select" name="payer_map[%s]"|args:$field label=$label options=$dynamic_fields required=true default=$default}
 			{/foreach}
 		</dl>
 	</fieldset>

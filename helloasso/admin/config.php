@@ -114,6 +114,7 @@ $tpl->assign([
 	'default_credit_account' => (null !== $credit_account) ? [ $credit_account->id => $credit_account->code . ' — ' . $credit_account->label ] : null,
 	'default_debit_account' => (null !== $debit_account) ? [ $debit_account->id => $debit_account->code . ' — ' . $debit_account->label ] : null,
 	'payer_fields' => $payer_fields,
+	'guesses' => API::PAYER_FIELD_MATCHES + [ 'email' => DynamicFields::getFirstEmailField() ],
 	'dynamic_fields' => $dynamic_fields,
 	'email_fields' => $email_fields,
 	'user_match_fields' => Users::USER_MATCH_TYPES,
