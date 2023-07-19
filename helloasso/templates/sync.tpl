@@ -1,20 +1,20 @@
-{include file="_head.tpl" title="HelloAsso"}
+{include file="_head.tpl" title="HelloAsso" custom_css='%sstyle.css'|args:$plugin_admin_url}
 
 {include file="%s/templates/_menu.tpl"|args:$plugin_root current="sync"}
 
 {if $sync->getDate() && !$sync->isCompleted()}
 	<p class="alert block">
-		La quantité de vos données sur HelloAsso est trop importante pour être synchronisée en une seule fois.<br />
-		Merci de cliquer sur "Continuer la synchronisation" pour synchroniser le lot suivant.
+		La synchronisation a été interrompu au stade "{$current_step_label}". Vous pouvez la reprendre en cliquant sur le bouton "Reprendre la synchronisation".
 	</p>
+
 	<h2>État d'avancement</h2>
 	<ul>
 		{assign var=in_progress' value=true}
 		{foreach from=$steps key='step' item='label'}
-			<li>
+			<li{if $sync->getStep() !== $step && $in_progress} class="step_done"{/if}>
 				{if $sync->getStep() === $step}
 					{assign var=in_progress' value=false}
-					{$label} : en cours (page {$sync->getPage()})
+					{$label} : {if $sync->getPage() === null}à démarrer{else}en cours (page {$sync->getPage()}){/if}
 				{else}
 					{$label} : {if $in_progress}fait{else}à venir{/if}
 				{/if}
@@ -45,7 +45,7 @@
 {/if}
 
 {if ($chargeables || $forms)}
-<form method="POST" action="{$self_url_no_qs}">
+<form method="POST" action="{$self_url_no_qs}" class="sync">
 {/if}
 
 {if $chargeables}
@@ -132,13 +132,11 @@
 
 
 {if $sync->getDate()}
-	<p class="help">
-		{if !$sync->isCompleted()}
-			La synchronisation est en pause au stade "{$current_step_label}".
-		{else}
+	{if $sync->isCompleted()}
+		<p class="help">
 			La dernière synchronisation date du {$sync->getDate()|date}.
-		{/if}
-	</p>
+		</p>
+	{/if}
 {else}
 	<p class="alert block">Cliquer sur le bouton ci-dessous pour récupérer les données depuis HelloAsso.</p>
 {/if}
@@ -146,14 +144,14 @@
 {if !$sync && $sync > (new \DateTime('1 hour ago'))}
 	<p class="alert block">Il n'est pas possible d'effectuer plus d'une synchronisation manuelle par heure.</p>
 {else}
-	<form method="post" action="{$self_url_no_qs}">
+	<form method="post" action="{$self_url_no_qs}" class="sync">
 		<p class="submit">
 			{csrf_field key=$csrf_key}
 			{if $chargeables || $forms}
 				ou bien
 				{button type="submit" name="sync" value=1 label="Synchroniser uniquement les anciennes données"}
 			{else}
-				{if $sync->getDate() && !$sync->isCompleted()}{assign var='label' value='Continuer la synchronisation'}{else}{assign var='label' value='Synchroniser les données'}{/if}
+				{if $sync->getDate() && !$sync->isCompleted()}{assign var='label' value='Reprendre la synchronisation'}{else}{assign var='label' value='Synchroniser les données'}{/if}
 				{button type="submit" name="sync" value=1 label=$label shape="right" class="main"}
 			{/if}
 		</p>
@@ -183,6 +181,15 @@
 			}
 		};
 	};
+})();
+
+(function () {
+	$('form.sync').forEach((form) => {
+		form.addEventListener('submit', (e) => {
+			if (e.defaultPrevented) return;
+			form.classList.add('progressing');
+		});
+	});
 })();
 {/literal}
 </script>

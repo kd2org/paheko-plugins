@@ -28,7 +28,7 @@ class HelloAsso
 	const LOG_FILE						= __DIR__ . '/../logs';
 	const REDIRECTION_FILE				= 'payer.php';
 	const DEFAULT_CLIENT_ID				= '';
-	const PER_PAGE						= 100;
+	const PER_PAGE						= 60;
 	const TIME_SAFE_MARGIN				= 4;
 
 	protected				$plugin;

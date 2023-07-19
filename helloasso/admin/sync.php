@@ -11,6 +11,7 @@ use KD2\DB\EntityManager as EM;
 use Garradin\Entities\Accounting\Account;
 use Garradin\Entities\Users\Category;
 use Garradin\Form as PA_Form;
+use KD2\Form as KD2_Form;
 
 use Garradin\Plugin\HelloAsso\HelloAsso;
 use Garradin\Plugin\HelloAsso\Sync;
@@ -21,7 +22,10 @@ use Garradin\Plugin\HelloAsso\Entities\Form;
 use Garradin\Plugin\HelloAsso\Chargeables;
 use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
 
-$synchronize = function () use ($ha, $tpl)
+$csrf_key = 'sync';
+$csrf_field = KD2_Form::tokenFieldName($csrf_key);
+
+$synchronize = function () use ($ha, $tpl, $csrf_field)
 {
 	$completed = $ha->sync();
 
@@ -29,11 +33,21 @@ $synchronize = function () use ($ha, $tpl)
 	if ($completed && !$exceptions) {
 		Utils::redirect(PLUGIN_ADMIN_URL . 'sync.php?ok=1');
 	}
+	elseif (!$completed) {
+		Utils::redirect(PLUGIN_ADMIN_URL . 'sync.php?continue=1&' . $csrf_field . '=' . $_POST[$csrf_field]);
+	}
 
 	$tpl->assign('exceptions', $exceptions);
 };
 
-$csrf_key = 'sync';
+// Emulate POST for runIf() compatibility
+if (qg('continue')) {
+	if (!array_key_exists($csrf_field, $_GET)) {
+		throw new ValidationException('Une erreur est survenue, merci de bien vouloir renvoyer le formulaire.');
+	}
+	$_POST[$csrf_field] = $_GET[$csrf_field];
+	$_POST['sync'] = 1;
+}
 
 $form->runIf('sync', $synchronize, $csrf_key);
 

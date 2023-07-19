@@ -1,3 +1,11 @@
 .awaits_account_configuration {
 	color: red;
 }
+
+li.step_done::after
+{
+	content: "☑";
+	color: green;
+	font-family: "gicon";
+	text-shadow: 2px 2px 5px var(--gLightBorderColor);
+}
