@@ -1,13 +1,13 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Entities\Users\User;
-use Garradin\DynamicList;
+use Paheko\Entities\Users\User;
+use Paheko\DynamicList;
 use KD2\DB\EntityManager;
-use Garradin\DB;
+use Paheko\DB;
 
-use Garradin\Plugin\HelloAsso\Entities\Order;
+use Paheko\Plugin\HelloAsso\Entities\Order;
 
 class Payers
 {

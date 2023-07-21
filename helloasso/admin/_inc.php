@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\HelloAsso;
 
 $session->requireAccess($session::SECTION_ACCOUNTING, $session::ACCESS_READ);
 

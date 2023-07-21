@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso\Entities;
+namespace Paheko\Plugin\HelloAsso\Entities;
 
-use Garradin\Entity;
+use Paheko\Entity;
 
 class CustomField extends Entity
 {

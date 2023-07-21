@@ -1,13 +1,13 @@
 <?php
 
-namespace Garradin\Plugin\Caisse;
+namespace Paheko\Plugin\Caisse;
 
-use Garradin\DB;
-use Garradin\Utils;
-use Garradin\Config;
+use Paheko\DB;
+use Paheko\Utils;
+use Paheko\Config;
 use KD2\DB\EntityManager as EM;
 
-use Garradin\Plugin\Caisse\Entities\Method;
+use Paheko\Plugin\Caisse\Entities\Method;
 
 class Methods
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin;
-use Garradin\Plugin\Caisse\Methods;
-use Garradin\Plugin\Caisse\Sessions;
-use Garradin\Plugin\Caisse\Products;
+namespace Paheko;
+use Paheko\Plugin\Caisse\Methods;
+use Paheko\Plugin\Caisse\Sessions;
+use Paheko\Plugin\Caisse\Products;
 
 require __DIR__ . '/_inc.php';
 

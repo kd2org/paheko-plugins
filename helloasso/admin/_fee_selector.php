@@ -1,8 +1,8 @@
 <?php
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\Entities\PahekoSearchOverride as SE;
-use Garradin\Plugin\HelloAsso\PahekoSearchOverride as Search;
+use Paheko\Plugin\HelloAsso\Entities\PahekoSearchOverride as SE;
+use Paheko\Plugin\HelloAsso\PahekoSearchOverride as Search;
 
 require __DIR__ . '/_inc.php';
 

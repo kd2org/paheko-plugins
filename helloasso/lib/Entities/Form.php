@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso\Entities;
+namespace Paheko\Plugin\HelloAsso\Entities;
 
-use Garradin\Entity;
-use Garradin\Plugin\HelloAsso\ChargeableInterface;
+use Paheko\Entity;
+use Paheko\Plugin\HelloAsso\ChargeableInterface;
 use KD2\DB\EntityManager;
 
 class Form extends Entity implements ChargeableInterface

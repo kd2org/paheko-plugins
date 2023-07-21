@@ -1,13 +1,13 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Plugin\Taima\Tracking;
-use Garradin\Plugin\Taima\Entities\Entry;
+use Paheko\Plugin\Taima\Tracking;
+use Paheko\Plugin\Taima\Entities\Entry;
 
-use Garradin\Utils;
+use Paheko\Utils;
 
-use function Garradin\{f, qg};
+use function Paheko\{f, qg};
 
 use DateTime;
 

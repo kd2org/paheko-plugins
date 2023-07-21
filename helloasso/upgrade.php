@@ -1,6 +1,6 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 $db = DB::getInstance();
 

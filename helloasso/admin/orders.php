@@ -1,11 +1,11 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\Forms;
-use Garradin\Plugin\HelloAsso\Orders;
+use Paheko\Plugin\HelloAsso\Forms;
+use Paheko\Plugin\HelloAsso\Orders;
 
-use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
+use Paheko\Plugin\HelloAsso\ControllerFunctions as CF;
 
 require __DIR__ . '/_inc.php';
 

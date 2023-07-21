@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso\Entities;
+namespace Paheko\Plugin\HelloAsso\Entities;
 
-use Garradin\DB;
-use Garradin\Entity;
-use Garradin\ValidationException;
+use Paheko\DB;
+use Paheko\Entity;
+use Paheko\ValidationException;
 
 use DateTime;
 

@@ -1,20 +1,20 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso\Entities;
+namespace Paheko\Plugin\HelloAsso\Entities;
 
-use Garradin\Entity;
-use Garradin\DB;
+use Paheko\Entity;
+use Paheko\DB;
 use KD2\DB\EntityManager;
-use Garradin\Entities\Services\Fee;
-use Garradin\Entities\Services\Service;
-use Garradin\Entities\Services\Service_User;
-use Garradin\Entities\Users\DynamicField;
-use Garradin\Entities\Users\Category;
-use Garradin\Entities\Accounting\Account;
-use Garradin\Users\Users;
-use Garradin\Users\Session;
+use Paheko\Entities\Services\Fee;
+use Paheko\Entities\Services\Service;
+use Paheko\Entities\Services\Service_User;
+use Paheko\Entities\Users\DynamicField;
+use Paheko\Entities\Users\Category;
+use Paheko\Entities\Accounting\Account;
+use Paheko\Users\Users;
+use Paheko\Users\Session;
 
-use Garradin\Plugin\HelloAsso\HelloAsso as HA;
+use Paheko\Plugin\HelloAsso\HelloAsso as HA;
 
 class Chargeable extends Entity
 {

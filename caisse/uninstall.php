@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Caisse\POS;
+use Paheko\Plugin\Caisse\POS;
 
 $db = DB::getInstance();
 

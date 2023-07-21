@@ -1,6 +1,6 @@
 <?php
 
-namespace Garradin\Plugin\Webstats;
+namespace Paheko\Plugin\Webstats;
 
 if ($_SERVER['REQUEST_METHOD'] != 'POST') {
 	http_response_code(405);

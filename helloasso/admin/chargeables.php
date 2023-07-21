@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\Forms;
-use Garradin\Plugin\HelloAsso\Chargeables;
+use Paheko\Plugin\HelloAsso\Forms;
+use Paheko\Plugin\HelloAsso\Chargeables;
 
 require __DIR__ . '/_inc.php';
 

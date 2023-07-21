@@ -1,6 +1,6 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
 interface ChargeableInterface
 {

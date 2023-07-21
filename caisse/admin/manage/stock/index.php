@@ -1,7 +1,7 @@
 <?php
 
-namespace Garradin;
-use Garradin\Plugin\Caisse\Stock;
+namespace Paheko;
+use Paheko\Plugin\Caisse\Stock;
 
 require __DIR__ . '/../_inc.php';
 

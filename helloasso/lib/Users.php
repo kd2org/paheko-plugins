@@ -1,21 +1,21 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Entities\Users\User;
-use Garradin\Entities\Users\Category;
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Plugin\HelloAsso\Entities\CustomField;
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Entities\Users\User;
+use Paheko\Entities\Users\Category;
+use Paheko\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\Entities\CustomField;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Entities\Order;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
 
 use KD2\DB\EntityManager as EM;
-use Garradin\DB;
-use Garradin\Users\DynamicFields;
-use Garradin\Entities\Users\DynamicField;
-use Garradin\Services\Services_User;
-use Garradin\Config;
+use Paheko\DB;
+use Paheko\Users\DynamicFields;
+use Paheko\Entities\Users\DynamicField;
+use Paheko\Services\Services_User;
+use Paheko\Config;
 
 class Users
 {
@@ -172,7 +172,7 @@ class Users
 
 		if (!$source['_conflict'])
 		{
-			$user = \Garradin\Users\Users::create();
+			$user = \Paheko\Users\Users::create();
 			$user->importForm($source);
 			$user->set('id_category', (int)$chargeable->id_category);
 			$user->setNumberIfEmpty();

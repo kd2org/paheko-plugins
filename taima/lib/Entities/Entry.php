@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin\Plugin\Taima\Entities;
+namespace Paheko\Plugin\Taima\Entities;
 
-use Garradin\Entity;
+use Paheko\Entity;
 
 use DateTime;
 

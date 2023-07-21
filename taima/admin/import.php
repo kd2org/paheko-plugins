@@ -1,18 +1,18 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Plugin\Taima\Entities\Entry;
-use Garradin\Plugin\Taima\Entities\Task;
-use Garradin\Plugin\Taima\Tracking;
+use Paheko\Plugin\Taima\Entities\Entry;
+use Paheko\Plugin\Taima\Entities\Task;
+use Paheko\Plugin\Taima\Tracking;
 
-use Garradin\Users\DynamicFields;
-use Garradin\DB;
-use Garradin\Utils;
-use Garradin\UserException;
+use Paheko\Users\DynamicFields;
+use Paheko\DB;
+use Paheko\Utils;
+use Paheko\UserException;
 use KD2\DB\EntityManager as EM;
 
-use function Garradin\{f, qg};
+use function Paheko\{f, qg};
 
 use DateTime;
 

@@ -1,7 +1,7 @@
 <?php
 
-namespace Garradin;
-use Garradin\Plugin\Caisse\Methods;
+namespace Paheko;
+use Paheko\Plugin\Caisse\Methods;
 
 require __DIR__ . '/../_inc.php';
 

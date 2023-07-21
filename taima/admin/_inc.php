@@ -1,13 +1,13 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Plugin\Taima\Tracking;
-use Garradin\Utils;
+use Paheko\Plugin\Taima\Tracking;
+use Paheko\Utils;
 
 use DateTime;
 
-use function Garradin\{f, qg};
+use function Paheko\{f, qg};
 
 
 $user_id = $session->getUser()->id;

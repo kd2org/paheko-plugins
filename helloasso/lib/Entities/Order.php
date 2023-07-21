@@ -1,18 +1,18 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso\Entities;
+namespace Paheko\Plugin\HelloAsso\Entities;
 
-use Garradin\DB;
-use Garradin\Entity;
-use Garradin\ValidationException;
-use Garradin\Config;
-use Garradin\Entities\Users\Category;
+use Paheko\DB;
+use Paheko\Entity;
+use Paheko\ValidationException;
+use Paheko\Config;
+use Paheko\Entities\Users\Category;
 
-use Garradin\UserException;
-use Garradin\Plugin\HelloAsso\NotFoundException;
-use Garradin\Plugin\HelloAsso\Users;
-use Garradin\Plugin\HelloAsso\Payers;
-use Garradin\Plugin\HelloAsso\Payments;
+use Paheko\UserException;
+use Paheko\Plugin\HelloAsso\NotFoundException;
+use Paheko\Plugin\HelloAsso\Users;
+use Paheko\Plugin\HelloAsso\Payers;
+use Paheko\Plugin\HelloAsso\Payments;
 
 use KD2\DB\EntityManager as EM;
 

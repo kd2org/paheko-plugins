@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use const Garradin\{ROOT, ADMIN_URL, CURRENT_YEAR_ID};
-use Garradin\Utils;
+use const Paheko\{ROOT, ADMIN_URL, CURRENT_YEAR_ID};
+use Paheko\Utils;
 
 if (HelloAsso::getInstance()->plugin()->getConfig()->accounting) {
 	require_once ROOT . '/www/admin/acc/_inc.php';

@@ -1,16 +1,16 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Entities\Users\User;
-use Garradin\UserException;
+use Paheko\Entities\Users\User;
+use Paheko\UserException;
 
 require __DIR__ . '/_inc.php';
 
-$id = \Garradin\qg('id');
-$email = \Garradin\qg('email');
-$first_name = \Garradin\qg('first_name');
-$last_name = \Garradin\qg('last_name');
+$id = \Paheko\qg('id');
+$email = \Paheko\qg('email');
+$first_name = \Paheko\qg('first_name');
+$last_name = \Paheko\qg('last_name');
 
 if (!$id && !$email &&!$first_name && !$last_name) {
 	throw new UserException('Aucun·e payeur/euse sélectionné·e.');
@@ -27,4 +27,4 @@ $tpl->assign([
 	'orders' => Orders::list($payer),
 	'orders_count_list' => Orders::listCountOpti($payer)
 ]);
-$tpl->display(\Garradin\PLUGIN_ROOT . '/templates/payer.tpl');
+$tpl->display(\Paheko\PLUGIN_ROOT . '/templates/payer.tpl');

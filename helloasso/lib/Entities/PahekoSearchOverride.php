@@ -1,17 +1,17 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso\Entities;
+namespace Paheko\Plugin\HelloAsso\Entities;
 
-use Garradin\Entities\Search;
-use Garradin\AdvancedSearch;
-use Garradin\CSV;
-use Garradin\DB;
-use Garradin\DynamicList;
-use Garradin\Entity;
-use Garradin\UserException;
+use Paheko\Entities\Search;
+use Paheko\AdvancedSearch;
+use Paheko\CSV;
+use Paheko\DB;
+use Paheko\DynamicList;
+use Paheko\Entity;
+use Paheko\UserException;
 
-use Garradin\Accounting\AdvancedSearch as Accounting_AdvancedSearch;
-use Garradin\Users\AdvancedSearch as Users_AdvancedSearch;
+use Paheko\Accounting\AdvancedSearch as Accounting_AdvancedSearch;
+use Paheko\Users\AdvancedSearch as Users_AdvancedSearch;
 
 use KD2\DB\DB_Exception;
 
@@ -32,13 +32,13 @@ class PahekoSearchOverride extends Search
 	public function getAdvancedSearch(): AdvancedSearch
 	{
 		if ($this->target == self::TARGET_FEE) {
-			$class = 'Garradin\Plugin\HelloAsso\FeeAdvancedSearch';
+			$class = 'Paheko\Plugin\HelloAsso\FeeAdvancedSearch';
 		}
 		elseif ($this->target == self::TARGET_ACCOUNTING) {
-			$class = 'Garradin\Accounting\AdvancedSearch';
+			$class = 'Paheko\Accounting\AdvancedSearch';
 		}
 		else {
-			$class = 'Garradin\Users\AdvancedSearch';
+			$class = 'Paheko\Users\AdvancedSearch';
 		}
 
 		if (null === $this->_as || !is_a($this->_as, $class)) {

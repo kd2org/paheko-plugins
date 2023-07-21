@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Taima\Tracking;
+use Paheko\Plugin\Taima\Tracking;
 
 $old_version = $plugin->oldVersion();
 $db = DB::getInstance();

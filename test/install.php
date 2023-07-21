@@ -1,5 +1,5 @@
 <?php
 
-use Garradin\Plugin\Test\Test;
+use Paheko\Plugin\Test\Test;
 
 $plugin->registerSignal('home.button', [Test::class, 'homeButton']);

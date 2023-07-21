@@ -1,15 +1,15 @@
 <?php
 
-namespace Garradin\Plugin\Caisse;
+namespace Paheko\Plugin\Caisse;
 
-use Garradin\DB;
-use Garradin\UserException;
-use Garradin\Entities\Accounting\Line;
-use Garradin\Entities\Accounting\Transaction;
-use Garradin\Entities\Accounting\Year;
-use Garradin\Files\Files;
-use Garradin\Accounting\Accounts;
-use Garradin\Users\Session;
+use Paheko\DB;
+use Paheko\UserException;
+use Paheko\Entities\Accounting\Line;
+use Paheko\Entities\Accounting\Transaction;
+use Paheko\Entities\Accounting\Year;
+use Paheko\Files\Files;
+use Paheko\Accounting\Accounts;
+use Paheko\Users\Session;
 
 use KD2\Graphics\SVG\Bar;
 use KD2\Graphics\SVG\Bar_Data_Set;

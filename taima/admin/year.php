@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Plugin\Taima\Tracking;
+use Paheko\Plugin\Taima\Tracking;
 
 require_once __DIR__ . '/_inc.php';
 
@@ -11,4 +11,4 @@ $weeks = Tracking::listUserWeeks($user_id);
 
 $tpl->assign(compact('weeks'));
 
-$tpl->display(\Garradin\PLUGIN_ROOT . '/templates/year.tpl');
+$tpl->display(\Paheko\PLUGIN_ROOT . '/templates/year.tpl');

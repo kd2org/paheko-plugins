@@ -1,11 +1,11 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Caisse\POS;
-use Garradin\Users\Session as UserSession;
+use Paheko\Plugin\Caisse\POS;
+use Paheko\Users\Session as UserSession;
 
-use Garradin\Accounting\Years;
+use Paheko\Accounting\Years;
 
 require __DIR__ . '/_inc.php';
 

@@ -1,19 +1,19 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\Orders;
-use Garradin\Plugin\HelloAsso\Payments;
-use Garradin\Plugin\HelloAsso\Items;
-use Garradin\Plugin\HelloAsso\Users;
-use Garradin\Plugin\HelloAsso\Options;
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\HelloAsso as HA;
-use Garradin\Plugin\HelloAsso\NotFoundException;
+use Paheko\Plugin\HelloAsso\Orders;
+use Paheko\Plugin\HelloAsso\Payments;
+use Paheko\Plugin\HelloAsso\Items;
+use Paheko\Plugin\HelloAsso\Users;
+use Paheko\Plugin\HelloAsso\Options;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\HelloAsso as HA;
+use Paheko\Plugin\HelloAsso\NotFoundException;
 
 use KD2\DB\EntityManager as EM;
 
-use Garradin\Entities\Users\User;
+use Paheko\Entities\Users\User;
 
 require __DIR__ . '/_inc.php';
 

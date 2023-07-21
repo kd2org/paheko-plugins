@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin\Plugin\Test;
+namespace Paheko\Plugin\Test;
 
-use Garradin\Plugins;
-use Garradin\Users\Session;
-use Garradin\UserTemplate\CommonFunctions;
+use Paheko\Plugins;
+use Paheko\Users\Session;
+use Paheko\UserTemplate\CommonFunctions;
 
 class Test
 {

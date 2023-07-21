@@ -1,11 +1,11 @@
 <?php
 
-namespace Garradin\Plugin\Webstats;
+namespace Paheko\Plugin\Webstats;
 
-use Garradin\UserTemplate\CommonFunctions;
-use Garradin\DB;
-use Garradin\Plugins;
-use Garradin\Users\Session;
+use Paheko\UserTemplate\CommonFunctions;
+use Paheko\DB;
+use Paheko\Plugins;
+use Paheko\Users\Session;
 
 use KD2\Graphics\SVG\Plot;
 use KD2\Graphics\SVG\Plot_Data;

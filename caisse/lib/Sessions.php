@@ -1,13 +1,13 @@
 <?php
 
-namespace Garradin\Plugin\Caisse;
+namespace Paheko\Plugin\Caisse;
 
-use Garradin\DB;
-use Garradin\DynamicList;
-use Garradin\Users\DynamicFields;
+use Paheko\DB;
+use Paheko\DynamicList;
+use Paheko\Users\DynamicFields;
 use KD2\DB\EntityManager as EM;
 
-use Garradin\Plugin\Caisse\Entities\Session;
+use Paheko\Plugin\Caisse\Entities\Session;
 
 class Sessions
 {

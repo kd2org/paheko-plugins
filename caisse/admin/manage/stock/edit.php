@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
-use Garradin\Plugin\Caisse\Stock;
-use Garradin\Plugin\Caisse\Entities\StockEvent;
+namespace Paheko;
+use Paheko\Plugin\Caisse\Stock;
+use Paheko\Plugin\Caisse\Entities\StockEvent;
 
 require __DIR__ . '/../_inc.php';
 

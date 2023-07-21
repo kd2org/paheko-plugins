@@ -1,17 +1,17 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 use KD2\DB\EntityManager;
-use Garradin\Payments\Payments;
-use Garradin\Payments\Users as PaymentsUsers;
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Entities\Payments\Payment;
-use Garradin\Entities\Accounting\Transaction;
-use Garradin\UserException;
-use Garradin\Entities\Users\User;
-use Garradin\Plugin\HelloAsso\Forms;
-use Garradin\Plugin\HelloAsso\Orders;
+use Paheko\Payments\Payments;
+use Paheko\Payments\Users as PaymentsUsers;
+use Paheko\Plugin\HelloAsso\HelloAsso;
+use Paheko\Entities\Payments\Payment;
+use Paheko\Entities\Accounting\Transaction;
+use Paheko\UserException;
+use Paheko\Entities\Users\User;
+use Paheko\Plugin\HelloAsso\Forms;
+use Paheko\Plugin\HelloAsso\Orders;
 
 require __DIR__ . '/_inc.php';
 

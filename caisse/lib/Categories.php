@@ -1,11 +1,11 @@
 <?php
 
-namespace Garradin\Plugin\Caisse;
+namespace Paheko\Plugin\Caisse;
 
-use Garradin\DB;
+use Paheko\DB;
 use KD2\DB\EntityManager as EM;
 
-use Garradin\Plugin\Caisse\Entities\Category;
+use Paheko\Plugin\Caisse\Entities\Category;
 
 class Categories
 {

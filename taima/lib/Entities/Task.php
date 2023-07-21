@@ -1,11 +1,11 @@
 <?php
 
-namespace Garradin\Plugin\Taima\Entities;
+namespace Paheko\Plugin\Taima\Entities;
 
-use Garradin\Accounting\Accounts;
+use Paheko\Accounting\Accounts;
 
-use Garradin\Entity;
-use Garradin\Utils;
+use Paheko\Entity;
+use Paheko\Utils;
 
 class Task extends Entity
 {

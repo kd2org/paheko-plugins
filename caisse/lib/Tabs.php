@@ -1,12 +1,12 @@
 <?php
 
-namespace Garradin\Plugin\Caisse;
+namespace Paheko\Plugin\Caisse;
 
-use Garradin\Config;
-use Garradin\DB;
-use Garradin\Users\DynamicFields;
+use Paheko\Config;
+use Paheko\DB;
+use Paheko\Users\DynamicFields;
 
-use Garradin\Plugin\Caisse\Entities\Tab;
+use Paheko\Plugin\Caisse\Entities\Tab;
 use KD2\DB\EntityManager as EM;
 
 class Tabs

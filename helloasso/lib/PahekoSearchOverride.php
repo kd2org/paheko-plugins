@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Search;
-use Garradin\Plugin\HelloAsso\Entities\PahekoSearchOverride as SE;
-use Garradin\DynamicList;
+use Paheko\Search;
+use Paheko\Plugin\HelloAsso\Entities\PahekoSearchOverride as SE;
+use Paheko\DynamicList;
 
 use KD2\DB\EntityManager as EM;
 

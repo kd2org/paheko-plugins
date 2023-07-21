@@ -1,14 +1,14 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Plugin\Taima\Tracking;
-use Garradin\Plugin\Taima\Entities\Entry;
-use Garradin\Membres;
-use Garradin\Utils;
-use Garradin\UserException;
+use Paheko\Plugin\Taima\Tracking;
+use Paheko\Plugin\Taima\Entities\Entry;
+use Paheko\Membres;
+use Paheko\Utils;
+use Paheko\UserException;
 
-use function Garradin\{f, qg};
+use function Paheko\{f, qg};
 
 $session->requireAccess($session::SECTION_USERS, $session::ACCESS_ADMIN);
 
@@ -27,4 +27,4 @@ $form->runIf('delete', function ()  use ($entry) {
 
 $tpl->assign(compact('csrf_key'));
 
-$tpl->display(\Garradin\PLUGIN_ROOT . '/templates/others_delete.tpl');
+$tpl->display(\Paheko\PLUGIN_ROOT . '/templates/others_delete.tpl');

@@ -1,18 +1,18 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Plugin\HelloAsso\API;
-use Garradin\Plugin\HelloAsso\Users;
-use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
+use Paheko\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\API;
+use Paheko\Plugin\HelloAsso\Users;
+use Paheko\Plugin\HelloAsso\ControllerFunctions as CF;
 
 use KD2\DB\EntityManager as EM;
-use Garradin\Entities\Accounting\Account;
-use Garradin\Entities\Users\Category;
-use Garradin\Entities\Users\DynamicField;
-use Garradin\Users\DynamicFields;
-use Garradin\Form as PA_Form;
+use Paheko\Entities\Accounting\Account;
+use Paheko\Entities\Users\Category;
+use Paheko\Entities\Users\DynamicField;
+use Paheko\Users\DynamicFields;
+use Paheko\Form as PA_Form;
 
 $session->requireAccess($session::SECTION_CONFIG, $session::ACCESS_ADMIN);
 

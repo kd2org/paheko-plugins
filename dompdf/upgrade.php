@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Dompdf\PDF;
+use Paheko\Plugin\Dompdf\PDF;
 
 // Delete DOMPDF library
 Utils::deleteRecursive(PDF::DIRECTORY, true);

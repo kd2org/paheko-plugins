@@ -1,12 +1,12 @@
 <?php
 
-namespace Garradin\Plugin\Stock_Velos;
+namespace Paheko\Plugin\Stock_Velos;
 
-use Garradin\DB;
-use Garradin\Entity;
-use Garradin\UserException;
-use Garradin\Users\DynamicFields;
-use Garradin\Users\Users;
+use Paheko\DB;
+use Paheko\Entity;
+use Paheko\UserException;
+use Paheko\Users\DynamicFields;
+use Paheko\Users\Users;
 use KD2\DB\Date;
 
 class Velo extends Entity

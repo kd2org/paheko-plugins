@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\Payers;
+use Paheko\Plugin\HelloAsso\Payers;
 
 require __DIR__ . '/_inc.php';
 

@@ -1,11 +1,11 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\UserException;
-use Garradin\Entities\Payments\Payment;
+use Paheko\UserException;
+use Paheko\Entities\Payments\Payment;
 
-use Garradin\Plugin\HelloAsso\Entities as HA;
+use Paheko\Plugin\HelloAsso\Entities as HA;
 
 use KD2\HTTP;
 use KD2\DB\EntityManager;

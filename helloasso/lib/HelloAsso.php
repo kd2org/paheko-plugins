@@ -1,17 +1,17 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Config;
-use Garradin\DB;
-use Garradin\Entities\Plugin;
-use Garradin\Entities\Users\User;
-use Garradin\Entities\Payments\Payment;
+use Paheko\Config;
+use Paheko\DB;
+use Paheko\Entities\Plugin;
+use Paheko\Entities\Users\User;
+use Paheko\Entities\Payments\Payment;
 use KD2\DB\EntityManager;
 
-use Garradin\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Entities\Form;
 
-use function Garradin\garradin_contributor_license;
+use function Paheko\garradin_contributor_license;
 
 class HelloAsso
 {
@@ -347,7 +347,7 @@ class HelloAsso
 	 */
 	static public function isTrial(): bool
 	{
-		$level = 100;//\Garradin\garradin_contributor_license();
+		$level = 100;//\Paheko\garradin_contributor_license();
 
 		if ($level < self::LEVEL_REQUIRED) {
 			return true;

@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin\Plugin\Caisse\Entities;
+namespace Paheko\Plugin\Caisse\Entities;
 
-use Garradin\Plugin\Caisse\POS;
-use Garradin\Entity;
-use Garradin\Utils;
+use Paheko\Plugin\Caisse\POS;
+use Paheko\Entity;
+use Paheko\Utils;
 use KD2\DB\EntityManager as EM;
 
 class Category extends Entity

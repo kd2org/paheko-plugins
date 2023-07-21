@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\HelloAsso;
 
 require_once __DIR__ . '/../../../../include/init.php';
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin\Plugin\Welcome;
+namespace Paheko\Plugin\Welcome;
 
-use Garradin\Template;
+use Paheko\Template;
 
 class Signaux
 {

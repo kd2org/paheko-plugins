@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Webstats\Stats;
+use Paheko\Plugin\Webstats\Stats;
 
 if (isset($_GET['graph'])) {
 	header('Content-Type: image/svg+xml');

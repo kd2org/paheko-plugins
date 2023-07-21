@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin\Plugin\Caisse;
+namespace Paheko\Plugin\Caisse;
 
-use Garradin\Users\Session;
-use Garradin\Utils;
-use Garradin\UserTemplate\CommonModifiers;
+use Paheko\Users\Session;
+use Paheko\Utils;
+use Paheko\UserTemplate\CommonModifiers;
 
 function reload() {
 	Utils::redirect(Utils::getSelfURI(true));
@@ -25,6 +25,6 @@ $tpl->register_modifier('image_base64', function (string $blob) {
 
 Session::getInstance()->requireAccess(Session::SECTION_USERS, Session::ACCESS_WRITE);
 
-$tpl->assign('pos_templates_root', \Garradin\PLUGIN_ROOT . '/templates');
+$tpl->assign('pos_templates_root', \Paheko\PLUGIN_ROOT . '/templates');
 
 $tpl->assign('plugin_css', ['style.css']);

@@ -1,13 +1,13 @@
 <?php
 
-namespace Garradin\Plugin\Caisse\Entities;
+namespace Paheko\Plugin\Caisse\Entities;
 
-use Garradin\DB;
-use Garradin\UserException;
+use Paheko\DB;
+use Paheko\UserException;
 
-use Garradin\Plugin\Caisse\POS;
-use Garradin\Entity;
-use Garradin\ValidationException;
+use Paheko\Plugin\Caisse\POS;
+use Paheko\Entity;
+use Paheko\ValidationException;
 
 class Tab extends Entity
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 require __DIR__ . '/_inc.php';
 require __DIR__ . '/_init_current_year.php';
@@ -8,19 +8,19 @@ require __DIR__ . '/_init_current_year.php';
 $session->requireAccess($session::SECTION_ACCOUNTING, $session::ACCESS_WRITE);
 
 use KD2\DB\EntityManager as EM;
-use Garradin\Entities\Accounting\Account;
-use Garradin\Entities\Users\Category;
-use Garradin\Form as PA_Form;
+use Paheko\Entities\Accounting\Account;
+use Paheko\Entities\Users\Category;
+use Paheko\Form as PA_Form;
 use KD2\Form as KD2_Form;
 
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Plugin\HelloAsso\Sync;
-use Garradin\Plugin\HelloAsso\Forms;
-use Garradin\Plugin\HelloAsso\Items;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Chargeables;
-use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
+use Paheko\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\Sync;
+use Paheko\Plugin\HelloAsso\Forms;
+use Paheko\Plugin\HelloAsso\Items;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Chargeables;
+use Paheko\Plugin\HelloAsso\ControllerFunctions as CF;
 
 $csrf_key = 'sync';
 $csrf_field = KD2_Form::tokenFieldName($csrf_key);

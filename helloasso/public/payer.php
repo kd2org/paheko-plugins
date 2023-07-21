@@ -1,6 +1,6 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 echo '<html><head></head><body>
 <h1>Redirected from the HelloAsso checkout</h1>';

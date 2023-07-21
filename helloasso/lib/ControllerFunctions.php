@@ -1,18 +1,18 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
 use KD2\DB\EntityManager as EM;
-use Garradin\DB;
-use Garradin\Config;
+use Paheko\DB;
+use Paheko\Config;
 
-use Garradin\Users\Session;
-use Garradin\Users\DynamicFields;
-use Garradin\Entities\Users\DynamicField;
-use Garradin\Entities\Users\Category;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\Plugin\HelloAsso\Entities\CustomField;
-use Garradin\Plugin\HelloAsso\Entities\Form;
+use Paheko\Users\Session;
+use Paheko\Users\DynamicFields;
+use Paheko\Entities\Users\DynamicField;
+use Paheko\Entities\Users\Category;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Plugin\HelloAsso\Entities\CustomField;
+use Paheko\Plugin\HelloAsso\Entities\Form;
 
 class ControllerFunctions
 {

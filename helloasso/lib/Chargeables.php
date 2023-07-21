@@ -1,22 +1,22 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\Plugin\HelloAsso\ChargeableInterface;
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Entities\Item;
-use Garradin\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Plugin\HelloAsso\ChargeableInterface;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Entities\Item;
+use Paheko\Plugin\HelloAsso\HelloAsso;
 
-use Garradin\Entities\Accounting\Account;
+use Paheko\Entities\Accounting\Account;
 
 use KD2\DB\EntityManager as EM;
-use Garradin\DB;
-use Garradin\DynamicList;
-use Garradin\Utils;
-use Garradin\Entities\Users\Category;
-use Garradin\Entities\Services\Fee;
-use Garradin\Entities\Services\Service;
+use Paheko\DB;
+use Paheko\DynamicList;
+use Paheko\Utils;
+use Paheko\Entities\Users\Category;
+use Paheko\Entities\Services\Fee;
+use Paheko\Entities\Services\Service;
 
 class Chargeables
 {

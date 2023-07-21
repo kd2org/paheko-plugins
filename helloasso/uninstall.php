@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 use KD2\DB\EntityManager as EM;
-use Garradin\Entities\Payments\Provider;
-use Garradin\Plugin\HelloAsso\HelloAsso;
+use Paheko\Entities\Payments\Provider;
+use Paheko\Plugin\HelloAsso\HelloAsso;
 
 DB::getInstance()->import(__DIR__ . '/uninstall.sql');
 

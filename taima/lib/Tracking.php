@@ -1,24 +1,24 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Plugin\Taima\Entities\Entry;
-use Garradin\Plugin\Taima\Entities\Task;
+use Paheko\Plugin\Taima\Entities\Entry;
+use Paheko\Plugin\Taima\Entities\Task;
 
-use Garradin\Entities\Accounting\Transaction;
-use Garradin\Entities\Accounting\Line;
-use Garradin\Entities\Accounting\Year;
-use Garradin\Accounting\Accounts;
-use Garradin\Accounting\Transactions;
+use Paheko\Entities\Accounting\Transaction;
+use Paheko\Entities\Accounting\Line;
+use Paheko\Entities\Accounting\Year;
+use Paheko\Accounting\Accounts;
+use Paheko\Accounting\Transactions;
 
-use Garradin\DB;
-use Garradin\DynamicList;
-use Garradin\Plugins;
-use Garradin\Utils;
-use Garradin\UserException;
-use Garradin\Users\DynamicFields;
-use Garradin\Users\Session;
-use Garradin\UserTemplate\CommonFunctions;
+use Paheko\DB;
+use Paheko\DynamicList;
+use Paheko\Plugins;
+use Paheko\Utils;
+use Paheko\UserException;
+use Paheko\Users\DynamicFields;
+use Paheko\Users\Session;
+use Paheko\UserTemplate\CommonFunctions;
 
 use KD2\DB\EntityManager as EM;
 
@@ -79,7 +79,7 @@ class Tracking
 			$icon = self::animatedIcon(16, '', 'float: right');
 		}
 
-		$list['plugin_taima'] = sprintf('<a href="%sp/taima/">Suivi du temps%s</a>', \Garradin\ADMIN_URL, $icon);
+		$list['plugin_taima'] = sprintf('<a href="%sp/taima/">Suivi du temps%s</a>', \Paheko\ADMIN_URL, $icon);
 	}
 
 	static public function get(int $id)

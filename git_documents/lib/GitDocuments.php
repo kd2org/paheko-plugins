@@ -1,11 +1,11 @@
 <?php
 
-namespace Garradin\Plugin\Git_Documents;
+namespace Paheko\Plugin\Git_Documents;
 
-use Garradin\Users\Session;
+use Paheko\Users\Session;
 
-use Garradin\Plugin;
-use Garradin\Users\Emails;
+use Paheko\Plugin;
+use Paheko\Users\Emails;
 
 use KD2\Mail_Message;
 
@@ -27,7 +27,7 @@ class GitDocuments
 		}
 
 		$cmd = '{ cd %s && git reset --merge 2>&1 && git add -A 2>&1 && git commit -a -m %s %s 2>&1; } > /dev/null &';
-		$cmd = sprintf($cmd, escapeshellarg(\Garradin\FILE_STORAGE_CONFIG), escapeshellarg(self::MESSAGE), $user_arg);
+		$cmd = sprintf($cmd, escapeshellarg(\Paheko\FILE_STORAGE_CONFIG), escapeshellarg(self::MESSAGE), $user_arg);
 
 		putenv('LANG=fr_FR.UTF-8');
 		exec($cmd, $out, $code);
@@ -47,7 +47,7 @@ class GitDocuments
 		}
 
 		$body = '';
-		$last = trim(shell_exec(sprintf('cd %s && git rev-parse HEAD', escapeshellarg(\Garradin\FILE_STORAGE_CONFIG))));
+		$last = trim(shell_exec(sprintf('cd %s && git rev-parse HEAD', escapeshellarg(\Paheko\FILE_STORAGE_CONFIG))));
 
 		if (!empty($config->last_commit_hash)) {
 			if ($last == $config->last_commit_hash) {
@@ -64,7 +64,7 @@ class GitDocuments
 
 		putenv('LANG=fr_FR.UTF-8');
 		$diff_cmd = sprintf('cd %s && git log -p %s',
-			escapeshellarg(\Garradin\FILE_STORAGE_CONFIG),
+			escapeshellarg(\Paheko\FILE_STORAGE_CONFIG),
 			escapeshellarg($revs)
 		);
 

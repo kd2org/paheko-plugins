@@ -1,28 +1,28 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 use KD2\DB\EntityManager;
 
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\Plugin\HelloAsso\Entities\Item;
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Forms;
-use Garradin\Plugin\HelloAsso\Orders;
-use Garradin\Plugin\HelloAsso\ControllerFunctions as CF;
+use Paheko\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Plugin\HelloAsso\Entities\Item;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Forms;
+use Paheko\Plugin\HelloAsso\Orders;
+use Paheko\Plugin\HelloAsso\ControllerFunctions as CF;
 
-use Garradin\Payments\Payments;
-use Garradin\Entities\Payments\Payment;
-use Garradin\Entities\Accounting\Account;
-use Garradin\Entities\Accounting\Transaction;
-use Garradin\Entities\Users\User;
-use Garradin\Entities\Users\Category;
-use Garradin\Entities\Services\Fee;
-use Garradin\Entities\Services\Service;
-use Garradin\Form as PA_Form;
+use Paheko\Payments\Payments;
+use Paheko\Entities\Payments\Payment;
+use Paheko\Entities\Accounting\Account;
+use Paheko\Entities\Accounting\Transaction;
+use Paheko\Entities\Users\User;
+use Paheko\Entities\Users\Category;
+use Paheko\Entities\Services\Fee;
+use Paheko\Entities\Services\Service;
+use Paheko\Form as PA_Form;
 
-use Garradin\UserException;
+use Paheko\UserException;
 
 require __DIR__ . '/_inc.php';
 require __DIR__ . '/_init_current_year.php';

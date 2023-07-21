@@ -1,30 +1,30 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Entities\Item;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\Plugin\HelloAsso\Entities\Option;
-use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Plugin\HelloAsso\API;
-use Garradin\Plugin\HelloAsso\HelloAsso as HA;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Entities\Item;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Plugin\HelloAsso\Entities\Option;
+use Paheko\Plugin\HelloAsso\Entities\Order;
+use Paheko\Plugin\HelloAsso\API;
+use Paheko\Plugin\HelloAsso\HelloAsso as HA;
 
-use Garradin\DB;
-use Garradin\DynamicList;
-use Garradin\Utils;
-use Garradin\ValidationException;
-use Garradin\Entities\Accounting\Transaction;
-use Garradin\Entities\Payments\Payment;
-use Garradin\Accounting\Years;
-use Garradin\Entities\Users\User;
-use Garradin\Plugin\HelloAsso\Payments;
-use Garradin\Entities\Services\Fee;
-use Garradin\Entities\Services\Service;
+use Paheko\DB;
+use Paheko\DynamicList;
+use Paheko\Utils;
+use Paheko\ValidationException;
+use Paheko\Entities\Accounting\Transaction;
+use Paheko\Entities\Payments\Payment;
+use Paheko\Accounting\Years;
+use Paheko\Entities\Users\User;
+use Paheko\Plugin\HelloAsso\Payments;
+use Paheko\Entities\Services\Fee;
+use Paheko\Entities\Services\Service;
 
 use KD2\DB\EntityManager as EM;
 
-//use Garradin\Plugin\HelloAsso\Mock\MockItems;
+//use Paheko\Plugin\HelloAsso\Mock\MockItems;
 
 class Items
 {

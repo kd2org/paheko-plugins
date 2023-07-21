@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin\Plugin;
+namespace Paheko\Plugin;
 
-use Garradin\Plugin\Welcome\Signaux;
+use Paheko\Plugin\Welcome\Signaux;
 
 // enregistrer signal pour message page d'accueil
 $plugin->registerSignal('home.banner', [Signaux::class, 'banner']);

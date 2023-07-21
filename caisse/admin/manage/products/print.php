@@ -1,12 +1,12 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Files\Files;
-use Garradin\Entities\Files\File;
-use Garradin\UserTemplate\UserTemplate;
+use Paheko\Files\Files;
+use Paheko\Entities\Files\File;
+use Paheko\UserTemplate\UserTemplate;
 
-use Garradin\Plugin\Caisse\Products;
+use Paheko\Plugin\Caisse\Products;
 
 require __DIR__ . '/../_inc.php';
 

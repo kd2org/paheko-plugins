@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Entities\Payments\Provider;
-use Garradin\Plugin\HelloAsso\HelloAsso;
+use Paheko\Entities\Payments\Provider;
+use Paheko\Plugin\HelloAsso\HelloAsso;
 
 // Création table
 $db = DB::getInstance();
@@ -17,4 +17,4 @@ $provider->save();
 $ha = HelloAsso::getInstance();
 $ha->initConfig((int)$provider->id_user);
 
-$plugin->registerSignal('cron', 'Garradin\Plugin\HelloAsso\HelloAsso::cron');
+$plugin->registerSignal('cron', 'Paheko\Plugin\HelloAsso\HelloAsso::cron');

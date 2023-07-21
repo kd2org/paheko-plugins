@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso\Entities;
+namespace Paheko\Plugin\HelloAsso\Entities;
 
-use Garradin\Entity;
-use Garradin\Plugin\HelloAsso\ChargeableInterface;
-use Garradin\Plugin\HelloAsso\Entities\Item;
+use Paheko\Entity;
+use Paheko\Plugin\HelloAsso\ChargeableInterface;
+use Paheko\Plugin\HelloAsso\Entities\Item;
 
 class Option extends Entity implements ChargeableInterface
 {

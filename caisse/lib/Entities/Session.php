@@ -1,21 +1,21 @@
 <?php
 
-namespace Garradin\Plugin\Caisse\Entities;
+namespace Paheko\Plugin\Caisse\Entities;
 
-use Garradin\Email\Emails;
-use Garradin\DB;
-use Garradin\Config;
-use Garradin\Template;
-use Garradin\UserException;
-use Garradin\Utils;
-use Garradin\Users\DynamicFields;
+use Paheko\Email\Emails;
+use Paheko\DB;
+use Paheko\Config;
+use Paheko\Template;
+use Paheko\UserException;
+use Paheko\Utils;
+use Paheko\Users\DynamicFields;
 
-use const Garradin\PLUGIN_ROOT;
+use const Paheko\PLUGIN_ROOT;
 
-use Garradin\Plugin\Caisse\POS;
-use Garradin\Plugin\Caisse\Tabs;
-use Garradin\Entity;
-use Garradin\ValidationException;
+use Paheko\Plugin\Caisse\POS;
+use Paheko\Plugin\Caisse\Tabs;
+use Paheko\Entity;
+use Paheko\ValidationException;
 
 use KD2\Mail_Message;
 

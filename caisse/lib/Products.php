@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin\Plugin\Caisse;
+namespace Paheko\Plugin\Caisse;
 
-use Garradin\DB;
+use Paheko\DB;
 use KD2\DB\EntityManager as EM;
 
 class Products

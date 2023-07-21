@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Caisse\Sessions;
-use function Garradin\Plugin\Caisse\get_amount;
+use Paheko\Plugin\Caisse\Sessions;
+use function Paheko\Plugin\Caisse\get_amount;
 
 require __DIR__ . '/_inc.php';
 

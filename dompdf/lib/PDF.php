@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin\Plugin\Dompdf;
+namespace Paheko\Plugin\Dompdf;
 
 use Dompdf\Dompdf;
-use const Garradin\CACHE_ROOT;
+use const Paheko\CACHE_ROOT;
 
 class PDF
 {

@@ -1,12 +1,12 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\DynamicList;
-use Garradin\Users\DynamicFields;
-use Garradin\AdvancedSearch as A_S;
-use Garradin\DB;
-use Garradin\Utils;
+use Paheko\DynamicList;
+use Paheko\Users\DynamicFields;
+use Paheko\AdvancedSearch as A_S;
+use Paheko\DB;
+use Paheko\Utils;
 
 class FeeAdvancedSearch extends A_S
 {

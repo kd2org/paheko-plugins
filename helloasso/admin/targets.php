@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Plugin\HelloAsso\Forms;
+use Paheko\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\Forms;
 
 $session->requireAccess($session::SECTION_USERS, $session::ACCESS_ADMIN);
 

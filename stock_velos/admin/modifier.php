@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Stock_Velos\Velos;
+use Paheko\Plugin\Stock_Velos\Velos;
 
 require_once __DIR__ . '/_inc.php';
 

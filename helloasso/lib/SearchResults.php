@@ -1,17 +1,17 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\DB;
-use Garradin\DynamicList;
-use Garradin\UserTemplate\Modifiers;
-use Garradin\Users\DynamicFields;
+use Paheko\DB;
+use Paheko\DynamicList;
+use Paheko\UserTemplate\Modifiers;
+use Paheko\Users\DynamicFields;
 
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Entities\Payments\Payment;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\Entities\Users\User;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Entities\Order;
+use Paheko\Entities\Payments\Payment;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Entities\Users\User;
 
 class SearchResults
 {

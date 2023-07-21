@@ -1,13 +1,13 @@
 <?php
 
-namespace Garradin\Plugin\Stock_Velos;
+namespace Paheko\Plugin\Stock_Velos;
 
-use Garradin\DB;
-use Garradin\Membres;
-use Garradin\UserException;
-use Garradin\Utils;
-use Garradin\DynamicList;
-use Garradin\Users\Session;
+use Paheko\DB;
+use Paheko\Membres;
+use Paheko\UserException;
+use Paheko\Utils;
+use Paheko\DynamicList;
+use Paheko\Users\Session;
 
 use KD2\DB\EntityManager;
 use KD2\Graphics\SVG\Bar;

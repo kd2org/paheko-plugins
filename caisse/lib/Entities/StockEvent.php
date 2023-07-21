@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin\Plugin\Caisse\Entities;
+namespace Paheko\Plugin\Caisse\Entities;
 
-use Garradin\Entity;
-use Garradin\Plugin\Caisse\POS;
+use Paheko\Entity;
+use Paheko\Plugin\Caisse\POS;
 use KD2\DB\EntityManager as EM;
 
 class StockEvent extends Entity

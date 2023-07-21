@@ -1,5 +1,5 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 $tpl->display(PLUGIN_ROOT . '/templates/index.tpl');

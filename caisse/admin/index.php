@@ -1,7 +1,7 @@
 <?php
 
-namespace Garradin;
-use Garradin\Plugin\Caisse\Sessions;
+namespace Paheko;
+use Paheko\Plugin\Caisse\Sessions;
 
 if ($plugin->needUpgrade()) {
 	$plugin->upgrade();

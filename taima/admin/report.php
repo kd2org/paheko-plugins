@@ -1,14 +1,14 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Plugin\Taima\Tracking;
-use Garradin\Accounting\Years;
-use Garradin\Utils;
-use Garradin\UserException;
-use Garradin\Users\Session;
+use Paheko\Plugin\Taima\Tracking;
+use Paheko\Accounting\Years;
+use Paheko\Utils;
+use Paheko\UserException;
+use Paheko\Users\Session;
 
-use function Garradin\{f, qg};
+use function Paheko\{f, qg};
 
 require_once __DIR__ . '/_inc.php';
 

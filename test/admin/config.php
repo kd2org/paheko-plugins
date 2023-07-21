@@ -1,6 +1,6 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
 // $session et $plugin sont déjà fournis par Paheko
 

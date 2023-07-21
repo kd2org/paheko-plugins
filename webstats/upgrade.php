@@ -1,8 +1,8 @@
 <?php
 
-use Garradin\Plugin\Webstats\Stats;
+use Paheko\Plugin\Webstats\Stats;
 
 $plugin->unregisterSignal('http.request.skeleton.before');
 $plugin->unregisterSignal('http.request.skeleton.after');
 
-$plugin->registerSignal('web.request', 'Garradin\Plugin\Webstats\Stats::webRequest');
+$plugin->registerSignal('web.request', 'Paheko\Plugin\Webstats\Stats::webRequest');

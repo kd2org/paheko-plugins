@@ -1,10 +1,10 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Caisse\{Sessions, Tabs, Products};
+use Paheko\Plugin\Caisse\{Sessions, Tabs, Products};
 
-use function Garradin\Plugin\Caisse\{reload,get_amount};
+use function Paheko\Plugin\Caisse\{reload,get_amount};
 
 require __DIR__ . '/_inc.php';
 

@@ -1,19 +1,19 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Plugin\HelloAsso\Entities\Form;
-use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\Plugin\HelloAsso\Entities\Item;
-use Garradin\Plugin\HelloAsso\Entities\Option;
-use Garradin\Plugin\HelloAsso\API;
-use Garradin\Plugin\HelloAsso\HelloAsso as HA;
+use Paheko\Plugin\HelloAsso\Entities\Form;
+use Paheko\Plugin\HelloAsso\Entities\Order;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Plugin\HelloAsso\Entities\Item;
+use Paheko\Plugin\HelloAsso\Entities\Option;
+use Paheko\Plugin\HelloAsso\API;
+use Paheko\Plugin\HelloAsso\HelloAsso as HA;
 
-use Garradin\DB;
-use Garradin\DynamicList;
-use Garradin\Utils;
-use Garradin\Entities\Users\User;
+use Paheko\DB;
+use Paheko\DynamicList;
+use Paheko\Utils;
+use Paheko\Entities\Users\User;
 
 use KD2\DB\EntityManager as EM;
 

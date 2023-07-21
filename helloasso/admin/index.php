@@ -1,15 +1,15 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\Forms;
+use Paheko\Plugin\HelloAsso\Forms;
 
-use Garradin\Plugin\HelloAsso\HelloAsso;
-use Garradin\Plugin\HelloAsso\API;
-use Garradin\Entities\Payments\Payment;
-use Garradin\Payments\Payments;
-use Garradin\Entities\Users\User;
-use Garradin\Form as PA_Form;
+use Paheko\Plugin\HelloAsso\HelloAsso;
+use Paheko\Plugin\HelloAsso\API;
+use Paheko\Entities\Payments\Payment;
+use Paheko\Payments\Payments;
+use Paheko\Entities\Users\User;
+use Paheko\Form as PA_Form;
 
 use KD2\DB\EntityManager as EM;
 

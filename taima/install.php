@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Taima\Tracking;
+use Paheko\Plugin\Taima\Tracking;
 
 $db = DB::getInstance();
 $db->import(__DIR__ . '/schema.sql');

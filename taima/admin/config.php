@@ -1,16 +1,16 @@
 <?php
 
-namespace Garradin\Plugin\Taima;
+namespace Paheko\Plugin\Taima;
 
-use Garradin\Entities\Accounting\Account;
+use Paheko\Entities\Accounting\Account;
 
-use Garradin\Plugin\Taima\Entities\Task;
-use Garradin\Plugin\Taima\Tracking;
+use Paheko\Plugin\Taima\Entities\Task;
+use Paheko\Plugin\Taima\Tracking;
 
-use Garradin\Utils;
+use Paheko\Utils;
 use KD2\DB\EntityManager as EM;
 
-use function Garradin\{f, qg};
+use function Paheko\{f, qg};
 
 use DateTime;
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
-use Garradin\Plugin\Caisse\Stock;
-use Garradin\Plugin\Caisse\Products;
+namespace Paheko;
+use Paheko\Plugin\Caisse\Stock;
+use Paheko\Plugin\Caisse\Products;
 
 require __DIR__ . '/../_inc.php';
 

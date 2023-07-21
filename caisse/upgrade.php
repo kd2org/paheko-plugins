@@ -1,9 +1,9 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Caisse\POS;
-use Garradin\Users\DynamicFields;
+use Paheko\Plugin\Caisse\POS;
+use Paheko\Users\DynamicFields;
 
 $db = DB::getInstance();
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\HelloAsso\SearchResults;
+use Paheko\Plugin\HelloAsso\SearchResults;
 
 require __DIR__ . '/_inc.php';
 

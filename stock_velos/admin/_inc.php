@@ -1,8 +1,8 @@
 <?php
 
-namespace Garradin;
+namespace Paheko;
 
-use Garradin\Plugin\Stock_Velos\Velos;
+use Paheko\Plugin\Stock_Velos\Velos;
 
 $session->requireAccess($session::SECTION_USERS, $session::ACCESS_WRITE);
 
@@ -56,4 +56,4 @@ function tpl_form_select(array $params)
 	return $out;
 }
 
-$tpl->register_function('form_select', 'Garradin\tpl_form_select');
+$tpl->register_function('form_select', 'Paheko\tpl_form_select');

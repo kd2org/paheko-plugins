@@ -1,15 +1,15 @@
 <?php
 
-namespace Garradin\Plugin\HelloAsso;
+namespace Paheko\Plugin\HelloAsso;
 
-use Garradin\Plugin\HelloAsso\Entities\Option;
-use Garradin\Plugin\HelloAsso\Entities\Item;
-use Garradin\Plugin\HelloAsso\Entities\Order;
-use Garradin\Plugin\HelloAsso\Entities\Chargeable;
-use Garradin\DynamicList;
-use Garradin\Entities\Users\User;
-use Garradin\Entities\Services\Fee;
-use Garradin\Entities\Services\Service;
+use Paheko\Plugin\HelloAsso\Entities\Option;
+use Paheko\Plugin\HelloAsso\Entities\Item;
+use Paheko\Plugin\HelloAsso\Entities\Order;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\DynamicList;
+use Paheko\Entities\Users\User;
+use Paheko\Entities\Services\Fee;
+use Paheko\Entities\Services\Service;
 
 class Options
 {
