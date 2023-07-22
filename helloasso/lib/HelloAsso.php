@@ -25,8 +25,9 @@ class HelloAsso
 	const CHECKOUT_LINK_EXPIRATION		= '15 minutes';
 	const CHECKOUT_CREATION_LOG_LABEL	= 'Tunnel de paiement ' . self::PROVIDER_LABEL . ' n°%d créé.';
 	const PAYMENT_RESUMING_LOG_LABEL	= 'Reprise du paiement.';
+	const PAYMENT_RESULT_MESSAGE		= 'Retour (indication peu-fiable) du tunnel de paiement : %s.';
 	const LOG_FILE						= __DIR__ . '/../logs';
-	const REDIRECTION_FILE				= 'payer.php';
+	const REDIRECTION_FILE				= 'payment_concluded.php';
 	const DEFAULT_CLIENT_ID				= '';
 	const PER_PAGE						= 60;
 	const TIME_SAFE_MARGIN				= 4;
@@ -218,10 +219,10 @@ class HelloAsso
 		return $checkout;
 	}
 
-	static public function checkPaymentStatus(Payment $payment): void
+	static public function checkPaymentStatus(Payment $payment): bool
 	{
 		if ($payment->status !== Payment::AWAITING_STATUS) {
-			return ;
+			return false;
 		}
 
 		if ($payment->provider != self::PROVIDER_NAME) {
@@ -232,7 +233,7 @@ class HelloAsso
 			throw new \LogicException('This payment does not have a reference.');
 		}
 
-		$checkout = API::getInstance()->getCheckout($payment->org_slug, (int)$payment->reference);
+		$checkout = API::getInstance()->getCheckout($payment->organization, (int)$payment->reference);
 
 		file_put_contents(self::LOG_FILE, sprintf("\n\n==== %s - Fetch: %s ====\n\n%s\n", date('d/m/Y H:i:s'), $payment->reference, json_encode($checkout, JSON_PRETTY_PRINT)), FILE_APPEND);
 
@@ -254,15 +255,18 @@ class HelloAsso
 			throw new \LogicException('Payment is missing details: ' . json_encode($checkout, JSON_PRETTY_PRINT));
 		}
 
-		if ($checkout->order->payments[0]->state != Payments::AUTHORIZED_STATUS) {
-			self::log(sprintf('NOTHING TO DO. Reason: only handle authorized status (received: %s).', $checkout->order->payments[0]->state));
-			return;
+		if ($checkout->order->payments[0]->state === Payments::AUTHORIZED_STATUS && $payment->status !== Payment::VALIDATED_STATUS) {
+			return $payment->validate((int)$checkout->order->payments[0]->amount, $checkout->order->payments[0]->paymentReceiptUrl ?? null);
+		}
+		elseif (array_key_exists($checkout->order->payments[0]->state, Payments::STATUSES) && Payments::STATUSES[$checkout->order->payments[0]->state] !== $payment->status) {
+			$new_status = Payments::STATUSES[$checkout->order->payments[0]->state];
+			return $payment->updateStatus($new_status, sprintf(Payments::STATUS_UPDATE_MESSAGE, Payment::STATUSES[$new_status]));
 		}
 
-		$payment->validate((int)$checkout->order->payments[0]->amount, $checkout->order->payments[0]->paymentReceiptUrl ?? null);
+		return false;
 	}
 
-	public static function handleCallback(): void
+	static public function handleCallback(): void
 	{
 		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
 			throw new \RuntimeException('Invalid request method');
@@ -315,6 +319,19 @@ class HelloAsso
 		}
 	}
 
+	static public function handlePaymentResult(int $id_payment, int $checkout_intent_id, string $code): void
+	{
+		if (!$payment = EntityManager::findOneById(Payment::class, (int)$id_payment)) {
+			throw new \RuntimeException(sprintf('Checkout payment #%d not found (checkoutIntentId: #%d)', $id_payment, $checkout_intent_id));
+		}
+		if (intval($payment->checkout->id) !== $checkout_intent_id) {
+			throw new \RuntimeException(sprintf('Payment checkoutIntent ID mismatch. Registered: #%d, received: #%d.', $payment->checkout->id, $checkout_intent_id));
+		}
+
+		$payment->addLog(sprintf(self::PAYMENT_RESULT_MESSAGE, $code));
+
+		self::checkPaymentStatus($payment);
+	}
 /*
 	public function listTargets(): array
 	{

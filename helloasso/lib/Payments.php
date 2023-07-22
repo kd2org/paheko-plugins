@@ -21,10 +21,28 @@ use KD2\DB\EntityManager as EM;
 
 class Payments extends Paheko_Payments
 {
+	// HelloAsso Statuses
+	const PENDING_STATUS = 'Pending';
 	const AUTHORIZED_STATUS = 'Authorized';
+	const REFUSED_STATUS = 'Refused';
+	const UNKNOWN_STATUS = 'Unknown';
+	const REGISTERED_STATUS = 'Registered';
+	const REFUNDED_STATUS = 'Refunded';
+	const REFUNDING_STATUS = 'Refunding';
+	const CONTESTED_STATUS = 'Contested';
+
+	// Paheko Payment matching statuses
 	const STATUSES = [
-		self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS
-	]; // ToDo: complete the list from the const STATES bellow
+		self::PENDING_STATUS => Payment::AWAITING_STATUS,
+		self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS,
+		self::REFUSED_STATUS => Payment::REFUSED_STATUS,
+		self::UNKNOWN_STATUS => Payment::UNKNOWN_STATUS,
+		self::REGISTERED_STATUS => Payment::UNKNOWN_STATUS,
+		self::REFUNDED_STATUS => Payment::UNKNOWN_STATUS,
+		self::REFUNDING_STATUS => Payment::UNKNOWN_STATUS,
+		self::CONTESTED_STATUS => Payment::UNKNOWN_STATUS
+	];
+
 	const UPDATE_LOG_LABEL = 'Mise à jour du paiement (nouveau statut : %s).';
 	const TRANSACTION_NOTE = null;
 	const USER_NOTE = '%s';
