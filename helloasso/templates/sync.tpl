@@ -70,7 +70,7 @@
 						<legend>
 				{/if}
 						{if $chargeable.type === Plugin\HelloAsso\Entities\Chargeable::CHECKOUT_TYPE}
-							{$chargeable->label}
+							{$chargeable->label} - {$chargeable->getItem_person_name()}
 						{elseif $chargeable.type !== Plugin\HelloAsso\Entities\Chargeable::ONLY_ONE_ITEM_FORM_TYPE}
 							{if $chargeable.target_type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TARGET_TYPE}Option {/if}"{$chargeable.label}" {$chargeable.amount|escape|money_currency}{if $chargeable.target_type === Plugin\HelloAsso\Entities\Chargeable::OPTION_TARGET_TYPE && $chargeable->id_item} de "{$chargeable->getItem_label()}"{/if}
 							{if $chargeable->type === Plugin\HelloAsso\Entities\Chargeable::FREE_TYPE}- Gratuit{/if}

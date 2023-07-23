@@ -52,7 +52,8 @@ class Chargeable extends Entity
 	const TARGET_TYPE_FROM_CLASS = [
 		Item::class => self::ITEM_TARGET_TYPE,
 		Option::class => self::OPTION_TARGET_TYPE,
-		Form::class => self::ITEM_TARGET_TYPE // Same behavior for Form and Item
+		Form::class => self::ITEM_TARGET_TYPE, // Same behavior for Form and Item
+		Payment::class => self::ITEM_TARGET_TYPE
 	];
 
 	protected int		$id;
@@ -70,6 +71,7 @@ class Chargeable extends Entity
 
 	protected ?string	$_form_label = null;
 	protected ?string	$_item_label = null;
+	protected ?string	$_item_person_name = null;
 
 	protected ?Fee		$_fee = null;
 	protected ?Service	$_service = null;
@@ -92,6 +94,16 @@ class Chargeable extends Entity
 	public function getItem_label(): ?string
 	{
 		return $this->_item_label;
+	}
+
+	public function setItem_person_name(?string $person_name): void
+	{
+		$this->_item_person_name = $person_name;
+	}
+
+	public function getItem_person_name(): ?string
+	{
+		return $this->_item_person_name;
 	}
 
 	public function getItemsIds(): array

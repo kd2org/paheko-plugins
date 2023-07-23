@@ -45,6 +45,12 @@ class Forms
 		return EM::getInstance(Form::class)->all('SELECT * FROM @TABLE WHERE need_config = 1;');
 	}
 
+	// ToDo: add some cache
+	static public function getIdForCheckout(): int
+	{
+		return (int)DB::getInstance()->firstColumn(sprintf('SELECT id FROM %s WHERE slug = :checkout_slug', Form::TABLE), Form::CHECKOUT_SLUG);
+	}
+
 	static public function list(): array
 	{
 		$sql = sprintf('SELECT * FROM %s ORDER BY state = \'Disabled\', type, org_name COLLATE NOCASE, label COLLATE NOCASE;', Form::TABLE);

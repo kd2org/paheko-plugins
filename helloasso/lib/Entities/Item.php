@@ -14,8 +14,8 @@ class Item extends Entity implements ChargeableInterface
 	protected int			$id_order;
 	protected int			$id_form;
 	protected ?int			$id_user = null; // ID of the $person if registered
-	protected ?int			$id_transaction;
-	protected ?int			$id_chargeable;
+	protected ?int			$id_transaction = null;
+	protected ?int			$id_chargeable = null;
 	protected string		$type;
 	protected string		$state;
 	protected int			$price_type;
@@ -63,6 +63,21 @@ class Item extends Entity implements ChargeableInterface
 		API::FREE_PRICE_CATEGORY => self::FREE_PRICE_TYPE,
 		API::PAY_WHAT_YOU_WANT_PRICE_CATEGORY => self::PAY_WHAT_YOU_WANT_PRICE_TYPE
 	];
+
+	public function getChargeableId(): ?int
+	{
+		return $this->id_chargeable;
+	}
+
+	public function setChargeableId(int $id): void
+	{
+		$this->set('id_chargeable', $id);
+	}
+
+	public function getType()
+	{
+		return $this->type;
+	}
 
 	public function getItemId(): ?int
 	{

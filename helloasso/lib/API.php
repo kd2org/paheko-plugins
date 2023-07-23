@@ -259,6 +259,26 @@ class API
 		}
 	}
 
+	public function listOrderItems(int $order_id): \stdClass
+	{
+		$result = $this->GET(sprintf('v5/orders/%s', $order_id));
+
+		$this->assertOrder($result);
+
+		return $result;
+	}
+
+	public function assertOrder(\stdClass $result)
+	{
+		$this->assert(isset($result->items));
+		$this->assert(is_array($result->items));
+
+		if (count($result->items)) {
+			$r = $result->items[0];
+			$this->assert(isset($r->name));
+		}
+	}
+
 	public function listOrganizationPayments(string $organization, array $params): \stdClass
 	{
 		if (!preg_match('/^[a-z0-9_-]+$/', $organization)) {
@@ -322,7 +342,27 @@ class API
 
 	public function getCheckout(string $organization, int $id): \stdClass
 	{
-		return $this->GET('v5/organizations/' . $organization . '/checkout-intents/' . (int)$id);
+		$result = $this->GET('v5/organizations/' . $organization . '/checkout-intents/' . (int)$id);
+
+		$this->assertCheckout($result);
+
+		return $result;
+	}
+
+	protected function assertCheckout(\stdClass $result): void
+	{
+		$this->assert(isset($result->id));
+		$this->assert(isset($result->redirectUrl));
+		$this->assert(isset($result->metadata));
+		$this->assert(is_object($result->metadata));
+
+		$this->assert(isset($result->order));
+		$this->assert(isset($result->order->date));
+		$this->assert(is_string($result->order->date));
+		$this->assert(isset($result->order->payer));
+		$this->assert(isset($result->order->items));
+		$this->assert(is_array($result->order->items));
+		$this->assert(isset($result->order->items[0]->name));
 	}
 
 	public function createCheckout(string $organization, int $amount, string $label, int $payment_id, string $url, array $metadata): \stdClass

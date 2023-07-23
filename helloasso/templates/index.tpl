@@ -48,8 +48,12 @@
 					{input type="list" name="user" label="Membre" target="!users/selector.php" can_delete="true" required=true}
 				</dl>
 				<dl>
-					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'6':$chart_id name="credit" label="Type de recette" required=1}
-					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:'1:2:3':$chart_id name="debit" label="Compte d'encaissement" required=1}
+					{input type="select" name="id_category" label="Inscrire comme membre dans la catégorie" default=null options=$category_options required=true help="Inscrira automatiquement la personne comme membre Paheko une fois le paiement validé."}
+					<span class="service_fee_registration">
+						{input type="list" target="_fee_selector.php" name="id_fee" label="Inscrire à l'activité" required=false can_delete=true help="Les comptes ci-dessous prévalent sur ceux du tarif de l'activité sélectionnée."}
+					</span>
+					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:$ca_type:$chart_id name="credit" label="Type de recette" required=1}
+					{input type="list" target="!acc/charts/accounts/selector.php?targets=%s&chart=%d"|args:$da_type:$chart_id name="debit" label="Compte d'encaissement" required=1}
 				</dl>
 			</fieldset>
 
@@ -59,5 +63,20 @@
 	{/if}
 
 {/if}
+
+<script type="text/javascript">
+{literal}
+(function () {
+	g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
+
+	$('#f_id_category').onchange = () => {
+		g.toggle('.service_fee_registration', $('#f_id_category').value > 0);
+		if ($('#f_id_category').value === '0' && $('#f_id_fee_container').getElementsByTagName('span').length) {
+			$('#f_id_fee_container').getElementsByTagName('span')[0].remove();
+		}
+	};
+})();
+{/literal}
+</script>
 
 {include file="_foot.tpl"}

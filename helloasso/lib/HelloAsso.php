@@ -6,7 +6,11 @@ use Paheko\Config;
 use Paheko\DB;
 use Paheko\Entities\Plugin;
 use Paheko\Entities\Users\User;
-use Paheko\Entities\Payments\Payment;
+use Paheko\Entities\Users\Category;
+use Paheko\Entities\Services\Fee;
+use Paheko\Entities\Accounting\Account;
+use Paheko\Plugin\HelloAsso\Entities\Chargeable;
+use Paheko\Plugin\HelloAsso\Entities\Payment;
 use KD2\DB\EntityManager;
 
 use Paheko\Plugin\HelloAsso\Entities\Form;
@@ -184,10 +188,22 @@ class HelloAsso
 		return $this->config;
 	}
 
-	public function createCheckout(string $organization, string $label, int $amount, int $author_id, User $payer, ?array $accounts = null): \stdClass
+	public function createCheckout(string $organization, string $label, int $amount, int $author_id, User $payer, ?array $accounts = null, ?int $id_category = null, ?int $id_fee = null): \stdClass
 	{
-		$label .= ' - ' . $payer->nom . ' - ' . self::PROVIDER_LABEL;
+		if (!DB::getInstance()->test(User::TABLE, 'id = ?', (int)$author_id)) {
+			throw new InvalidArgumentException(sprintf('User (author) #%s not found.', $author_id));
+		}
+		if ($accounts && (!DB::getInstance()->test(Account::TABLE, 'id = ?', (int)$accounts[0]) || !DB::getInstance()->test(Account::TABLE, 'id = ?', (int)$accounts[1]))) {
+			throw new InvalidArgumentException(sprintf('Category #%s not found.', $id_category));
+		}
+		if ($id_category && !DB::getInstance()->test(Category::TABLE, 'id = ?', (int)$id_category)) {
+			throw new InvalidArgumentException(sprintf('Category #%s not found.', $id_category));
+		}
+		if ($id_fee && !DB::getInstance()->test(Fee::TABLE, 'id = ?', (int)$id_fee)) {
+			throw new InvalidArgumentException(sprintf('Fee #%s not found.', $id_fee));
+		}
 
+		$payment_label = Payments::CHECKOUT_PREFIX_LABEL . ' : ' . $label;
 		// Resume user failed attemp
 		if ($payment = EntityManager::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE id_author = :id_user AND label = :label AND status = :status AND method = :method AND type = :type AND date >= datetime(\'now\', :expiration)', (int)$payer->id, $label, Payment::AWAITING_STATUS, Payment::BANK_CARD_METHOD, Payment::UNIQUE_TYPE, '-' . self::PAYMENT_EXPIRATION)) {
 			// Resume current checkout
@@ -197,7 +213,7 @@ class HelloAsso
 			$payment->addLog(self::PAYMENT_RESUMING_LOG_LABEL);
 		}
 		else {
-			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, Payment::AWAITING_STATUS, self::PROVIDER_NAME, null, $author_id, $payer->id, $payer->nom, null, $label, $amount, null, null, null, null);
+			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, Payment::AWAITING_STATUS, self::PROVIDER_NAME, null, $author_id, $payer->id, $payer->nom, null, $payment_label, $amount, null, null, null, null, (int)Forms::getIdForCheckout());
 		}
 		$csrf = 'COMING_SOON_CSRF';
 		$metadata = [
@@ -208,6 +224,7 @@ class HelloAsso
 		$checkout = API::getInstance()->createCheckout($organization, $payment->amount, $label, $payment->id, $this->plugin->url() . self::REDIRECTION_FILE, $metadata);
 		$checkout->date = (new \DateTime())->format('Y-m-d H:i:s');
 		$checkout->csrf = $csrf;
+
 		$payment->setExtraData('checkout', $checkout);
 		$payment->set('reference', $checkout->id);
 		$payment->setExtraData('organization', $organization);
@@ -215,6 +232,15 @@ class HelloAsso
 		$payment->setExtraData('id_debit_account', $accounts ? $accounts[1] : null);
 		$payment->addLog(sprintf(self::CHECKOUT_CREATION_LOG_LABEL, (int)$checkout->id));
 		$payment->save();
+
+		$chargeable = Chargeables::createChargeable(Forms::getIdForCheckout(), $payment, Chargeable::CHECKOUT_TYPE);
+		$chargeable->set('label', $label); // Use "raw" label (instead of nice $payment_label) to catch matching Item later
+		$chargeable->set('id_category', $id_category ?? null);
+		$chargeable->set('id_fee', $id_fee ?? null);
+		$chargeable->set('id_credit_account', $accounts ? (int)$accounts[0] : null);
+		$chargeable->set('id_debit_account', $accounts ? (int)$accounts[1] : null);
+		$chargeable->set('need_config', 0);
+		$chargeable->save();
 
 		return $checkout;
 	}
@@ -251,16 +277,67 @@ class HelloAsso
 			return;
 		}*/
 
+		Users::initSync();
+
+		// First update
+		if (!isset($payment->id_order)) {
+			Orders::syncOrder(clone $checkout->order);
+			$payment->set('reference', (string)$checkout->order->payments[0]->id); // Change reference from checkout ID to payment ID
+			$payment->setExtraData('id', (int)$checkout->order->payments[0]->id);
+			$payment->setExtraData('id_order', (int)$checkout->order->id);
+			$payment->setExtraData('raw_data', $checkout);
+			$payment->addLog(sprintf(Payments::ORDER_SYNCED_LOG_LABEL, (int)$payment->id_order));
+			$payment->save();
+
+			if (!$chargeable = EntityManager::findOneById(Chargeable::class, $payment->getChargeableId())) {
+				throw new \RuntimeException(sprintf('Chargeable #%d not found for checkout payment #%d.', $payment->getChargeableId(), $payment->id));
+			}
+
+			// Set the real payer (the old $payment->id_payer was the intended payer but anyone may have paid on the HelloAsso checkoutIntent URL)
+			if (isset($checkout->order->payer)) {
+				$payer_name = Payers::getPersonName($checkout->order->payer);
+				$payment->set('label', \str_replace($payment->payer_name, $payer_name, $payment->label));
+				$chargeable->set('label', \str_replace($payment->payer_name, $payer_name, $chargeable->label));
+				$payment->set('payer_name', $payer_name);
+
+				$registered_payer = Users::findUserMatchingPayer($checkout->order->payer);
+				if ($registered_payer && (intval($registered_payer->id) !== $payment->id_payer)) {
+					$payment->set('id_payer', (int)$registered_payer->id);
+					$payment->addLog(sprintf(Payments::PAYER_CHANGE_LOG_LABEL, (int)$registered_payer->id, $payer_name));
+				}
+				if (!$registered_payer && $payment->id) {
+					$payment->set('id_payer', null);
+				}
+			}
+
+			$data = self::transform($checkout);
+			$item = Items::syncItem($data, self::getInstance()->config->accounting, $payment);
+			$payment->addLog(sprintf(Payments::ITEM_SYNCED_LOG_LABEL, (int)$item->id));
+			$payment->save();
+
+			$chargeable->set('id_item', $checkout->order->items[0]->id);
+			$chargeable->save();
+		}
+
 		if (!isset($checkout->order->payments[0]->state, $checkout->order->payments[0]->amount)) {
 			throw new \LogicException('Payment is missing details: ' . json_encode($checkout, JSON_PRETTY_PRINT));
 		}
 
 		if ($checkout->order->payments[0]->state === Payments::AUTHORIZED_STATUS && $payment->status !== Payment::VALIDATED_STATUS) {
-			return $payment->validate((int)$checkout->order->payments[0]->amount, $checkout->order->payments[0]->paymentReceiptUrl ?? null);
+			if (!$payment->validate((int)$checkout->order->payments[0]->amount, $checkout->order->payments[0]->paymentReceiptUrl ?? null)) {
+				return false;
+			}
+			if (!$payment->id_payer) {
+				$checkout->fields = [];
+				$item = Items::get((int)$checkout->order->items[0]->id); // All registrations & accounting are made from Items (whatever the origin is a Form (e.g., Donation), Payment, ...)
+				return !(Users::syncRegistration($data, (int)$payment->id_form, $item, Chargeable::CHECKOUT_TYPE, $payment) === null);
+			}
+
+			return true;
 		}
 		elseif (array_key_exists($checkout->order->payments[0]->state, Payments::STATUSES) && Payments::STATUSES[$checkout->order->payments[0]->state] !== $payment->status) {
 			$new_status = Payments::STATUSES[$checkout->order->payments[0]->state];
-			return $payment->updateStatus($new_status, sprintf(Payments::STATUS_UPDATE_MESSAGE, Payment::STATUSES[$new_status]));
+			return $payment->updateStatus($new_status, sprintf(Payments::STATUS_UPDATE_LOG_LABEL, Payment::STATUSES[$new_status]));
 		}
 
 		return false;
@@ -324,6 +401,9 @@ class HelloAsso
 		if (!$payment = EntityManager::findOneById(Payment::class, (int)$id_payment)) {
 			throw new \RuntimeException(sprintf('Checkout payment #%d not found (checkoutIntentId: #%d)', $id_payment, $checkout_intent_id));
 		}
+		if (!isset($payment->checkout)) {
+			throw new \LogicException(sprintf('Cannot accept "payment return" of a payment already processed (e.g., imported).'));
+		}
 		if (intval($payment->checkout->id) !== $checkout_intent_id) {
 			throw new \RuntimeException(sprintf('Payment checkoutIntent ID mismatch. Registered: #%d, received: #%d.', $payment->checkout->id, $checkout_intent_id));
 		}
@@ -338,6 +418,27 @@ class HelloAsso
 		return EM::getInstance(Target::class, 'SELECT * FROM @TABLE ORDER BY label;');
 	}
 */
+
+	static protected function transform(\stdClass $checkout): \stdClass
+	{
+		$data = clone $checkout;
+		$data->beneficiary = &$checkout->order->payer;
+		$data->order_id = (int)$checkout->order->id;
+		$data->order->date = $checkout->order->date;
+		$data->payments = &$checkout->order->payments;
+		$data->id = $checkout->order->items[0]->id;
+		$data->amount = $checkout->order->amount->total;
+		$data->payer = &$checkout->order->payer;
+		$data->state = $checkout->order->items[0]->state;
+		$data->priceCategory = $checkout->order->items[0]->priceCategory;
+		$data->type = $checkout->order->items[0]->type;
+		$data->name = $checkout->order->items[0]->name;
+		$data->payer_name = Payers::getPersonName($data->payer);
+		$data->fields = [];
+
+		return $data;
+	}
+
 	static public function log(string $message): void
 	{
 		file_put_contents(self::LOG_FILE, $message, FILE_APPEND);

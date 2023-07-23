@@ -14,13 +14,28 @@ class Option extends Entity implements ChargeableInterface
 	protected int			$id_item;
 	protected ?int			$id_order;
 	protected ?int			$id_user = null;
-	protected ?int			$id_transaction;
-	protected ?int			$id_chargeable;
+	protected ?int			$id_transaction = null;
+	protected ?int			$id_chargeable = null;
 	protected int			$price_type;
 	protected string		$label;
 	protected int			$amount;
 	protected ?\stdClass	$custom_fields;
 	protected string		$raw_data;
+
+	public function getChargeableId(): ?int
+	{
+		return $this->id_chargeable;
+	}
+
+	public function setChargeableId(int $id): void
+	{
+		$this->set('id_chargeable', $id);
+	}
+
+	public function getType()
+	{
+		return null;
+	}
 
 	public function getItemId(): ?int
 	{

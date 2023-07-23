@@ -4,6 +4,9 @@ namespace Paheko\Plugin\HelloAsso;
 
 interface ChargeableInterface
 {
+	public function getChargeableId(): ?int;
+	public function setChargeableId(int $id): void;
+	public function getType();
 	public function getItemId(): ?int;
 	public function getLabel(): string;
 	public function getAmount(): ?int;

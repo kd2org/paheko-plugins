@@ -38,14 +38,14 @@ class Chargeables
 
 	static public function getFromEntity(int $id_form, ChargeableInterface $entity, int $type): Chargeable
 	{
-		if ($entity->id_chargeable) {
-			return EM::findOneById(Chargeable::class, (int)$entity->id_chargeable);
+		if ($entity->getChargeableId()) {
+			return EM::findOneById(Chargeable::class, (int)$entity->getChargeableId());
 		}
 
 		$amount = (self::isMatchingAnyAmount($entity, $type) ? null : $entity->getAmount());
 
 		if ($chargeable = self::get($id_form, Chargeable::TARGET_TYPE_FROM_CLASS[get_class($entity)], $type, $entity->getLabel(), $amount)) {
-			$entity->set('id_chargeable', (int)$chargeable->id);
+			$entity->setChargeableId((int)$chargeable->id);
 			$entity->save();
 
 			return $chargeable;
@@ -58,7 +58,7 @@ class Chargeables
 		$params = $accounting ? [ Chargeable::FREE_TYPE ] : [];
 		$chargeables = Chargeables::allPlusExtraFields(
 			sprintf('
-				SELECT c.*, f.label AS _form_label, i.label AS _item_label
+				SELECT c.*, f.label AS _form_label, i.label AS _item_label, i.person AS _item_person_name
 				FROM @TABLE c
 				LEFT JOIN %s f ON (f.id = c.id_form)
 				LEFT JOIN %s i ON (i.id = c.id_item)
@@ -66,7 +66,7 @@ class Chargeables
 				ORDER BY f.label
 				',
 				Form::TABLE, Item::TABLE),
-			['_form_label', '_item_label' ],
+			['_form_label', '_item_label', '_item_person_name' ],
 			...$params
 		);
 		$result = [];
@@ -151,6 +151,9 @@ class Chargeables
 			'id_item' => [
 				'select' => 'c.id_item'
 			],
+			'person' => [
+				'select' => 'i.person'
+			],
 			'need_config' => [
 				'select' => 'c.need_config'
 			]
@@ -178,6 +181,7 @@ class Chargeables
 				$row->type_label .= ' - ' . Chargeable::TARGET_TYPES[$row->target_type];
 			}
 			
+			$row->label = $row->label . ' - ' . $row->person;
 			$row->category = $row->category ?? ($row->need_config === 1 ? null : '-');
 			$row->service = $row->service ?? '-';
 		});
@@ -230,7 +234,7 @@ class Chargeables
 		if ($form_type !== Chargeable::ONLY_ONE_ITEM_FORM_TYPE && $entity->getPriceType() === Item::PAY_WHAT_YOU_WANT_PRICE_TYPE) {
 			return Chargeable::PAY_WHAT_YOU_WANT_TYPE;
 		}
-		if ($form_type === Chargeable::SIMPLE_TYPE && $entity->type === Item::DONATION_TYPE)
+		if ($form_type === Chargeable::SIMPLE_TYPE && $entity->getType() === Item::DONATION_TYPE)
 			return Chargeable::DONATION_ITEM_TYPE;
 		return $form_type;
 	}
@@ -251,7 +255,7 @@ class Chargeables
 		$chargeable->set('need_config', 1);
 		$chargeable->save();
 
-		$entity->set('id_chargeable', (int)$chargeable->id);
+		$entity->setChargeableId((int)$chargeable->id);
 		$entity->save();
 
 		return $chargeable;

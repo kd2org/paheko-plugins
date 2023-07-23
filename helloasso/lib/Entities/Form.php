@@ -10,8 +10,10 @@ class Form extends Entity implements ChargeableInterface
 {
 	const TABLE = 'plugin_helloasso_forms';
 
+	const CHECKOUT_SLUG = 'default';
+
 	protected int		$id;
-	protected ?int		$id_chargeable;
+	protected ?int		$id_chargeable = null;
 	protected string	$org_slug;
 	protected string	$org_name;
 	protected string	$label;
@@ -39,6 +41,21 @@ class Form extends Entity implements ChargeableInterface
 		'Private'  => 'privé',
 		'Disabled' => 'désactivé',
 	];
+
+	public function getChargeableId(): ?int
+	{
+		return $this->id_chargeable;
+	}
+
+	public function setChargeableId(int $id): void
+	{
+		$this->set('id_chargeable', $id);
+	}
+
+	public function getType()
+	{
+		return null;
+	}
 
 	public function getItemId(): ?int
 	{

@@ -8,6 +8,7 @@ use Paheko\Plugin\HelloAsso\HelloAsso;
 use Paheko\Plugin\HelloAsso\Entities\CustomField;
 use Paheko\Plugin\HelloAsso\Entities\Form;
 use Paheko\Plugin\HelloAsso\Entities\Order;
+use Paheko\Plugin\HelloAsso\Entities\Payment;
 use Paheko\Plugin\HelloAsso\Entities\Chargeable;
 
 use KD2\DB\EntityManager as EM;
@@ -142,7 +143,7 @@ class Users
 	 * int: newly registered user's ID
 	 * null: conflict happened
 	 */
-	static public function syncRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type)
+	static public function syncRegistration(\stdClass $data, int $id_form, ChargeableInterface $entity, int $chargeable_type, ?Payment $payment = null)
 	{
 		self::addNewCustomFields($id_form, $data);
 
@@ -182,7 +183,17 @@ class Users
 			self::bindUserToWholeProcess((int)$user->id, $entity, $data);
 			self::handleFeeRegistration($chargeable, (int)$user->id, $date);
 
+			if ($payment) {
+				$payment->addLog(sprintf(Payments::PAYER_REGISTRATION_LOG_LABEL, $user->id));
+				$payment->save();
+			}
+
 			return (int)$user->id;
+		}
+
+		if ($payment) {
+			$payment->addLog(sprintf(Payments::PAYER_REGISTRATION_FAILED_LOG_LABEL, $identifier));
+			$payment->save();
 		}
 		return null;
 	}

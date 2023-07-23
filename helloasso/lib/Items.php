@@ -172,7 +172,7 @@ class Items
 		return 0;
 	}
 
-	static protected function syncItem(\stdClass $data, bool $accounting): Item
+	static public function syncItem(\stdClass $data, bool $accounting, ?Payment $payment = null): ?Item
 	{
 		$item = self::get($data->id) ?? new Item;
 		$item->set('raw_data', json_encode($data));
@@ -183,17 +183,21 @@ class Items
 		$item->save();
 
 		// Different try/catch blocks because we want to do all steps even if an exception occured
-		try {
-			Users::syncRegistration($data, (int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType));
+		if ($data->payments[0]->state === Payments::AUTHORIZED_STATUS) {
+			try {
+				Users::syncRegistration($data, (int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType), $payment);
+			}
+			catch (SyncException $e) { self::catchSyncException($e); }
 		}
-		catch (SyncException $e) { self::catchSyncException($e); }
 
 		$option_entities = self::syncOptions($data, $item, $accounting);
 
-		try {
-			self::handleAccounting($item, $data, $option_entities, $accounting);
+		if ($data->payments[0]->state === Payments::AUTHORIZED_STATUS) {
+			try {
+				self::handleAccounting($item, $data, $option_entities, $accounting);
+			}
+			catch (SyncException $e) { self::catchSyncException($e); }
 		}
-		catch (SyncException $e) { self::catchSyncException($e); }
 
 		return $item;
 	}
@@ -262,6 +266,7 @@ class Items
 		$option->set('amount', $data->amount);
 		$option->set('label', $data->name ?? Forms::getLabel($id_form));
 		$option->set('custom_fields', count($data->fields) ? (object)$data->fields : null);
+
 		$identifier = Users::guessUserIdentifier($full_data->beneficiary);
 		if ($identifier && ($id_user = Users::getUserId($identifier))) {
 			$option->set('id_user', $id_user);
@@ -269,7 +274,9 @@ class Items
 		}
 		$option->save();
 
-		Users::syncRegistration($full_data, $id_form, $option, Chargeables::getType($option, $full_data->order->formType));
+		if ($full_data->payments[0]->state === Payments::AUTHORIZED_STATUS) {
+			Users::syncRegistration($full_data, $id_form, $option, Chargeables::getType($option, $full_data->order->formType));
+		}
 
 		return $option;
 	}
@@ -283,18 +290,7 @@ class Items
 				if (!$payment = Payments::get((int)$data->payments[0]->id)) {
 					throw new \RuntimeException(sprintf('Payment #%d matching item #%d not found.', $data->payments[0]->id, $item->id));
 				}
-
-				if ($data->order->formType !== 'Checkout') { // All cases except Checkout
-					self::accountChargeable((int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType), $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
-				}
-				else // Checkout case
-				{
-					if (isset($payment->id_credit_account) && $payment->id_credit_account && $payment->id_debit_account) {// This feature will be available once the ChekoutIntent callback is fixed
-						$transaction = self::createTransaction($item, [$payment->id_credit_account, $payment->id_debit_account], $payment, (int)$data->payments[0]->id, $payment->date, self::CHECKOUT_TRANSACTION_LABEL);
-					}
-					self::accountChargeable((int)$item->id_form, $item, Chargeable::CHECKOUT_TYPE, $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
-					$payment->save();
-				}
+				self::accountChargeable((int)$item->id_form, $item, Chargeables::getType($item, $data->order->formType), $payment, (int)$data->payments[0]->id, new \DateTime($data->payments[0]->date));
 			}
 			if (isset($data->options)) {
 				foreach ($option_entities as $option) {
@@ -342,6 +338,13 @@ class Items
 			$data->beneficiary->email = $data->payer->email;
 		}
 		$data->beneficiary_label = isset($data->user) ? Payers::getPersonName($data->user) : null;
+
+		// The API does not provide item infos (such as item name) for checkout!!!
+		// We need to ask details of the specific order
+		if ($data->order->formType === 'Checkout') {
+			$order_data = API::getInstance()->listOrderItems((int)$data->order->id);
+			$data->name = $order_data->items[0]->name;
+		}
 
 		return $data;
 	}
@@ -421,7 +424,8 @@ class Items
 			if (null === $payment) {
 				throw new \RuntimeException(sprintf('No payment matching retrieved checkout item #%d (order #%d).', $data->id, $data->order->id));
 			}
-			return sprintf(self::CHECKOUT_LABEL, $payment->id, $payment->label);
+
+			return $data->name;
 		}
 		elseif (!isset($data->name))
 		{

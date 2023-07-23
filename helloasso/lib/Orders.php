@@ -164,26 +164,28 @@ class Orders
 		return 0;
 	}
 
-	static protected function syncOrder(\stdClass $data): void
+	static public function syncOrder(\stdClass $data): Order
 	{
-		$entity = self::get($data->id) ?? new Order;
+		$order = self::get($data->id) ?? new Order;
 
-		$entity->set('raw_data', json_encode($data));
+		$order->set('raw_data', json_encode($data));
 
 		$data = self::transform($data);
 
-		if (!$entity->exists()) {
-			$entity->set('id', $data->id);
-			$entity->set('id_form', Forms::getId($data->org_slug, $data->form_slug));
+		if (!$order->exists()) {
+			$order->set('id', $data->id);
+			$order->set('id_form', Forms::getId($data->org_slug, $data->form_slug));
 		}
 
-		$entity->set('id_payer', isset($data->payer) ? Users::getUserId(Users::guessUserIdentifier($data->payer)): null); // The user may subscribe by himself/herself a long time after his/her order
-		$entity->set('payer_name', $data->payer_name);
-		$entity->set('amount', $data->amount);
-		$entity->set('status', $data->status);
-		$entity->set('date', $data->date);
+		$order->set('id_payer', isset($data->payer) ? Users::getUserId(Users::guessUserIdentifier($data->payer)): null); // The user may subscribe by himself/herself a long time after his/her order
+		$order->set('payer_name', $data->payer_name);
+		$order->set('amount', $data->amount);
+		$order->set('status', $data->status);
+		$order->set('date', $data->date);
 
-		$entity->save();
+		$order->save();
+
+		return $order;
 	}
 
 	static protected function transform(\stdClass $data): \stdClass

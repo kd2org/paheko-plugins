@@ -48,7 +48,7 @@
 		{/if}
 	</dd>
 	{/foreach}
-	{if $payer && $payer->nom === \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
+	{if $payer && $payer->nom === \Paheko\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
 		<dt>Membre correspondant·e</dt>
 		<dd class="num">{$payer->nom} <a href="{$admin_url}users/details.php?id={$payer->id|intval}">{$payer->numero}</a></dd>
 	{elseif $guessed_user}
@@ -57,7 +57,7 @@
 	{/if}
 </dl>
 
-{if !$payer || $payer->nom !== \Garradin\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
+{if !$payer || $payer->nom !== \Paheko\Plugin\HelloAsso\Users::guessUserName($order->getRawPayer())}
 	<form method="post" action="{$self_url}">
 		{csrf_field key=$csrf_key}
 		{if $guessed_user}

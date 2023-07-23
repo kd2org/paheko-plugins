@@ -8,7 +8,8 @@ use Paheko\Plugin\HelloAsso\Entities as HA;
 use Paheko\Plugin\HelloAsso\API;
 
 use Paheko\Payments\Payments as Paheko_Payments;
-use Paheko\Entities\Payments\Payment;
+use Paheko\Entities\Payments\Payment as Paheko_Payment;
+use Paheko\Plugin\HelloAsso\Entities\Payment;
 use Paheko\Payments\Users as PaymentsUsers;
 use Paheko\Entities\Accounting\Transaction;
 use Paheko\Entities\Users\User;
@@ -49,6 +50,11 @@ class Payments extends Paheko_Payments
 	const BENEFICIARY_NOTE = 'Bénéficiaire (%s)';
 	const BENEFICIARY_LOG_LABEL = 'Ajout du bénéficiaire n°%d.';
 	const LABEL_UPDATED_LOG_LABEL = 'Intitulé mis à jour.';
+	const ORDER_SYNCED_LOG_LABEL = 'Commande n°%s synchronisée.';
+	const ITEM_SYNCED_LOG_LABEL = 'Item n°%s synchronisée.';
+	const PAYER_CHANGE_LOG_LABEL = 'Rectification de la personne effectuant le paiement : %2$s (membre n°%1$d).';
+	const PAYER_REGISTRATION_LOG_LABEL = 'Inscription du payeur/euse comme membre n°%d.';
+	const PAYER_REGISTRATION_FAILED_LOG_LABEL = 'Inscription du payeur/euse refusée : conflit dans son identifiant "%s".';
 	const CHECKOUT_PREFIX_LABEL = 'Paiement isolé';
 	const WITH_BENEFICIARY_LABEL = '%s%s - Payé par %s';
 
@@ -233,7 +239,7 @@ class Payments extends Paheko_Payments
 			$payer_id = $payer ? (int)$payer->id : null;
 			$payer_name = $data->payer_name;
 			$label = ($data->order ? ($data->order->formName === 'Checkout' ? self::CHECKOUT_PREFIX_LABEL : $data->order->formName) . ' - ' : '') . $data->payer_name;
-			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, (int)HelloAsso::getInstance()->getConfig()->provider_user_id, $payer_id, $payer_name, $data->id, $label, $data->amount, null, null, $data, self::TRANSACTION_NOTE);
+			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, (int)HelloAsso::getInstance()->getConfig()->provider_user_id, $payer_id, $payer_name, $data->id, $label, $data->amount, null, null, $data, self::TRANSACTION_NOTE, $data->id_form);
 			self::setPaymentExtraDataAndSave($payment, $data);
 		}
 		elseif ($payment->status !== self::STATUSES[$data->state])
@@ -288,6 +294,28 @@ class Payments extends Paheko_Payments
 				$payment->save();
 			}
 		}
+	}
+
+	static public function createPayment(string $type, string $method, string $status, string $provider_name, ?array $accounts, ?int $author_id, ?int $payer_id, ?string $payer_name, ?string $reference, string $label, int $amount, ?array $user_ids = null, ?array $user_notes = null, ?\stdClass $extra_data = null, ?string $transaction_notes = null, ?int $id_form = null): ?Payment
+	{
+		if ($id_form && !DB::getInstance()->test(Form::TABLE, 'id = ?', $id_form)) {
+			throw new \RuntimeException(sprintf('Inexisting form ID #%d.', $id_form));
+		}
+
+		$pa_payment = parent::createPayment($type, $method, $status, $provider_name, $accounts, $author_id, $payer_id, $payer_name, $reference, $label, $amount, $user_ids, $user_notes, $extra_data, $transaction_notes);
+		$payment = self::createFromPahekoPayment($pa_payment);
+		$payment->setExtraData('id_form', $id_form ?? null);
+		$payment->save();
+
+		return $payment;
+	}
+
+	static public function createFromPahekoPayment(Paheko_Payment $source): Payment
+	{
+		$payment = new Payment();
+		$payment->loadFromPahekoPayment($source);
+
+		return $payment;
 	}
 
 	static public function reset(): void
