@@ -2,6 +2,7 @@
 
 namespace Paheko;
 
+use Paheko\Plugin\HelloAsso\Entities\Order;
 use Paheko\Plugin\HelloAsso\Orders;
 use Paheko\Plugin\HelloAsso\Payments;
 use Paheko\Plugin\HelloAsso\Items;
@@ -27,19 +28,22 @@ $form->runIf('create_payer', function () use ($order) {
 	$order->registerRawPayer();
 }, $csrf_key, '?id=' .(int)$order->id. '&ok=1');
 
-$form = EM::findOneById(Form::class, (int)$order->id_form);
-$payer = $order->id_payer ? EM::findOneById(User::class, (int)$order->id_payer) : null;
-$payments = Payments::list(null, $order);
-$items = Items::list($order);
-$items_count_list = Items::listCountOpti($order);
-$options = Options::list($order);
-$options_count_list = Options::listCountOpti($order);
-$payer_infos = $order->getRawPayerInfos();
-$guessed_user = Users::findUserMatchingPayer($order->getRawPayer());
-
-$user_match_field_label = (int)$plugin->getConfig()->user_match_type;
+$tpl->assign([
+	'order' => $order,
+	'order_statuses' => Order::STATUSES,
+	'form' => EM::findOneById(Form::class, (int)$order->id_form),
+	'payer' => $order->id_payer ? EM::findOneById(User::class, (int)$order->id_payer) : null,
+	'payments' => Payments::list(null, $order),
+	'items' => Items::list($order),
+	'items_count_list' => Items::listCountOpti($order),
+	'options' => Options::list($order),
+	'options_count_list' => Options::listCountOpti($order),
+	'payer_infos' => $order->getRawPayerInfos(),
+	'guessed_user' => Users::findUserMatchingPayer($order->getRawPayer()),
+	'user_match_field_label' => (int)$plugin->getConfig()->user_match_type
+]);
 
 $tpl->assign('current_sub', 'orders');
-$tpl->assign(compact('order', 'form', 'payer', 'payments', 'items', 'items_count_list', 'options', 'options_count_list', 'payer_infos', 'guessed_user', 'user_match_field_label', 'csrf_key'));
+$tpl->assign(compact('csrf_key'));
 
 $tpl->display(PLUGIN_ROOT . '/templates/order.tpl');

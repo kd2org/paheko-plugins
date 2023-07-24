@@ -17,6 +17,8 @@ use Paheko\Entities\Users\User;
 
 use KD2\DB\EntityManager as EM;
 
+//use Paheko\Plugin\HelloAsso\Mock\MockItems;
+
 class Orders
 {
 	static public function get(int $id): ?Order
@@ -55,9 +57,9 @@ class Orders
 			'status' => [
 				'label' => 'Statut',
 			],
-			'id_payment' => [
+			'payment_ids' => [
 				'label' => 'Paiement',
-				'select' => 'json_extract(o.raw_data, \'$.payments[0].id\')'
+				'select' => 'json_extract(o.raw_data, \'$.payments[0].id\', \'$.payments[1].id\', \'$.payments[2].id\')'
 			]
 		];
 
@@ -126,6 +128,7 @@ class Orders
 			if (!(($associate instanceof User) || ($associate instanceof \stdClass)) && $row->id_payer) {
 				$row->payer = EM::findOneById(User::class, (int)$row->id_payer);
 			}
+			$row->payment_ids = json_decode($row->payment_ids);
 		});
 
 		$list->setExportCallback(function (&$row) {
@@ -152,6 +155,8 @@ class Orders
 			$params['pageIndex'] = $i;
 			$result = API::getInstance()->listOrganizationOrders($org_slug, $params);
 			$page_count = $result->pagination->totalPages;
+
+			//$result->data = MockItems::tif(true);
 
 			foreach ($result->data as $order) {
 				self::syncOrder($order);

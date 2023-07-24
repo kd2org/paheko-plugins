@@ -20,7 +20,7 @@
 					{$row.payer_name}
 				{/if}
 			</td>
-			<td>{$row.state}</td>
+			<td>{$row.status}</td>
 			<td>{$row.transfert_date|date}</td>
 			<td class="num"><a href="{$plugin_admin_url}order.php?id={$row.id_order}">{$row.id_order}</a></td>
 			<td class="actions">

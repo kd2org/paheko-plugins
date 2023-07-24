@@ -20,6 +20,8 @@ use Paheko\Utils;
 
 use KD2\DB\EntityManager as EM;
 
+//use Paheko\Plugin\HelloAsso\Mock\MockItems;
+
 class Payments extends Paheko_Payments
 {
 	// HelloAsso Statuses
@@ -34,7 +36,7 @@ class Payments extends Paheko_Payments
 
 	// Paheko Payment matching statuses
 	const STATUSES = [
-		self::PENDING_STATUS => Payment::AWAITING_STATUS,
+		self::PENDING_STATUS => Payment::PLANNED_STATUS,
 		self::AUTHORIZED_STATUS => Payment::VALIDATED_STATUS,
 		self::REFUSED_STATUS => Payment::REFUSED_STATUS,
 		self::UNKNOWN_STATUS => Payment::UNKNOWN_STATUS,
@@ -44,19 +46,20 @@ class Payments extends Paheko_Payments
 		self::CONTESTED_STATUS => Payment::UNKNOWN_STATUS
 	];
 
-	const UPDATE_LOG_LABEL = 'Mise à jour du paiement (nouveau statut : %s).';
-	const TRANSACTION_NOTE = null;
-	const USER_NOTE = '%s';
-	const BENEFICIARY_NOTE = 'Bénéficiaire (%s)';
-	const BENEFICIARY_LOG_LABEL = 'Ajout du bénéficiaire n°%d.';
-	const LABEL_UPDATED_LOG_LABEL = 'Intitulé mis à jour.';
-	const ORDER_SYNCED_LOG_LABEL = 'Commande n°%s synchronisée.';
-	const ITEM_SYNCED_LOG_LABEL = 'Item n°%s synchronisée.';
-	const PAYER_CHANGE_LOG_LABEL = 'Rectification de la personne effectuant le paiement : %2$s (membre n°%1$d).';
-	const PAYER_REGISTRATION_LOG_LABEL = 'Inscription du payeur/euse comme membre n°%d.';
-	const PAYER_REGISTRATION_FAILED_LOG_LABEL = 'Inscription du payeur/euse refusée : conflit dans son identifiant "%s".';
-	const CHECKOUT_PREFIX_LABEL = 'Paiement isolé';
-	const WITH_BENEFICIARY_LABEL = '%s%s - Payé par %s';
+	const UPDATE_LOG_LABEL						= 'Mise à jour du paiement (nouveau statut : %s).';
+	const TRANSACTION_NOTE						= null;
+	const USER_NOTE								= '%s';
+	const BENEFICIARY_NOTE						= 'Bénéficiaire (%s)';
+	const BENEFICIARY_LOG_LABEL					= 'Ajout du bénéficiaire n°%d.';
+	const PARENT_ADDED_LOG_LABEL				= 'Association au paiement parent n°%d.';
+	const LABEL_UPDATED_LOG_LABEL				= 'Intitulé mis à jour.';
+	const ORDER_SYNCED_LOG_LABEL				= 'Commande n°%s synchronisée.';
+	const ITEM_SYNCED_LOG_LABEL					= 'Item n°%s synchronisée.';
+	const PAYER_CHANGE_LOG_LABEL				= 'Rectification de la personne effectuant le paiement : %2$s (membre n°%1$d).';
+	const PAYER_REGISTRATION_LOG_LABEL			= 'Inscription du payeur/euse comme membre n°%d.';
+	const PAYER_REGISTRATION_FAILED_LOG_LABEL	= 'Inscription du payeur/euse refusée : conflit dans son identifiant "%s".';
+	const CHECKOUT_PREFIX_LABEL					= 'Paiement isolé';
+	const WITH_BENEFICIARY_LABEL				= '%s%s - Payé par %s';
 
 	const STATES = [
 		'Pending'               => 'À venir',
@@ -97,6 +100,11 @@ class Payments extends Paheko_Payments
 		return EM::findOne(Payment::class, 'SELECT * FROM @TABLE WHERE provider = :provider AND json_extract(extra_data, \'$.id_order\') = :id_order', HelloAsso::PROVIDER_NAME, $id_order);
 	}
 
+	static public function getIdForItem(int $id_item): ?int
+	{
+		return DB::getInstance()->firstColumn(sprintf('SELECT id FROM %s WHERE json_extract(extra_data, \'$.items[0].id\') = :id_item', Payment::TABLE), $id_item);
+	}
+
 	static public function list(?string $provider = HA::PROVIDER_NAME, $for = null): DynamicList
 	{
 		$columns = [
@@ -125,6 +133,7 @@ class Payments extends Paheko_Payments
 				'label' => 'Statut',
 				'select' => 'json_extract(extra_data, \'$.state\')'
 			],
+			'status' => [],
 			'transfer_date' => [
 				'label' => 'Versement',
 				'select' => 'json_extract(extra_data, \'$.transfert_date\')'
@@ -156,7 +165,7 @@ class Payments extends Paheko_Payments
 		}
 
 		$list->setModifier(function ($row) {
-			$row->state = self::STATES[$row->state] ?? 'Inconnu';
+			$row->status = Payment::STATUSES[$row->status] ?? (self::STATES[$row->state] ?? 'Inconnu');
 			if ($row->id_payer) {
 				$row->payer = EM::findOneById(User::class, (int)$row->id_payer);
 			}
@@ -211,6 +220,8 @@ class Payments extends Paheko_Payments
 			$result = API::getInstance()->listOrganizationPayments($org_slug, $params);
 			$page_count = $result->pagination->totalPages;
 
+			//$result->data = MockItems::tifPayment();
+
 			foreach ($result->data as $payment) {
 				// This API endpoint does not return Pending payments
 				self::syncPayment($payment, $accounting);
@@ -239,7 +250,21 @@ class Payments extends Paheko_Payments
 			$payer_id = $payer ? (int)$payer->id : null;
 			$payer_name = $data->payer_name;
 			$label = ($data->order ? ($data->order->formName === 'Checkout' ? self::CHECKOUT_PREFIX_LABEL : $data->order->formName) . ' - ' : '') . $data->payer_name;
-			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], HelloAsso::PROVIDER_NAME, null, (int)HelloAsso::getInstance()->getConfig()->provider_user_id, $payer_id, $payer_name, $data->id, $label, $data->amount, null, null, $data, self::TRANSACTION_NOTE, $data->id_form);
+			$parent_id = self::getIdForItem((int)$data->items[0]->id);
+			if ((isset($data->cashOutState) && $data->cashOutState === 'Transfered') || $parent_id) {
+				$type = Payment::TIF_TYPE;
+				if ($parent_id) {
+					$data->parent_id = (int)$parent_id;
+				}
+			}
+			else {
+				$type = Payment::UNIQUE_TYPE;
+			}
+			$payment = Payments::createPayment($type, Payment::BANK_CARD_METHOD, self::STATUSES[$data->state], $data->date, HelloAsso::PROVIDER_NAME, null, (int)HelloAsso::getInstance()->getConfig()->provider_user_id, $payer_id, $payer_name, $data->id, $label, $data->amount, null, null, $data, self::TRANSACTION_NOTE, $data->id_form);
+			if ($parent_id) {
+				$payment->addLog(sprintf(self::PARENT_ADDED_LOG_LABEL, $parent_id));
+				self::addChild($parent_id, $payment->id);
+			}
 			self::setPaymentExtraDataAndSave($payment, $data);
 		}
 		elseif ($payment->status !== self::STATUSES[$data->state])
@@ -279,35 +304,42 @@ class Payments extends Paheko_Payments
 	static public function handleBeneficiary(int $id_user, \stdClass $data, string $label)
 	{
 		if (isset($data->user)) { // Means the beneficiary is not the payer
-			$payment = Payments::getByReference(HelloAsso::PROVIDER_NAME, $data->payment_ref);
+			foreach ($data->payments as $payment_json) {
+				$payment = Payments::getByReference(HelloAsso::PROVIDER_NAME, $payment_json->id);
 
-			if (!array_key_exists($id_user, PaymentsUsers::getIds($payment->id))) {
-				PaymentsUsers::add($payment->id, [ $id_user ], [ sprintf(self::BENEFICIARY_NOTE, $label) ]);
-				$payment->addLog(sprintf(self::BENEFICIARY_LOG_LABEL, $id_user));
+				if (!array_key_exists($id_user, PaymentsUsers::getIds($payment->id))) {
+					PaymentsUsers::add($payment->id, [ $id_user ], [ sprintf(self::BENEFICIARY_NOTE, $label) ]);
+					$payment->addLog(sprintf(self::BENEFICIARY_LOG_LABEL, $id_user));
 
-				$beneficiary = Payers::getPersonName($data->user);
-				if ($beneficiary !== $data->payer_name) {
-					$payment->set('label', sprintf(self::WITH_BENEFICIARY_LABEL, ($data->order ? $data->order->formName . ' - ' : ''), $beneficiary, $data->payer_name));
-					$payment->addLog(self::LABEL_UPDATED_LOG_LABEL);
+					$beneficiary = Payers::getPersonName($data->user);
+					if ($beneficiary !== $data->payer_name) {
+						$payment->set('label', sprintf(self::WITH_BENEFICIARY_LABEL, ($data->order ? $data->order->formName . ' - ' : ''), $beneficiary, $data->payer_name));
+						$payment->addLog(self::LABEL_UPDATED_LOG_LABEL);
+					}
+
+					$payment->save();
 				}
-
-				$payment->save();
 			}
 		}
 	}
 
-	static public function createPayment(string $type, string $method, string $status, string $provider_name, ?array $accounts, ?int $author_id, ?int $payer_id, ?string $payer_name, ?string $reference, string $label, int $amount, ?array $user_ids = null, ?array $user_notes = null, ?\stdClass $extra_data = null, ?string $transaction_notes = null, ?int $id_form = null): ?Payment
+	static public function createPayment(string $type, string $method, string $status, ?\DateTime $date, string $provider_name, ?array $accounts, ?int $author_id, ?int $payer_id, ?string $payer_name, ?string $reference, string $label, int $amount, ?array $user_ids = null, ?array $user_notes = null, ?\stdClass $extra_data = null, ?string $transaction_notes = null, ?int $id_form = null): ?Payment
 	{
 		if ($id_form && !DB::getInstance()->test(Form::TABLE, 'id = ?', $id_form)) {
 			throw new \RuntimeException(sprintf('Inexisting form ID #%d.', $id_form));
 		}
 
-		$pa_payment = parent::createPayment($type, $method, $status, $provider_name, $accounts, $author_id, $payer_id, $payer_name, $reference, $label, $amount, $user_ids, $user_notes, $extra_data, $transaction_notes);
+		$pa_payment = parent::createPayment($type, $method, $status, $date, $provider_name, $accounts, $author_id, $payer_id, $payer_name, $reference, $label, $amount, $user_ids, $user_notes, $extra_data, $transaction_notes);
 		$payment = self::createFromPahekoPayment($pa_payment);
 		$payment->setExtraData('id_form', $id_form ?? null);
 		$payment->save();
 
 		return $payment;
+	}
+
+	static public function addChild(int $parent_id, int $child_id): bool
+	{
+		return DB::getInstance()->exec(sprintf('UPDATE %s SET extra_data = json_set(extra_data, \'$.children.%d\', %d) WHERE id = %d', Payment::TABLE, $child_id, $child_id, $parent_id));
 	}
 
 	static public function createFromPahekoPayment(Paheko_Payment $source): Payment

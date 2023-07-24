@@ -24,14 +24,19 @@ elseif ($ref = qg('ref')) {
 if (!$payment) {
 	throw new UserException('Paiement inconnu');
 }
-$payer = EntityManager::findOneById(User::class, (int)$payment->id_payer);
-$users = PaymentsUsers::getForPaymentId((int)$payment->id);
-$users_notes = PaymentsUsers::getNotesForPaymentId((int)$payment->id);
-$form = $payment->id_form ? Forms::get($payment->id_form) : null;
-$order = Orders::get($payment->id_order);
-$transactions = $payment->getTransactions();
+$tpl->assign([
+	'payment' => $payment,
+	'payment_types' => Payment::TYPES,
+	'payment_statuses' => Payment::STATUSES,
+	'payment_methods' => Payment::METHODS,
+	'payer' => EntityManager::findOneById(User::class, (int)$payment->id_payer),
+	'users' => PaymentsUsers::getForPaymentId((int)$payment->id),
+	'users_notes' => PaymentsUsers::getNotesForPaymentId((int)$payment->id),
+	'form' => $payment->id_form ? Forms::get($payment->id_form) : null,
+	'order' => Orders::get($payment->id_order),
+	'transactions' => $payment->getTransactions()
+]);
 
-$tpl->assign(compact('payment', 'payer', 'users', 'users_notes', 'form', 'order', 'transactions'));
 $tpl->assign('current_sub', 'payments');
 
 $tpl->assign('TECH_DETAILS', SHOW_ERRORS && ENABLE_TECH_DETAILS);

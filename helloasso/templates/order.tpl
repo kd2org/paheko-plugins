@@ -20,7 +20,7 @@
 	<dt>Date</dt>
 	<dd>{$order.date|date}</dd>
 	<dt>Statut</dt>
-	<dd>{if $order.status}Payée{else}Paiement incomplet{/if}</dd>
+	<dd>{$order_statuses[$order.status]}</dd>
 </dl>
 
 <h2 class="ruler">Éléments de la commande</h2>

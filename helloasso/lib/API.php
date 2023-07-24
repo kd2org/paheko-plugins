@@ -80,7 +80,7 @@ class API
 		$headers = [
 			'Authorization' => sprintf('Bearer %s', $token),
 			'Accept'        => 'application/json',
-			'User-Agent'    => 'Garradin',
+			'User-Agent'    => 'Paheko',
 		];
 
 		if ($type == 'GET') {
@@ -301,6 +301,7 @@ class API
 			$r = $result->data[0];
 			$this->assert(isset($r->date));
 			$this->assert(strtotime($r->date));
+			$this->assert($r->cashOutState);
 			$this->assert(isset($r->order->id));
 			$this->assert(isset($r->state));
 			$this->assert(isset($r->id));

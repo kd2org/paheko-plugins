@@ -213,7 +213,7 @@ class HelloAsso
 			$payment->addLog(self::PAYMENT_RESUMING_LOG_LABEL);
 		}
 		else {
-			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, Payment::AWAITING_STATUS, self::PROVIDER_NAME, null, $author_id, $payer->id, $payer->nom, null, $payment_label, $amount, null, null, null, null, (int)Forms::getIdForCheckout());
+			$payment = Payments::createPayment(Payment::UNIQUE_TYPE, Payment::BANK_CARD_METHOD, Payment::AWAITING_STATUS, null, self::PROVIDER_NAME, null, $author_id, $payer->id, $payer->nom, null, $payment_label, $amount, null, null, null, null, (int)Forms::getIdForCheckout());
 		}
 		$csrf = 'COMING_SOON_CSRF';
 		$metadata = [
