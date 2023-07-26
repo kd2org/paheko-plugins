@@ -174,8 +174,11 @@ CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_label ON payments (json
 CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_form_order ON payments (json_extract(extra_data, '$.id_form'), json_extract(extra_data, '$.id_order'));
 -- Listing payments on the order page
 CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_order_date ON payments (json_extract(extra_data, '$.id_order'), 'date');
+-- Synchronizing multiple payments for the same order
+CREATE INDEX IF NOT EXISTS plugin_helloasso_payment_first_item ON payments (json_extract(extra_data, '$.items[0].id'));
 -- Search index
 CREATE INDEX IF NOT EXISTS plugin_helloasso_search_user_date ON users (date_inscription);
+CREATE INDEX IF NOT EXISTS plugin_helloasso_search_service_fee ON services_fees (label);
 
 -----------------------------------
 ---- Plugin indexes
