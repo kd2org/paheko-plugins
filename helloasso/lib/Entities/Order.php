@@ -23,7 +23,6 @@ class Order extends Entity
 	protected int		$id;
 	protected int		$id_form;
 	protected ?int		$id_payer;
-	protected ?int		$id_transaction;
 	protected \DateTime	$date;
 	protected ?string	$payer_name;
 	protected int		$amount;
@@ -97,48 +96,6 @@ class Order extends Entity
 		$payment->addLog(sprintf(self::RAW_PAYER_REGISTRATION_MESSAGE, $user->id, $user->nom));
 		$payment->save();
 	}
-
-	/*public function createTransaction(Target $target): Transaction
-	{
-		if (!$target->id_year) {
-			throw new \RuntimeException('Cannot create transaction: no year has been specified');
-		}
-
-		if ($this->id_transaction) {
-			throw new \RuntimeException('This order already has a transaction');
-		}
-
-		$accounts = $target->listAccountsByType();
-
-		if (!isset($accounts[TargetAccount::TYPE_THIRDPARTY])) {
-
-		}
-
-		$transaction = new Transaction;
-		$transaction->type = Transaction::TYPE_ADVANCED;
-		$transaction->id_creator = HelloAsso::getInstance()->getConfig()->provider_user_id;
-		$transaction->id_year = $target->id_year;
-
-		$transaction->date = $this->date;
-		$transaction->label = 'Commande ' . HelloAsso::PROVIDER_LABEL . ' n°' . $this->id();
-		$transaction->reference = $this->id;
-
-		foreach ($this->listItems() as $item) {
-			if (!isset($accounts[$item->type])) {
-				throw new \RuntimeException('No account has been specified for this type: ' . $item->type);
-			}
-
-			$line = new Line;
-			$line->label = $item->label;
-			$line->reference = $item->id;
-			$line->id_account = $accounts[$item->type];
-			$transaction->addLine($line);
-		}
-
-		$transaction->save();
-		$this->set('id_transaction', $transaction->id());
-		$this->save();
-	}*/
 
 	public function selfCheck(): void
 	{

@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_orders (
 	id INTEGER PRIMARY KEY NOT NULL,
 	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
 	id_payer INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
-	id_transaction INTEGER NULL REFERENCES acc_transactions(id) ON DELETE SET NULL,
 	date TEXT NOT NULL,
 	payer_name TEXT NULL,
 	amount INTEGER NOT NULL,
@@ -38,7 +37,6 @@ CREATE TABLE IF NOT EXISTS plugin_helloasso_orders (
 
 CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_form ON plugin_helloasso_orders(id_form);
 CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_user ON plugin_helloasso_orders(id_payer);
-CREATE INDEX IF NOT EXISTS plugin_helloasso_orders_transaction ON plugin_helloasso_orders(id_transaction);
 
 CREATE TABLE IF NOT EXISTS plugin_helloasso_items (
 	id INTEGER PRIMARY KEY NOT NULL,
@@ -111,53 +109,6 @@ CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_credit_account ON plugin
 CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_debit_account ON plugin_helloasso_chargeables(id_debit_account);
 CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_category ON plugin_helloasso_chargeables(id_category);
 CREATE INDEX IF NOT EXISTS plugin_helloasso_chargeables_fee ON plugin_helloasso_chargeables(id_fee);
-
-CREATE TABLE IF NOT EXISTS plugin_helloasso_targets (
--- List of forms that should create users or subscriptions
-	id INTEGER PRIMARY KEY NOT NULL,
-	id_form INTEGER NOT NULL REFERENCES plugin_helloasso_forms(id) ON DELETE CASCADE,
-
-	label TEXT NOT NULL,
-	last_sync TEXT NULL,
-
-	-- If not null, create a user in this category
-	id_category INTEGER NOT NULL REFERENCES users_categories(id) ON DELETE SET NULL,
-
-	-- If not null, subscribe the user (if found) to this fee, and add payments to the subscription
-	id_fee INTEGER NULL REFERENCES services_fees(id) ON DELETE SET NULL,
-
-	-- If not null, creates transactions in this year
-	id_year INTEGER NULL REFERENCES acc_years(id) ON DELETE SET NULL,
-
-	split_payments INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS plugin_helloasso_targets_accounts (
-	id INTEGER NOT NULL PRIMARY KEY,
-	id_target INTEGER NOT NULL REFERENCES plugin_helloasso_targets (id) ON DELETE CASCADE,
-	type TEXT NOT NULL,
-	id_account INTEGER NOT NULL REFERENCES acc_accounts(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS plugin_helloasso_targets_fields (
-	id INTEGER PRIMARY KEY NOT NULL,
-	id_target INTEGER NOT NULL REFERENCES plugin_helloasso_targets(id) ON DELETE CASCADE,
-	source TEXT NOT NULL,
-	target TEXT NULL
-);
-
--- Make sure we can't link to an invalid account if the linked fee changes its accounting chart
-CREATE TRIGGER IF NOT EXISTS plugin_helloasso_targets_fee_update AFTER UPDATE OF id_year ON services_fees BEGIN
-    DELETE FROM plugin_helloasso_targets_payments WHERE id_account = NULL AND id_fee = OLD.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS plugin_helloasso_targets_fee_delete BEFORE DELETE ON services_fees BEGIN
-    UPDATE plugin_helloasso_targets SET id_account = NULL, id_fee = NULL WHERE id_fee = OLD.id;
-END;
-
-CREATE TRIGGER IF NOT EXISTS plugin_helloasso_targets_year_delete BEFORE DELETE ON acc_years BEGIN
-    DELETE FROM plugin_helloasso_targets_accounts WHERE id_target IN (SELECT id FROM plugin_helloasso_targets WHERE id_year = OLD.id);
-END;
 
 -----------------------------------
 ---- Indexes for Paheko core tables
