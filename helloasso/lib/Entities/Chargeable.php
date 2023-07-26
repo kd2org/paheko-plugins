@@ -10,11 +10,15 @@ use Paheko\Entities\Services\Service;
 use Paheko\Entities\Services\Service_User;
 use Paheko\Entities\Users\DynamicField;
 use Paheko\Entities\Users\Category;
+use Paheko\Entities\Accounting\Transaction;
 use Paheko\Entities\Accounting\Account;
+use Paheko\Accounting\Years;
 use Paheko\Users\Users;
 use Paheko\Users\Session;
 
 use Paheko\Plugin\HelloAsso\HelloAsso as HA;
+use Paheko\Plugin\HelloAsso\ChargeableInterface;
+use Paheko\Plugin\HelloAsso\Payments;
 
 class Chargeable extends Entity
 {
@@ -55,6 +59,9 @@ class Chargeable extends Entity
 		Form::class => self::ITEM_TARGET_TYPE, // Same behavior for Form and Item
 		Payment::class => self::ITEM_TARGET_TYPE
 	];
+	const TRANSACTION_NOTE = null;
+	const TRANSACTION_LOG_LABEL = 'Écriture comptable n°%d créée.';
+	const MEMBER_LOG_LABEL = 'Membre n°%d associé·e.';
 
 	protected int		$id;
 	protected int		$id_form;
@@ -121,7 +128,7 @@ class Chargeable extends Entity
 		return (($this->type === Chargeable::ONLY_ONE_ITEM_FORM_TYPE) || ($this->type === Chargeable::DONATION_ITEM_TYPE) || ($this->type === Chargeable::PAY_WHAT_YOU_WANT_TYPE));
 	}
 
-	public function registerToService(int $id_user, \DateTime $date, bool $paid)
+	public function registerToService(int $id_user, \DateTime $date, bool $paid): Service_User
 	{
 		if (!$this->id_fee) {
 			throw new \RuntimeException(sprintf('No fee associated to current chargeable #%d while trying to register user #%d to a service.', $this->id, $id_user));
@@ -142,6 +149,59 @@ class Chargeable extends Entity
 			'date' => $date
 		];
 		return Service_User::createFromForm([ $id_user => HA::PROVIDER_LABEL . ' synchronization' ], $id_user, false, $source); // Second parameter should be HelloAsso user ID (to understand the plugin auto-registered the member)
+	}
+
+	public function account(ChargeableInterface $entity, Payment $payment, int $payment_ref, \DateTime $date, string $label): bool
+	{
+		$transaction = $this->createTransaction($entity, $payment, $payment_ref, $date, $label);
+		$entity->id_transaction = (int)$transaction->id;
+		return $entity->save();
+	}
+
+	protected function createTransaction(ChargeableInterface $entity, Payment $payment, int $payment_ref, \DateTime $date, string $label): Transaction
+	{
+		if (!$id_year = Years::getOpenYearIdMatchingDate($date)) {
+			throw new \RuntimeException(sprintf('No opened accounting year matching the item date "%s"!', $date->format('Y-m-d')));
+		}
+		// ToDo: check accounts validity (right number for the Transaction type)
+
+		$transaction = new Transaction();
+		$transaction->type = Transaction::TYPE_REVENUE;
+		$transaction->reference = (string)$payment->id;
+
+		$source = [
+			'status' => Transaction::STATUS_PAID,
+			'label' => sprintf($label, HA::PROVIDER_LABEL, $entity->getLabel()),
+			'notes' => self::TRANSACTION_NOTE,
+			'payment_reference' => $payment_ref,
+			'date' => \KD2\DB\Date::createFromInterface($date),
+			'id_year' => (int)$id_year,
+			'id_payment' => (int)$payment->id,
+			'id_creator' => (int)HA::getInstance()->getConfig()->provider_user_id,
+			'amount' => $entity->getAmount() / 100,
+			'simple' => [
+				Transaction::TYPE_REVENUE => [
+					'credit' => [ (int)$this->id_credit_account => null ],
+					'debit' => [ (int)$this->id_debit_account => null ]
+			]]
+		];
+
+		$transaction->importForm($source);
+
+		if (!$transaction->save()) {
+			throw new \RuntimeException(sprintf('Cannot record item/option transaction. Item/option ID: %d.', $entity->id));
+		}
+		$payment->addLog(sprintf(self::TRANSACTION_LOG_LABEL, $transaction->id));
+
+		if ($id_user = $entity->getUserId()) {
+			$transaction->linkToUser((int)$id_user);
+			$payment->bindToUsers([ $id_user ], [ sprintf(Payments::USER_NOTE, $entity->label) ]);
+			$payment->addLog(sprintf(self::MEMBER_LOG_LABEL, $id_user));
+		}
+
+		$payment->save();
+
+		return $transaction;
 	}
 
 	public function fee(): ?Fee

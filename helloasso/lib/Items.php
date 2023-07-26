@@ -14,9 +14,7 @@ use Paheko\DB;
 use Paheko\DynamicList;
 use Paheko\Utils;
 use Paheko\ValidationException;
-use Paheko\Entities\Accounting\Transaction;
 use Paheko\Entities\Payments\Payment;
-use Paheko\Accounting\Years;
 use Paheko\Entities\Users\User;
 use Paheko\Plugin\HelloAsso\Payments;
 use Paheko\Entities\Services\Fee;
@@ -30,11 +28,8 @@ class Items
 {
 	const TRANSACTION_LABEL = 'Article %s: %s';
 	const CHECKOUT_TRANSACTION_LABEL = '%s: %s';
-	const TRANSACTION_NOTE = null;
 	const DONATION_LABEL = 'Don';
 	const CHECKOUT_LABEL = 'Commande #%d (%s)';
-	const TRANSACTION_LOG_LABEL = 'Écriture comptable n°%d créée.';
-	const MEMBER_LOG_LABEL = 'Membre n°%d associé·e.';
 
 	static protected array	$_exceptions = [];
 
@@ -307,9 +302,7 @@ class Items
 	{
 		$chargeable = Chargeables::getFromEntity($id_form, $entity, $type);
 		if ($entity->getAmount() && $chargeable->id_credit_account && $chargeable->id_debit_account) {
-			$transaction = self::createTransaction($entity, [(int)$chargeable->id_credit_account, (int)$chargeable->id_debit_account], $payment, $payment_ref, $date, self::TRANSACTION_LABEL);
-			$entity->id_transaction = (int)$transaction->id;
-			$entity->save();
+			$chargeable->account($entity, $payment, $payment_ref, $date, self::TRANSACTION_LABEL);
 			return true;
 		}
 		return false;
@@ -365,52 +358,6 @@ class Items
 		}
 
 		return $data;
-	}
-
-	static protected function createTransaction(ChargeableInterface $entity, array $accounts, Payment $payment, int $payment_ref, \DateTime $date, string $label): Transaction
-	{
-		if (!$id_year = Years::getOpenYearIdMatchingDate($date)) {
-			throw new \RuntimeException(sprintf('No opened accounting year matching the item date "%s"!', $date->format('Y-m-d')));
-		}
-		// ToDo: check accounts validity (right number for the Transaction type)
-
-		$transaction = new Transaction();
-		$transaction->type = Transaction::TYPE_REVENUE;
-		$transaction->reference = (string)Payments::getId($payment_ref); // aka $payment->id
-
-		$source = [
-			'status' => Transaction::STATUS_PAID,
-			'label' => sprintf($label, HA::PROVIDER_LABEL, $entity->getLabel()),
-			'notes' => self::TRANSACTION_NOTE,
-			'payment_reference' => $payment_ref,
-			'date' => \KD2\DB\Date::createFromInterface($date),
-			'id_year' => (int)$id_year,
-			'id_payment' => (int)$payment->id,
-			'id_creator' => (int)HA::getInstance()->getConfig()->provider_user_id,
-			'amount' => $entity->getAmount() / 100,
-			'simple' => [
-				Transaction::TYPE_REVENUE => [
-					'credit' => [ (int)$accounts[0] => null ],
-					'debit' => [ (int)$accounts[1] => null ]
-			]]
-		];
-
-		$transaction->importForm($source);
-
-		if (!$transaction->save()) {
-			throw new \RuntimeException(sprintf('Cannot record item/option transaction. Item/option ID: %d.', $entity->id));
-		}
-		$payment->addLog(sprintf(self::TRANSACTION_LOG_LABEL, $transaction->id));
-
-		if ($id_user = $entity->getUserId()) {
-			$transaction->linkToUser((int)$id_user);
-			$payment->bindToUsers([ $id_user ], [ sprintf(Payments::USER_NOTE, $entity->label) ]);
-			$payment->addLog(sprintf(self::MEMBER_LOG_LABEL, $id_user));
-		}
-
-		$payment->save();
-
-		return $transaction;
 	}
 
 	static protected function initSync(): void
