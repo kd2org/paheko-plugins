@@ -13,6 +13,7 @@ use Paheko\Entities\Users\Category;
 use Paheko\Entities\Accounting\Transaction;
 use Paheko\Entities\Accounting\Account;
 use Paheko\Accounting\Years;
+use Paheko\Accounting\Transactions;
 use Paheko\Users\Users;
 use Paheko\Users\Session;
 
@@ -165,14 +166,12 @@ class Chargeable extends Entity
 		}
 		// ToDo: check accounts validity (right number for the Transaction type)
 
-		$transaction = new Transaction();
-		$transaction->type = Transaction::TYPE_REVENUE;
-		$transaction->reference = (string)$payment->id;
-
 		$source = [
+			'type' => Transaction::TYPE_REVENUE,
 			'status' => Transaction::STATUS_PAID,
 			'label' => sprintf($label, HA::PROVIDER_LABEL, $entity->getLabel()),
 			'notes' => self::TRANSACTION_NOTE,
+			'reference' => (string)$payment->id,
 			'payment_reference' => $payment_ref,
 			'date' => \KD2\DB\Date::createFromInterface($date),
 			'id_year' => (int)$id_year,
@@ -185,8 +184,7 @@ class Chargeable extends Entity
 					'debit' => [ (int)$this->id_debit_account => null ]
 			]]
 		];
-
-		$transaction->importForm($source);
+		$transaction = Transactions::create($source);
 
 		if (!$transaction->save()) {
 			throw new \RuntimeException(sprintf('Cannot record item/option transaction. Item/option ID: %d.', $entity->id));
