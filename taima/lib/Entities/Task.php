@@ -5,6 +5,7 @@ namespace Paheko\Plugin\Taima\Entities;
 use Paheko\Accounting\Accounts;
 
 use Paheko\Entity;
+use Paheko\Form;
 use Paheko\Utils;
 
 class Task extends Entity
@@ -24,6 +25,10 @@ class Task extends Entity
 
 		if (isset($source['value'])) {
 			$source['value'] = Utils::moneyToInteger($source['value']) ?: null;
+		}
+
+		if (isset($source['account'])) {
+			$source['account'] = Form::getSelectorValue($source['account']);
 		}
 
 		return parent::importForm($source);
