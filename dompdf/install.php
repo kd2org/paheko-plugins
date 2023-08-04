@@ -11,14 +11,13 @@ if (!class_exists('ZipArchive')) {
 // Download and unzip DomPDF library
 $url = 'https://github.com/dompdf/dompdf/releases/download/v2.0.3/dompdf_2-0-3.zip';
 
-$file = tempnam(CACHE_ROOT, 'dompdf');
+$file = CACHE_ROOT . '/dompdf.zip';
 
 copy($url, $file);
 
-$zip = new \ZipArchive;
-$zip->open($file);
-$zip->extractTo(PDF::DIRECTORY);
-$zip->close();
+$zip = new \PharData($file);
+$zip->extractTo(PDF::DIRECTORY, null, true);
+unset($zip);
 
 unlink($file);
 
