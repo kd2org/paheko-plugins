@@ -4,7 +4,8 @@ namespace Paheko\Plugin\Taima;
 
 use Paheko\Plugin\Taima\Tracking;
 use Paheko\Plugin\Taima\Entities\Entry;
-use Paheko\Membres;
+use Paheko\Form;
+use Paheko\Users;
 use Paheko\Utils;
 use Paheko\UserException;
 
@@ -19,13 +20,13 @@ $selected_user = null;
 $user = qg('id_user');
 
 if ($user) {
-	$user = (new Membres)->get((int)$user);
+	$user = User::get((int)$user);
 
 	if (!$user) {
 		throw new UserException('Membre inconnu');
 	}
 
-	$selected_user = [$user->id => $user->identite];
+	$selected_user = [$user->id => $user->name()];
 }
 
 if (qg('from')) {
@@ -45,7 +46,7 @@ else {
 
 $form->runIf('save', function () use ($entry) {
 	$entry->setDateString(f('date'));
-	$entry->user_id = @key(f('user'));
+	$entry->user_id = Form::getSelectorValue(f('user'));
 	$entry->importForm();
 	$entry->setDuration(f('duration'));
 	$entry->save();

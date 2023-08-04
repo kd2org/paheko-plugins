@@ -3,7 +3,7 @@
 {else}
 	{assign var="title" value="Ajouter une tâche"}
 {/if}
-{include file="admin/_head.tpl" title=$title}
+{include file="_head.tpl" title=$title}
 
 {if isset($_GET.ok)}
 	<p class="confirm block">Tâche enregistrée.</p>
