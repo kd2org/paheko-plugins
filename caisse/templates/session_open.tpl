@@ -2,7 +2,7 @@
 
 {if $current_pos_session}
 <p class="alert block">
-	Attention : il existe déjà une caisse ouverte en cours, voulez-vous vraiment ouvrir deux sessions de caisse en même temps&nbsp;?
+	Attention : il existe déjà une caisse ouverte en cours, voulez-vous vraiment ouvrir deux sessions de caisse en même temps&nbsp;?<br />
 </p>
 {/if}
 
@@ -20,6 +20,7 @@
 	</fieldset>
 	<p class="submit">
 		{csrf_field key=$csrf_key}
+		{linkbutton shape="left" href="./" label="Annuler"}
 		{button type="submit" shape="right" label="Ouvrir la caisse" class="main" name="open"}
 	</p>
 </form>
